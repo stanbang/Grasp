@@ -1,6 +1,6 @@
 # Grasp
 
-A local study workspace for tracing concepts and answers back to your notes. Phase 2 adds PDF, Markdown and text ingestion, source-linked concepts and streamed processing events. The lightweight workspace preview is available; the interactive 3D canvas follows in Phase 3.
+A local study workspace for tracing concepts and answers back to your notes. Phases 1–5 are implemented: upload notes, explore a 3D concept graph, ask questions with source citations, and check understanding with server-graded quizzes. The app runs locally in deterministic mock mode without a key.
 
 ## Run
 
@@ -14,7 +14,13 @@ On Windows with several Python versions, use `py -3.11 scripts/dev.py --setup`. 
 
 On later runs, use `python scripts/dev.py`. Use `python scripts/dev.py --install-only` to install without starting the app.
 
-## Try the checkpoint
+## Try the study workspace
+
+Open the sample graph, select a concept, and read its named source passages. Use **Ask your notes** for cited answers and **Check understanding** for a three-question quiz. Passing two questions marks the selected concept mastered. No XP or streaks are used.
+
+See [the Phases 3–5 walkthrough](docs/phase-5.md).
+
+## API tools
 
 - Read the sample note in the source panel and download its Markdown file.
 - Inspect the live Pydantic schemas through **Contracts**.
@@ -61,9 +67,9 @@ scripts/           Setup, launcher, contracts and ingestion verification
 
 1. Complete: scaffold, contracts, local stores and preview.
 2. Complete: document ingestion, extraction, merging and SSE.
-3. Next: interactive 3D canvas and source panels.
-4. Grounded chat with exact citations.
-5. Mastery quizzes and persistent progress.
+3. Complete: interactive 3D canvas and source panels.
+4. Complete: grounded chat with exact citations.
+5. Complete: mastery quizzes and persistent progress.
 6. Retrieval evaluation and shipping checks.
 
 Each phase ends at a runnable checkpoint. The next phase starts after approval. The final mastery specification has no XP, levels or streaks.
