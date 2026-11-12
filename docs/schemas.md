@@ -4,7 +4,7 @@ The Python source is `apps/api/app/schemas.py`. Run `python scripts/generate_con
 
 Pages are one-based. Chunk offsets count Unicode code points within the extracted page text, and charEnd is exclusive. A browser must use `Array.from(pageText)` before applying those offsets. PDF citations refer to extracted text, not coordinates on a rendered PDF.
 
-exploredCount includes learning and mastered nodes. coveragePercent is the percentage of nodes explored, or zero for an empty graph. crossDocLinks counts each extra document attached to a concept after its first document. Reprocessing the same concept/document pair does not add another link. These semantics will be implemented with ingestion and mastery.
+exploredCount includes learning and mastered nodes. coveragePercent is the percentage of nodes explored, or zero for an empty graph. crossDocLinks counts each extra document attached to a concept after its first document. Reprocessing the same concept/document pair does not add another link. Ingestion updates totalNodes and crossDocLinks. Exploration and mastery updates arrive in later phases.
 
 Quiz.answerIndex is an internal answer key. The quiz delivery endpoint in Phase 5 will use a separate public question model so the answer key is not sent before grading.
 

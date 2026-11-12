@@ -38,7 +38,7 @@ Dark, calm, scientific star-chart feel. One cool accent for selected content and
 
 ## Evidence on Hand
 
-The user's supplied specification establishes the behavior and schemas. The repository starts empty. The sample study note is original demonstration material. There are no user study results, retrieval benchmarks or completed mastery results to claim.
+The user's supplied specification establishes the behavior and schemas. Phase 1 provides the workspace preview; Phase 2 provides ingestion and persistent source-linked graph data. Two original sample notes demonstrate cross-document merging. Mock-mode tests verify the pipeline and contracts. There are no user study results, semantic retrieval benchmarks or completed mastery results to claim.
 
 ## Product Principles
 

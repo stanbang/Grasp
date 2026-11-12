@@ -64,7 +64,7 @@ def generate_docs() -> str:
         "exploredCount includes learning and mastered nodes. coveragePercent is the percentage of nodes "
         "explored, or zero for an empty graph. crossDocLinks counts each extra document attached to a "
         "concept after its first document. Reprocessing the same concept/document pair does not add another link. "
-        "These semantics will be implemented with ingestion and mastery.\n\n"
+        "Ingestion updates totalNodes and crossDocLinks. Exploration and mastery updates arrive in later phases.\n\n"
         "Quiz.answerIndex is an internal answer key. The quiz delivery endpoint in Phase 5 will use "
         "a separate public question model so the answer key is not sent before grading.\n\n"
         + definitions + "\n"

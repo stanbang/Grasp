@@ -1,5 +1,7 @@
 # Phase 1 checkpoint
 
+This historical checkpoint describes commit `d3672d8`. Current development is at [Phase 2](phase-2.md), where the health response reports `phase: 2`.
+
 ## Scope
 
 This checkpoint includes the repository scaffold, schema contracts, local stores, model configuration, mock adapters, sample note, health endpoint and a small workspace preview. Upload, interactive 3D, chat and quizzes are not implemented in this phase.
