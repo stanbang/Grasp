@@ -1,0 +1,22 @@
+# Working on Grasp
+
+- Write code the way a careful student would: descriptive names, small typed functions, and direct control flow. Avoid speculative abstractions, boilerplate try/catch and comments that repeat the code. Comments explain why.
+- Keep UI copy, documentation, errors and commit messages plain and specific. Use the Humanizer skill to review prose without changing facts or commands.
+- Make conventional commits, one logical change per commit. Use the configured Git author and the actual work dates. Do not invent a development history, user feedback or results.
+- Complete one phase at a time. The app must run at each phase boundary. Report changed files, run instructions, verification and limitations. Wait for the user's `go` before the next phase.
+- Ask before adding any dependency outside the agreed stack. Uvicorn, python-dotenv, @types/react, @types/react-dom and @types/node are approved supporting dependencies. Tools explicitly requested for design review are development tools, not app dependencies.
+- Frontend: Vite, React 18, strict TypeScript, Tailwind CSS, Zustand, Lucide and react-force-graph-3d/Three.js. Client-only; no SSR.
+- Backend: Python 3.11, FastAPI, Pydantic v2, the agreed LangChain packages, persistent local ChromaDB and SQLite through SQLModel.
+- Use LangChain BaseChatModel and Embeddings behind configuration in `.env`. Live model output uses `.with_structured_output()` with Pydantic validation and one retry on invalid output. Mock mode uses deterministic fixtures and FakeListChatModel without network or API keys.
+- Keep secrets, uploaded documents, local databases and generated embeddings out of Git. Bind development servers to loopback.
+- Preserve the exact public schemas in docs/schemas.md. Generate the frontend contracts from Pydantic and check for drift.
+- Chunk offsets are page-local Unicode code-point offsets into the extracted page text, with an exclusive end. Pages are one-based. Quotes must be exact source substrings.
+- Link nodes to chunks through sourceChunkIds. Derive chat referencedNodeIds from retrieved chunks, never from a model guess.
+- Default to at most 40 extracted nodes per document. Merge matching concepts using a configurable embedding-similarity threshold. Record document provenance on merged nodes and edges.
+- Never persist force-layout positions. Client graph coordinates are transient.
+- Mastery states are unexplored, learning and mastered. Progress contains masteredCount, exploredCount, totalNodes, coveragePercent and crossDocLinks. There is no XP, level, streak or bonus system.
+- In Phase 5, generate three grounded multiple-choice questions. Passing at least two marks the assessed nodes mastered. Keep answer keys on the server until grading.
+- Add meaningful tests for schema invariants, storage, structured-output validation, chunk offsets, deduplication and quiz grading as those features arrive.
+- Before a UI phase, use `$impeccable shape`. After it, use `$impeccable critique`, then `$impeccable polish`. Use `/impeccable init` for PRODUCT.md and the design workflow for DESIGN.md. Before Phase 6 ends, run `$impeccable audit` and `npx impeccable detect apps/web/src`.
+- Preserve the dark, calm star-chart direction: quiet branding, one cool accent, gold reserved for mastered concepts, and slow purposeful motion. Keep the first preview lightweight and suitable for a portfolio.
+- Follow PRODUCT.md, DESIGN.md and the relevant .impeccable/surfaces brief. Do not turn unfinished phases into nonfunctional controls or label fixtures as live processing.

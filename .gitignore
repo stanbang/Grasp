@@ -1,0 +1,39 @@
+# Local configuration and private study material
+.env
+.env.*
+!.env.example
+data/
+uploads/
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# Frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local tools and verification captures
+.agents/skills/
+.impeccable/config.local.json
+.impeccable/questions/
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/critique/snapshots/
+.impeccable/seed/
+work/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
