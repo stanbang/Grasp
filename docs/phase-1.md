@@ -33,3 +33,5 @@ The dependency setup, root development launcher and production build passed on W
 The project uses Impeccable for shaping, critique and polish, and Humanizer for prose review. These are optional development tools and are excluded from app dependencies. Product and design records are committed; local tool binaries and review captures are ignored.
 
 Install Impeccable for this checkout with `npx impeccable@4.8.2 install --providers=codex --scope=project --no-hooks --yes`. Humanizer is available from `https://github.com/blader/humanizer`. It was loaded from a workspace-local skill installation for this checkpoint.
+
+For the current interactive workspace, see [Phases 3–5](phase-5.md).

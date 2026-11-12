@@ -81,3 +81,5 @@ The checkpoint passed 49 tests covering chunk offsets, repeated text, Unicode, P
 Live provider extraction has not been exercised with a real key. Mock embeddings do not establish semantic similarity quality; mock relationships describe source order. Exact source IDs are validated, but semantic correctness of live summaries and relationships needs evaluation. Normalized label matching can merge ambiguous concepts that share a name.
 
 There is no OCR, cancellation, delete/retry endpoint, multi-worker coordination, chat, quiz flow, public hosting or production rate limiter in this phase. Event history and uploaded originals remain in local storage. Full upload hardening and retrieval evaluation remain part of Phase 6.
+
+For the current interactive workspace, see [Phases 3–5](phase-5.md).

@@ -22,11 +22,7 @@ See [the Phases 3–5 walkthrough](docs/phase-5.md).
 
 ## API tools
 
-- Read the sample note in the source panel and download its Markdown file.
-- Inspect the live Pydantic schemas through **Contracts**.
-- Open the workspace connection status to check SQLite, ChromaDB and mock mode.
-- Open `http://127.0.0.1:8000/docs` for the API reference.
-- Use **POST /documents** in the API reference to upload a note, then read its progress at **GET /documents/{doc_id}/events**.
+Open `http://127.0.0.1:8000/docs` for uploads, graph records, chat and quiz endpoints.
 
 For a repeatable mock demonstration, run this in a second terminal while the API is running:
 

@@ -3,7 +3,7 @@ const ForceGraph3D = lazy(() => import('react-force-graph-3d'));
 import type { ForceGraphMethods } from 'react-force-graph-3d';
 import { Orbit, Upload, BookOpen, MessageCircle, RotateCcw } from 'lucide-react';
 import { useStudyGraph } from './study-store';
-import type { GraphNode, Chunk, ChatResponse, Progress, QuizResponse as Quiz, GradeResponse } from './types/contracts';
+import type { GraphNode, Chunk, ChatResponse, Progress, QuizResponse as Quiz } from './types/contracts';
 type Graph = import('./study-store').StudyGraph;
 async function request<T>(path: string, body?: unknown): Promise<T> {
     const response = await fetch('/api' + path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
