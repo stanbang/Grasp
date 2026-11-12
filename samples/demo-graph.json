@@ -1,0 +1,295 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": "1b23f323-0ae1-5e75-b89c-0a3105538c7d",
+        "label": "Long-term memory",
+        "summary": "Long-term memory stores knowledge beyond the current task. A useful concept is easier to revisit when it has a clear name, a short explanation and an example. New knowledge can connect to something the learner already knows.",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:0-874"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "2ff31efe-ed75-56c6-8afd-99ade22ba92a",
+        "label": "Feedback",
+        "summary": "Feedback compares a response with the source material. Specific feedback identifies what was correct and which part needs revision. A learner can use that information to choose the next concept to study.",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6",
+          "406bc003-b637-4071-bd3d-068832c53957"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:854-1561",
+          "406bc003-b637-4071-bd3d-068832c53957:p1:0-632"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "4dfd7bbb-5f71-596c-9bde-854e34f2896f",
+        "label": "Working memory",
+        "summary": "Working memory holds information briefly while a person uses it. Keeping several unfamiliar ideas active at once can make a task difficult. Breaking a task into smaller steps can reduce that demand.",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:0-874"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "6f14a510-acfa-5177-ad1f-8121e2ffbccd",
+        "label": "Memory and learning",
+        "summary": "These short notes are original demonstration material for this project. They are not a research review.",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6",
+          "406bc003-b637-4071-bd3d-068832c53957"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:0-874",
+          "406bc003-b637-4071-bd3d-068832c53957:p1:0-632"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "80f594dc-662f-5472-8702-3beef75c1377",
+        "label": "Retrieval practice",
+        "summary": "Retrieval practice means trying to recall an idea before looking at the answer. A learner can write a question, close the notes and explain the answer from memory. Checking the source afterward helps identify missing or mistaken details.",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6",
+          "406bc003-b637-4071-bd3d-068832c53957"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:0-874",
+          "406bc003-b637-4071-bd3d-068832c53957:p1:0-632"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "910d065d-2a28-516a-b624-e9b498d28b98",
+        "label": "Checking understanding",
+        "summary": "Checking understanding",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:854-1561",
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:1534-2059"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "acb5e84e-3ca2-58f6-b270-6e81e0f84637",
+        "label": "Spaced practice",
+        "summary": "Spaced practice",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:0-874",
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:854-1561"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "d73502a7-fabb-537d-bd79-9f6ac6bb93cf",
+        "label": "Concept maps",
+        "summary": "A concept map represents ideas as nodes and relationships as labelled connections. One node can link to several passages or documents. A connection can show that one idea supports, limits or provides an example of another idea.",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:854-1561"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "e9aaaec2-a893-5ee1-b918-f28a7756f90c",
+        "label": "Worked examples",
+        "summary": "A worked example shows the steps used to solve a task. After reading the example, try explaining why each step was chosen.",
+        "docIds": [
+          "406bc003-b637-4071-bd3d-068832c53957"
+        ],
+        "sourceChunkIds": [
+          "406bc003-b637-4071-bd3d-068832c53957:p1:0-632"
+        ],
+        "masteryState": "unexplored"
+      },
+      {
+        "id": "f7ae3160-3d3c-59d1-85c4-6f7085511212",
+        "label": "Source references",
+        "summary": "An exact citation identifies a document, a page and the passage used in an answer. Character offsets identify where a chunk begins and ends in the extracted page text. For Markdown and text notes, the whole document is page 1. End offsets are exclusive.",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ],
+        "sourceChunkIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:1534-2059"
+        ],
+        "masteryState": "unexplored"
+      }
+    ],
+    "edges": [
+      {
+        "id": "2c9dba56-cf9f-5028-8b54-3c213587540e",
+        "source": "acb5e84e-3ca2-58f6-b270-6e81e0f84637",
+        "target": "2ff31efe-ed75-56c6-8afd-99ade22ba92a",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ]
+      },
+      {
+        "id": "328332e9-690c-562d-990c-2b0f3aec4c0d",
+        "source": "2ff31efe-ed75-56c6-8afd-99ade22ba92a",
+        "target": "e9aaaec2-a893-5ee1-b918-f28a7756f90c",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "406bc003-b637-4071-bd3d-068832c53957"
+        ]
+      },
+      {
+        "id": "5b157c5d-3be8-5507-a7c3-b5cf9de2d2fc",
+        "source": "6f14a510-acfa-5177-ad1f-8121e2ffbccd",
+        "target": "80f594dc-662f-5472-8702-3beef75c1377",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "406bc003-b637-4071-bd3d-068832c53957"
+        ]
+      },
+      {
+        "id": "5f85971b-9891-5b58-a52b-75f74522ffa4",
+        "source": "2ff31efe-ed75-56c6-8afd-99ade22ba92a",
+        "target": "d73502a7-fabb-537d-bd79-9f6ac6bb93cf",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ]
+      },
+      {
+        "id": "6b2bb638-76ed-51d4-bf12-3f25e47104a7",
+        "source": "6f14a510-acfa-5177-ad1f-8121e2ffbccd",
+        "target": "4dfd7bbb-5f71-596c-9bde-854e34f2896f",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ]
+      },
+      {
+        "id": "72906bb6-efc1-5828-869c-264f5e55aafa",
+        "source": "910d065d-2a28-516a-b624-e9b498d28b98",
+        "target": "f7ae3160-3d3c-59d1-85c4-6f7085511212",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ]
+      },
+      {
+        "id": "7ca5f0d9-55a9-545a-959d-6b73bc8ab287",
+        "source": "1b23f323-0ae1-5e75-b89c-0a3105538c7d",
+        "target": "80f594dc-662f-5472-8702-3beef75c1377",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ]
+      },
+      {
+        "id": "94ab35d8-9e0b-5a57-8b58-039cd7689135",
+        "source": "80f594dc-662f-5472-8702-3beef75c1377",
+        "target": "2ff31efe-ed75-56c6-8afd-99ade22ba92a",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "406bc003-b637-4071-bd3d-068832c53957"
+        ]
+      },
+      {
+        "id": "adfed5c2-fbe1-5f42-81a9-3cbe300ad802",
+        "source": "4dfd7bbb-5f71-596c-9bde-854e34f2896f",
+        "target": "1b23f323-0ae1-5e75-b89c-0a3105538c7d",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ]
+      },
+      {
+        "id": "ca474b20-1486-52f2-a594-0223190f4ccb",
+        "source": "d73502a7-fabb-537d-bd79-9f6ac6bb93cf",
+        "target": "910d065d-2a28-516a-b624-e9b498d28b98",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ]
+      },
+      {
+        "id": "ca7c3597-0ee8-55ed-8596-7053ab12ba87",
+        "source": "80f594dc-662f-5472-8702-3beef75c1377",
+        "target": "acb5e84e-3ca2-58f6-b270-6e81e0f84637",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "69d26879-6f0f-4084-8f86-b979f11fe5f6"
+        ]
+      }
+    ]
+  },
+  "documents": [
+    {
+      "id": "406bc003-b637-4071-bd3d-068832c53957",
+      "name": "retrieval-review.md",
+      "status": "done",
+      "uploadedAt": "2026-11-12T19:00:24.984563Z"
+    },
+    {
+      "id": "69d26879-6f0f-4084-8f86-b979f11fe5f6",
+      "name": "memory-and-learning.md",
+      "status": "done",
+      "uploadedAt": "2026-11-12T19:00:24.705509Z"
+    }
+  ],
+  "chunks": [
+    {
+      "id": "406bc003-b637-4071-bd3d-068832c53957:p1:0-632",
+      "docId": "406bc003-b637-4071-bd3d-068832c53957",
+      "page": 1,
+      "text": "# Memory and learning\n\nThese original demonstration notes supplement the first sample. Shared concept names let the ingestion demo show how two documents retain their sources on one node.\n\n## Retrieval practice\n\nClose the notes and explain an idea before checking the source. Compare the recalled answer with the passage and write down any missing detail.\n\n## Feedback\n\nFeedback identifies which part of a response needs revision. Use the source passage to make that correction specific.\n\n## Worked examples\n\nA worked example shows the steps used to solve a task. After reading the example, try explaining why each step was chosen.\n",
+      "charStart": 0,
+      "charEnd": 632
+    },
+    {
+      "id": "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:0-874",
+      "docId": "69d26879-6f0f-4084-8f86-b979f11fe5f6",
+      "page": 1,
+      "text": "# Memory and learning\n\nThese short notes are original demonstration material for this project. They are not a research review.\n\n## Working memory\n\nWorking memory holds information briefly while a person uses it. Keeping several unfamiliar ideas active at once can make a task difficult. Breaking a task into smaller steps can reduce that demand.\n\n## Long-term memory\n\nLong-term memory stores knowledge beyond the current task. A useful concept is easier to revisit when it has a clear name, a short explanation and an example. New knowledge can connect to something the learner already knows.\n\n## Retrieval practice\n\nRetrieval practice means trying to recall an idea before looking at the answer. A learner can write a question, close the notes and explain the answer from memory. Checking the source afterward helps identify missing or mistaken details.\n\n## Spaced practice",
+      "charStart": 0,
+      "charEnd": 874
+    },
+    {
+      "id": "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:854-1561",
+      "docId": "69d26879-6f0f-4084-8f86-b979f11fe5f6",
+      "page": 1,
+      "text": "\n\n## Spaced practice\n\nSpaced practice separates study sessions over time. The learner returns to an idea after a gap instead of repeating it only within one session. A later session can begin with retrieval practice.\n\n## Feedback\n\nFeedback compares a response with the source material. Specific feedback identifies what was correct and which part needs revision. A learner can use that information to choose the next concept to study.\n\n## Concept maps\n\nA concept map represents ideas as nodes and relationships as labelled connections. One node can link to several passages or documents. A connection can show that one idea supports, limits or provides an example of another idea.\n\n## Checking understanding",
+      "charStart": 854,
+      "charEnd": 1561
+    },
+    {
+      "id": "69d26879-6f0f-4084-8f86-b979f11fe5f6:p1:1534-2059",
+      "docId": "69d26879-6f0f-4084-8f86-b979f11fe5f6",
+      "page": 1,
+      "text": "\n\n## Checking understanding\n\nReading a passage and answering a question are different activities. In this app, exploring a concept records that it was visited. Mastery requires a separate quiz. The mastery state does not prove long-term retention.\n\n## Source references\n\nAn exact citation identifies a document, a page and the passage used in an answer. Character offsets identify where a chunk begins and ends in the extracted page text. For Markdown and text notes, the whole document is page 1. End offsets are exclusive.\n",
+      "charStart": 1534,
+      "charEnd": 2059
+    }
+  ],
+  "pages": [
+    {
+      "docId": "406bc003-b637-4071-bd3d-068832c53957",
+      "page": 1,
+      "text": "# Memory and learning\n\nThese original demonstration notes supplement the first sample. Shared concept names let the ingestion demo show how two documents retain their sources on one node.\n\n## Retrieval practice\n\nClose the notes and explain an idea before checking the source. Compare the recalled answer with the passage and write down any missing detail.\n\n## Feedback\n\nFeedback identifies which part of a response needs revision. Use the source passage to make that correction specific.\n\n## Worked examples\n\nA worked example shows the steps used to solve a task. After reading the example, try explaining why each step was chosen.\n"
+    },
+    {
+      "docId": "69d26879-6f0f-4084-8f86-b979f11fe5f6",
+      "page": 1,
+      "text": "# Memory and learning\n\nThese short notes are original demonstration material for this project. They are not a research review.\n\n## Working memory\n\nWorking memory holds information briefly while a person uses it. Keeping several unfamiliar ideas active at once can make a task difficult. Breaking a task into smaller steps can reduce that demand.\n\n## Long-term memory\n\nLong-term memory stores knowledge beyond the current task. A useful concept is easier to revisit when it has a clear name, a short explanation and an example. New knowledge can connect to something the learner already knows.\n\n## Retrieval practice\n\nRetrieval practice means trying to recall an idea before looking at the answer. A learner can write a question, close the notes and explain the answer from memory. Checking the source afterward helps identify missing or mistaken details.\n\n## Spaced practice\n\nSpaced practice separates study sessions over time. The learner returns to an idea after a gap instead of repeating it only within one session. A later session can begin with retrieval practice.\n\n## Feedback\n\nFeedback compares a response with the source material. Specific feedback identifies what was correct and which part needs revision. A learner can use that information to choose the next concept to study.\n\n## Concept maps\n\nA concept map represents ideas as nodes and relationships as labelled connections. One node can link to several passages or documents. A connection can show that one idea supports, limits or provides an example of another idea.\n\n## Checking understanding\n\nReading a passage and answering a question are different activities. In this app, exploring a concept records that it was visited. Mastery requires a separate quiz. The mastery state does not prove long-term retention.\n\n## Source references\n\nAn exact citation identifies a document, a page and the passage used in an answer. Character offsets identify where a chunk begins and ends in the extracted page text. For Markdown and text notes, the whole document is page 1. End offsets are exclusive.\n"
+    }
+  ]
+}
