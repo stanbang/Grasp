@@ -1,20 +1,20 @@
 import { useEffect, useRef } from "react";
 import {
-  ArrowDownToLine, ArrowUpRight, BookOpen, Check,
+  ArrowDownToLine, ArrowLeft, ArrowUpRight, BookOpen, Check,
   ChevronRight, Code2, Database, FileText, Layers3, Orbit,
   RefreshCw, SquareArrowOutUpRight, X,
 } from "lucide-react";
 import { useWorkspace } from "./store";
 
-function HealthIndicator() {
-  const { healthState, health, setPanel } = useWorkspace();
+function HealthIndicator({ compact = false }: { compact?: boolean }) {
+  const { healthState, health, panel, setPanel } = useWorkspace();
   const connected = healthState === "ready" && health?.status === "ok";
   const label = connected ? "Local workspace ready" : healthState === "error"
     ? "API is unavailable" : healthState === "ready" ? "Configuration needs attention" : "Connecting to workspace";
   return (
-    <button className="health-button" onClick={() => setPanel("status")} aria-label={`${label}. Open system status`}>
+    <button className={`health-button ${compact ? "compact-health" : ""}`} onClick={() => setPanel("status")} aria-label={`${label}. Open system status`} aria-expanded={panel === "status"} aria-controls="workspace-panel">
       <span className={`health-dot ${connected ? "connected" : ""}`} />
-      <span>{label}</span><ChevronRight size={14} />
+      <span>{compact ? "Status" : label}</span>{!compact && <ChevronRight size={14} />}
     </button>
   );
 }
@@ -31,7 +31,7 @@ function DocumentRail() {
       </div>
       <div className="sample-group">
         <span className="list-label">Included sample</span>
-        <button className={`document-item ${panel === "source" ? "selected" : ""}`} onClick={() => void loadSample()}>
+        <button className={`document-item ${panel === "source" ? "selected" : ""}`} onClick={() => void loadSample()} aria-expanded={panel === "source"} aria-controls="workspace-panel">
           <span className="file-symbol"><FileText size={18} /></span>
           <span><strong>Memory & learning</strong><small>Markdown · 8 sections</small></span>
           <ChevronRight size={14} />
@@ -130,8 +130,8 @@ function SidePanel() {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { if (panel) heading.current?.focus(); }, [panel]);
   if (!panel) return null;
-  return <aside className="side-panel" aria-labelledby="panel-title">
-    <div className="panel-heading"><h2 id="panel-title" ref={heading} tabIndex={-1}>{title}</h2><button className="icon-button" aria-label="Close side panel" onClick={() => { setPanel(null); document.getElementById("canvas-action")?.focus(); }}><X size={17} /></button></div>
+  return <aside id="workspace-panel" className="side-panel" aria-labelledby="panel-title">
+    <div className="panel-heading"><h2 id="panel-title" ref={heading} tabIndex={-1}>{title}</h2><button className="panel-close" aria-label="Back to canvas" onClick={() => setPanel(null)}><ArrowLeft className="mobile-back" size={16} /><span className="mobile-back">Back to canvas</span><X className="desktop-close" size={17} /></button></div>
     <div className="panel-body">{panel === "source" ? <SampleReader /> : panel === "contracts" ? <ContractInspector /> : <StatusPanel />}</div>
   </aside>;
 }
@@ -143,7 +143,6 @@ export function App() {
     const closePanel = (event: KeyboardEvent) => {
       if (event.key === "Escape" && panel) {
         setPanel(null);
-        document.getElementById("canvas-action")?.focus();
       }
     };
     window.addEventListener("keydown", closePanel);
@@ -153,7 +152,7 @@ export function App() {
     <a className="skip-link" href="#workspace-main">Skip to canvas</a>
     <header className="topbar">
       <div className="workspace-title"><Orbit size={21} strokeWidth={1.4} /><span>Study space</span><span className="title-divider" /><span className="collection-name">Untitled collection</span></div>
-      <nav aria-label="Workspace tools"><button className={panel === "source" ? "active" : ""} onClick={() => void loadSample()}><FileText size={15} /><span>Source</span></button><button className={panel === "contracts" ? "active" : ""} onClick={() => void loadSchemas()}><Code2 size={15} /><span>Contracts</span></button></nav>
+      <nav aria-label="Workspace tools"><button className={panel === "source" ? "active" : ""} onClick={() => void loadSample()} aria-expanded={panel === "source"} aria-controls="workspace-panel"><FileText size={15} /><span>Source</span></button><button className={panel === "contracts" ? "active" : ""} onClick={() => void loadSchemas()} aria-expanded={panel === "contracts"} aria-controls="workspace-panel"><Code2 size={15} /><span>Contracts</span></button><HealthIndicator compact /></nav>
     </header>
     <main id="workspace-main" className="workspace-body"><DocumentRail /><EmptyCanvas /><SidePanel /></main>
     <footer className="workspace-footer"><span>Notes → connections → understanding</span><a href="https://github.com/stanbang/Grasp" target="_blank" rel="noreferrer">View project <ArrowUpRight size={12} /></a></footer>

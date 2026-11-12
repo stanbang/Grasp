@@ -7,6 +7,7 @@ type LoadState = "idle" | "loading" | "ready" | "error";
 
 interface WorkspaceState {
   panel: Panel;
+  returnFocusTo: HTMLElement | null;
   health: HealthResponse | null;
   healthState: LoadState;
   sample: SampleResponse | null;
@@ -29,6 +30,7 @@ function readableError(error: unknown): string {
 
 export const useWorkspace = create<WorkspaceState>((set, get) => ({
   panel: null,
+  returnFocusTo: null,
   health: null,
   healthState: "idle",
   sample: null,
@@ -38,7 +40,19 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
   schemasState: "idle",
   schemasError: "",
   selectedSchema: "GraphNode",
-  setPanel: (panel) => set({ panel }),
+  setPanel: (panel) => {
+    if (panel) {
+      const active = document.activeElement;
+      const returnFocusTo = get().panel ? get().returnFocusTo
+        : active instanceof HTMLElement ? active : null;
+      set({ panel, returnFocusTo });
+    } else {
+      const opener = get().returnFocusTo;
+      set({ panel: null, returnFocusTo: null });
+      // The canvas becomes visible after React commits the panel change.
+      requestAnimationFrame(() => opener?.focus());
+    }
+  },
   selectSchema: (selectedSchema) => set({ selectedSchema }),
   loadHealth: async () => {
     if (get().healthState === "loading") return;
@@ -50,7 +64,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     }
   },
   loadSample: async () => {
-    set({ panel: "source" });
+    get().setPanel("source");
     if (get().sampleState === "ready" || get().sampleState === "loading") return;
     set({ sampleState: "loading", sampleError: "" });
     try {
@@ -60,7 +74,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => ({
     }
   },
   loadSchemas: async () => {
-    set({ panel: "contracts" });
+    get().setPanel("contracts");
     if (get().schemasState === "ready" || get().schemasState === "loading") return;
     set({ schemasState: "loading", schemasError: "" });
     try {

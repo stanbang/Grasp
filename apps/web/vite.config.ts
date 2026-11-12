@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => {
       port: Number(env.WEB_PORT || 5173),
       strictPort: true,
       proxy: {
+        "/openapi.json": {
+          target: `http://127.0.0.1:${env.API_PORT || 8000}`,
+        },
         "/api": {
           target: `http://127.0.0.1:${env.API_PORT || 8000}`,
           rewrite: (path) => path.replace(/^\/api/, ""),
