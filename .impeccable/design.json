@@ -1,14 +1,345 @@
 {
-  "version": 1,
-  "tokens": {
-    "color": {
-      "background": "#0b1119", "surface": "#101923", "raised": "#17232e",
-      "line": "#263642", "text": "#e7edf1", "secondary": "#a4b3bf",
-      "quiet": "#8194a3", "accent": "#8ddbcf", "accentInk": "#0b2522",
-      "mastered": "#d9b66f", "error": "#f0aba6"
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T18:36:48.974Z",
+  "title": "Design System: Grasp",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Deep navy",
+        "canonical": "#0b1119",
+        "tonalRamp": [
+          "oklch(15% 0.0061 255.8)",
+          "oklch(26% 0.0157 255.8)",
+          "oklch(38% 0.0192 255.8)",
+          "oklch(50% 0.0192 255.8)",
+          "oklch(62% 0.0192 255.8)",
+          "oklch(74% 0.0192 255.8)",
+          "oklch(86% 0.0122 255.8)",
+          "oklch(95% 0.0044 255.8)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Panel navy",
+        "canonical": "#101923",
+        "tonalRamp": [
+          "oklch(15% 0.0076 251.6)",
+          "oklch(26% 0.0196 251.6)",
+          "oklch(38% 0.0240 251.6)",
+          "oklch(50% 0.0240 251.6)",
+          "oklch(62% 0.0240 251.6)",
+          "oklch(74% 0.0240 251.6)",
+          "oklch(86% 0.0153 251.6)",
+          "oklch(95% 0.0055 251.6)"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "Raised blue-grey",
+        "canonical": "#17232e",
+        "tonalRamp": [
+          "oklch(15% 0.0086 246.8)",
+          "oklch(26% 0.0220 246.8)",
+          "oklch(38% 0.0269 246.8)",
+          "oklch(50% 0.0269 246.8)",
+          "oklch(62% 0.0269 246.8)",
+          "oklch(74% 0.0269 246.8)",
+          "oklch(86% 0.0171 246.8)",
+          "oklch(95% 0.0061 246.8)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Boundary blue-grey",
+        "canonical": "#263642",
+        "tonalRamp": [
+          "oklch(15% 0.0096 241.2)",
+          "oklch(26% 0.0246 241.2)",
+          "oklch(38% 0.0300 241.2)",
+          "oklch(50% 0.0300 241.2)",
+          "oklch(62% 0.0300 241.2)",
+          "oklch(74% 0.0300 241.2)",
+          "oklch(86% 0.0191 241.2)",
+          "oklch(95% 0.0068 241.2)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Cool white",
+        "canonical": "#e7edf1",
+        "tonalRamp": [
+          "oklch(15% 0.0027 236.6)",
+          "oklch(26% 0.0069 236.6)",
+          "oklch(38% 0.0084 236.6)",
+          "oklch(50% 0.0084 236.6)",
+          "oklch(62% 0.0084 236.6)",
+          "oklch(74% 0.0084 236.6)",
+          "oklch(86% 0.0054 236.6)",
+          "oklch(95% 0.0019 236.6)"
+        ]
+      },
+      "secondary": {
+        "role": "neutral",
+        "displayName": "Reading grey",
+        "canonical": "#a4b3bf",
+        "tonalRamp": [
+          "oklch(15% 0.0076 242.0)",
+          "oklch(26% 0.0197 242.0)",
+          "oklch(38% 0.0240 242.0)",
+          "oklch(50% 0.0240 242.0)",
+          "oklch(62% 0.0240 242.0)",
+          "oklch(74% 0.0240 242.0)",
+          "oklch(86% 0.0153 242.0)",
+          "oklch(95% 0.0055 242.0)"
+        ]
+      },
+      "quiet": {
+        "role": "neutral",
+        "displayName": "Metadata grey",
+        "canonical": "#8194a3",
+        "tonalRamp": [
+          "oklch(15% 0.0099 241.8)",
+          "oklch(26% 0.0255 241.8)",
+          "oklch(38% 0.0312 241.8)",
+          "oklch(50% 0.0312 241.8)",
+          "oklch(62% 0.0312 241.8)",
+          "oklch(74% 0.0312 241.8)",
+          "oklch(86% 0.0199 241.8)",
+          "oklch(95% 0.0071 241.8)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Pale teal",
+        "canonical": "#8ddbcf",
+        "tonalRamp": [
+          "oklch(15% 0.0251 183.6)",
+          "oklch(26% 0.0647 183.6)",
+          "oklch(38% 0.0790 183.6)",
+          "oklch(50% 0.0790 183.6)",
+          "oklch(62% 0.0790 183.6)",
+          "oklch(74% 0.0790 183.6)",
+          "oklch(86% 0.0503 183.6)",
+          "oklch(95% 0.0180 183.6)"
+        ]
+      },
+      "accent-ink": {
+        "role": "primary",
+        "displayName": "Teal ink",
+        "canonical": "#0b2522",
+        "tonalRamp": [
+          "oklch(15% 0.0103 185.2)",
+          "oklch(26% 0.0265 185.2)",
+          "oklch(38% 0.0324 185.2)",
+          "oklch(50% 0.0324 185.2)",
+          "oklch(62% 0.0324 185.2)",
+          "oklch(74% 0.0324 185.2)",
+          "oklch(86% 0.0206 185.2)",
+          "oklch(95% 0.0074 185.2)"
+        ]
+      },
+      "mastered": {
+        "role": "mastery",
+        "displayName": "Mastery gold",
+        "canonical": "#d9b66f",
+        "tonalRamp": [
+          "oklch(15% 0.0313 84.0)",
+          "oklch(26% 0.0805 84.0)",
+          "oklch(38% 0.0984 84.0)",
+          "oklch(50% 0.0984 84.0)",
+          "oklch(62% 0.0984 84.0)",
+          "oklch(74% 0.0984 84.0)",
+          "oklch(86% 0.0626 84.0)",
+          "oklch(95% 0.0224 84.0)"
+        ]
+      },
+      "error": {
+        "role": "error",
+        "displayName": "Muted error red",
+        "canonical": "#f0aba6",
+        "tonalRamp": [
+          "oklch(15% 0.0261 23.7)",
+          "oklch(26% 0.0672 23.7)",
+          "oklch(38% 0.0821 23.7)",
+          "oklch(50% 0.0821 23.7)",
+          "oklch(62% 0.0821 23.7)",
+          "oklch(74% 0.0821 23.7)",
+          "oklch(86% 0.0522 23.7)",
+          "oklch(95% 0.0187 23.7)"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Light teal",
+        "canonical": "#b1e9e0",
+        "tonalRamp": [
+          "oklch(15% 0.0186 184.1)",
+          "oklch(26% 0.0478 184.1)",
+          "oklch(38% 0.0584 184.1)",
+          "oklch(50% 0.0584 184.1)",
+          "oklch(62% 0.0584 184.1)",
+          "oklch(74% 0.0584 184.1)",
+          "oklch(86% 0.0371 184.1)",
+          "oklch(95% 0.0133 184.1)"
+        ]
+      },
+      "secondary-hover": {
+        "role": "neutral",
+        "displayName": "Hover blue-grey",
+        "canonical": "#21313d",
+        "tonalRamp": [
+          "oklch(15% 0.0097 241.4)",
+          "oklch(26% 0.0249 241.4)",
+          "oklch(38% 0.0304 241.4)",
+          "oklch(50% 0.0304 241.4)",
+          "oklch(62% 0.0304 241.4)",
+          "oklch(74% 0.0304 241.4)",
+          "oklch(86% 0.0193 241.4)",
+          "oklch(95% 0.0069 241.4)"
+        ]
+      }
     },
-    "spacing": [4, 8, 12, 16, 24, 32, 48, 64],
-    "radius": {"control": 10, "panel": 14},
-    "motion": {"panelMs": 160}
+    "typographyMeta": {
+      "display": {
+        "displayName": "Canvas invitation",
+        "purpose": "30px desktop, 26px at max-width 1100px, 28px at max-width 640px."
+      },
+      "body": {
+        "displayName": "Source reading",
+        "purpose": "Source paragraphs at 15px/1.75, including mobile; not a universal UI text size."
+      },
+      "supporting": {
+        "displayName": "Panel explanation",
+        "purpose": "Contract and status prose."
+      },
+      "code": {
+        "displayName": "Schema code",
+        "purpose": "Inherited Tailwind monospace stack; scroll long JSON lines."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "control-color",
+        "value": "background-color 160ms ease, color 160ms ease",
+        "purpose": "Buttons, links and selects. Panels mount immediately; no sliding or loading animation."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "transition: none !important; scroll-behavior: auto !important",
+        "purpose": "All elements and pseudo-elements when prefers-reduced-motion is reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "1100px"
+      },
+      {
+        "name": "hidden-rail",
+        "value": "900px"
+      },
+      {
+        "name": "mobile-panel",
+        "value": "640px"
+      },
+      {
+        "name": "symbol-only-title",
+        "value": "380px"
+      }
+    ],
+    "notes": [
+      "Tonal ramps are synthesized display aids, not additional shipped CSS tokens.",
+      "All breakpoints use max-width.",
+      "Panels restore focus to their opener on close.",
+      "Mastery gold exists in CSS but is unused in Phase 1."
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The sample reader action.",
+      "html": "<button class=\"ds-primary\">Read sample notes</button>",
+      "css": ".ds-primary{display:flex;align-items:center;gap:9px;border:0;border-radius:9px;padding:0 17px;height:44px;background:var(--accent,#8ddbcf);color:var(--accent-ink,#0b2522);font:600 12px/1.5 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer;transition:background-color 160ms,color 160ms;}.ds-primary:hover{background:#b1e9e0}.ds-primary:disabled{opacity:.6;cursor:wait}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-text:focus-visible,.ds-nav button:focus-visible,.ds-document:focus-visible,.ds-select:focus-visible{outline:2px solid var(--accent,#8ddbcf);outline-offset:3px}@media(prefers-reduced-motion:reduce){button,a,select{transition:none!important}}"
+    },
+    {
+      "name": "Secondary action",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Connection checks and request retries.",
+      "html": "<button class=\"ds-secondary\">Check connection</button>",
+      "css": ".ds-secondary{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line,#263642);background:var(--raised,#17232e);color:var(--text,#e7edf1);border-radius:8px;min-height:44px;padding:0 13px;font:12px/1.5 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer;transition:background-color 160ms,color 160ms;}.ds-secondary:hover{background:#21313d}.ds-secondary:disabled{opacity:.6;cursor:wait}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-text:focus-visible,.ds-nav button:focus-visible,.ds-document:focus-visible,.ds-select:focus-visible{outline:2px solid var(--accent,#8ddbcf);outline-offset:3px}@media(prefers-reduced-motion:reduce){button,a,select{transition:none!important}}"
+    },
+    {
+      "name": "Text action",
+      "kind": "button",
+      "refersTo": "button-text",
+      "description": "Quiet access to the contracts inspector.",
+      "html": "<button class=\"ds-text\">Inspect the data contracts</button>",
+      "css": ".ds-text{display:flex;align-items:center;gap:7px;background:transparent;border:0;min-height:44px;padding:0;color:var(--secondary,#a4b3bf);font:12px/1.5 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer;transition:background-color 160ms,color 160ms;}.ds-text:hover{color:var(--accent,#8ddbcf)}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-text:focus-visible,.ds-nav button:focus-visible,.ds-document:focus-visible,.ds-select:focus-visible{outline:2px solid var(--accent,#8ddbcf);outline-offset:3px}@media(prefers-reduced-motion:reduce){button,a,select{transition:none!important}}"
+    },
+    {
+      "name": "Workspace navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Raised fills identify hovered and open tools.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Workspace tools\"><button class=\"ds-active\" aria-expanded=\"true\">Source</button><button aria-expanded=\"false\">Contracts</button></nav>",
+      "css": ".ds-nav{display:flex;gap:7px}.ds-nav button{display:flex;align-items:center;gap:7px;min-height:44px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--secondary,#a4b3bf);font:12px/1.5 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer;transition:background-color 160ms,color 160ms;}.ds-nav button:hover,.ds-nav button.ds-active{background:var(--raised,#17232e);color:var(--text,#e7edf1)}@media(max-width:640px){.ds-nav{gap:2px}.ds-nav button{padding-inline:9px;font-size:11px}}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-text:focus-visible,.ds-nav button:focus-visible,.ds-document:focus-visible,.ds-select:focus-visible{outline:2px solid var(--accent,#8ddbcf);outline-offset:3px}@media(prefers-reduced-motion:reduce){button,a,select{transition:none!important}}"
+    },
+    {
+      "name": "Document row",
+      "kind": "custom",
+      "refersTo": "document-item",
+      "description": "A selected sample with title and file metadata.",
+      "html": "<button class=\"ds-document ds-selected\"><span class=\"ds-file\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h8\"/></svg></span><span><strong>Memory &amp; learning</strong><small>Markdown · 8 sections</small></span></button>",
+      "css": ".ds-document{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:9px;padding:13px 8px;background:transparent;color:var(--secondary,#a4b3bf);text-align:left;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer;transition:background-color 160ms,color 160ms;}.ds-document:hover,.ds-document.ds-selected{background:var(--raised,#17232e)}.ds-document.ds-selected{color:var(--text,#e7edf1)}.ds-file{border:1px solid var(--line,#263642);border-radius:7px;width:32px;height:38px;display:grid;place-items:center;flex-shrink:0}.ds-document strong{font-size:13px;font-weight:500;display:block;line-height:1.5}.ds-document small{display:block;margin-top:5px;color:var(--quiet,#8194a3);font-size:11px;line-height:1.5}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-text:focus-visible,.ds-nav button:focus-visible,.ds-document:focus-visible,.ds-select:focus-visible{outline:2px solid var(--accent,#8ddbcf);outline-offset:3px}@media(prefers-reduced-motion:reduce){button,a,select{transition:none!important}}"
+    },
+    {
+      "name": "Schema selector",
+      "kind": "input",
+      "refersTo": "schema-select",
+      "description": "Native selector for the live data contracts.",
+      "html": "<label class=\"ds-select-label\" for=\"ds-schema\">Schema</label><select class=\"ds-select\" id=\"ds-schema\"><option>GraphNode</option><option>Progress</option></select>",
+      "css": ".ds-select-label{display:block;font:12px/1.5 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:var(--secondary,#a4b3bf);margin-bottom:8px}.ds-select{width:100%;min-height:44px;background:var(--raised,#17232e);border:1px solid var(--line,#263642);border-radius:8px;padding:0 11px;color:var(--text,#e7edf1);font:13px/1.5 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;transition:background-color 160ms,color 160ms;}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-text:focus-visible,.ds-nav button:focus-visible,.ds-document:focus-visible,.ds-select:focus-visible{outline:2px solid var(--accent,#8ddbcf);outline-offset:3px}@media(prefers-reduced-motion:reduce){button,a,select{transition:none!important}}"
+    },
+    {
+      "name": "Canvas orbit symbol",
+      "kind": "custom",
+      "description": "Static star-chart marker; not a graph node.",
+      "html": "<div class=\"ds-orbit\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M20.2 15.8a9 9 0 0 0-12-12M3.8 8.2a9 9 0 0 0 12 12\"/><circle cx=\"18\" cy=\"4\" r=\"2\"/><circle cx=\"6\" cy=\"20\" r=\"2\"/></svg></div>",
+      "css": ".ds-orbit{width:70px;height:70px;display:grid;place-items:center;color:var(--accent,#8ddbcf);border:1px solid #304c50;border-radius:22px;background:#101e26}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Star Chart",
+    "overview": "Dark navy surfaces and a sparse star field give the study workspace a calm, scientific character. Pale teal draws attention to actions and source links. Small labels and familiar controls keep the canvas prominent.\n\nThe interface uses local fonts, CSS geometry and Lucide line icons. Naming stays quiet: the app presents a study space, with little branding. The portfolio preview remains lightweight and makes its current phase clear.",
+    "keyCharacteristics": [
+      "A dark canvas with restrained celestial geometry.",
+      "One cool accent; gold reserved for mastery.",
+      "Flat, bordered panels and readable source passages."
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "Use teal for actions and attention. Reserve gold for mastered concepts.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do keep the canvas visually prominent and naming quiet.",
+      "Do use teal for actions, source links, focus and connected status.",
+      "Do keep source paragraphs at the body reading size on narrow screens.",
+      "Do preserve visible keyboard focus and the explicit mobile back action.",
+      "Do distinguish source content, live API status and preview decoration."
+    ],
+    "donts": [
+      "Don't use gold for decoration or ordinary activity.",
+      "Don't turn the workspace into a generic grid of metric cards.",
+      "Don't animate the Phase 1 star field or imply that it contains graph data.",
+      "Don't add remote font or image dependencies to the lightweight preview."
+    ]
   }
 }
