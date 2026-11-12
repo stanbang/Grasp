@@ -4,7 +4,7 @@
 - Keep UI copy, documentation, errors and commit messages plain and specific. Use the Humanizer skill to review prose without changing facts or commands.
 - Make conventional commits, one logical change per commit. Use the configured Git author and the actual work dates. Do not invent a development history, user feedback or results.
 - Complete one phase at a time. The app must run at each phase boundary. Report changed files, run instructions, verification and limitations. Wait for the user's `go` before the next phase.
-- Ask before adding any dependency outside the agreed stack. Uvicorn, python-dotenv, @types/react, @types/react-dom and @types/node are approved supporting dependencies. Tools explicitly requested for design review are development tools, not app dependencies.
+- Ask before adding any dependency outside the agreed stack. Uvicorn, python-dotenv, python-multipart, @types/react, @types/react-dom and @types/node are approved supporting dependencies. Pytest is requested for Phase 2, and HTTPX is approved for tests. Tools explicitly requested for design review are development tools, not app dependencies.
 - Frontend: Vite, React 18, strict TypeScript, Tailwind CSS, Zustand, Lucide and react-force-graph-3d/Three.js. Client-only; no SSR.
 - Backend: Python 3.11, FastAPI, Pydantic v2, the agreed LangChain packages, persistent local ChromaDB and SQLite through SQLModel.
 - Use LangChain BaseChatModel and Embeddings behind configuration in `.env`. Live model output uses `.with_structured_output()` with Pydantic validation and one retry on invalid output. Mock mode uses deterministic fixtures and FakeListChatModel without network or API keys.

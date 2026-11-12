@@ -22,7 +22,7 @@ def setup(npm: str) -> None:
         venv.create(ROOT / ".venv", with_pip=True)
     requirements = ROOT / "apps/api/requirements.lock"
     if not requirements.exists():
-        requirements = ROOT / "apps/api/requirements.in"
+        requirements = ROOT / "apps/api/requirements-dev.in"
     run([str(PYTHON), "-m", "pip", "install", "-r", str(requirements)])
     run([npm, "--prefix", "apps/web", "ci", "--ignore-scripts", "--no-audit", "--no-fund"])
     if not (ROOT / ".env").exists():
