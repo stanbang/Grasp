@@ -1,160 +1,81 @@
-import { useEffect, useRef } from "react";
-import {
-  ArrowDownToLine, ArrowLeft, ArrowUpRight, BookOpen, Check,
-  ChevronRight, Code2, Database, FileText, Layers3, Orbit,
-  RefreshCw, SquareArrowOutUpRight, X,
-} from "lucide-react";
-import { useWorkspace } from "./store";
-
-function HealthIndicator({ compact = false }: { compact?: boolean }) {
-  const { healthState, health, panel, setPanel } = useWorkspace();
-  const connected = healthState === "ready" && health?.status === "ok";
-  const label = connected ? "Local workspace ready" : healthState === "error"
-    ? "API is unavailable" : healthState === "ready" ? "Configuration needs attention" : "Connecting to workspace";
-  return (
-    <button className={`health-button ${compact ? "compact-health" : ""}`} onClick={() => setPanel("status")} aria-label={`${label}. Open system status`} aria-expanded={panel === "status"} aria-controls="workspace-panel">
-      <span className={`health-dot ${connected ? "connected" : ""}`} />
-      <span>{compact ? "Status" : label}</span>{!compact && <ChevronRight size={14} />}
-    </button>
-  );
-}
-
-function DocumentRail() {
-  const { panel, loadSample } = useWorkspace();
-  return (
-    <aside className="document-rail" aria-label="Study material">
-      <div className="rail-top">
-        <div className="flex items-center justify-between gap-3">
-          <h2>Source library</h2><Layers3 size={16} aria-hidden="true" />
-        </div>
-        <p>Your notes stay close.</p>
-      </div>
-      <div className="sample-group">
-        <span className="list-label">Included sample</span>
-        <button className={`document-item ${panel === "source" ? "selected" : ""}`} onClick={() => void loadSample()} aria-expanded={panel === "source"} aria-controls="workspace-panel">
-          <span className="file-symbol"><FileText size={18} /></span>
-          <span><strong>Memory & learning</strong><small>Markdown · 8 sections</small></span>
-          <ChevronRight size={14} />
-        </button>
-      </div>
-      <div className="rail-note">
-        <BookOpen size={16} aria-hidden="true" />
-        <p>Begin with the sample to see how source notes will sit beside your canvas.</p>
-      </div>
-      <div className="rail-bottom"><HealthIndicator /><span>Stored on this computer</span></div>
-    </aside>
-  );
-}
-
-function EmptyCanvas() {
-  const { loadSample, loadSchemas } = useWorkspace();
-  return (
-    <section className="canvas" aria-labelledby="canvas-heading">
-      <div className="canvas-topline"><span><Orbit size={15} /> Knowledge canvas</span><span>Phase 1 preview</span></div>
-      <div className="chart-grid" aria-hidden="true"><div className="chart-ring ring-one" /><div className="chart-ring ring-two" /><div className="chart-axis axis-x" /><div className="chart-axis axis-y" /></div>
-      <div className="canvas-welcome">
-        <div className="canvas-symbol" aria-hidden="true"><Orbit size={32} strokeWidth={1.2} /></div>
-        <h1 id="canvas-heading">Find the connections<br />in your notes.</h1>
-        <p>A place to explore ideas, follow the source<br className="desktop-break" /> and check what you understand.</p>
-        <button id="canvas-action" className="primary-button" onClick={() => void loadSample()}><BookOpen size={16} /> Read sample notes <ArrowUpRight size={15} /></button>
-        <button className="text-button" onClick={() => void loadSchemas()}>Inspect the data contracts <ChevronRight size={14} /></button>
-      </div>
-      <div className="canvas-bottom"><span><span className="small-cross" aria-hidden="true" /> No documents uploaded</span><span>Interactive graph follows in Phase 3</span></div>
-    </section>
-  );
-}
-
-function LoadingLines() {
-  return <div className="loading-lines" role="status" aria-label="Loading"><span /><span /><span /><span /></div>;
-}
-
-function ErrorMessage({ message, retry }: { message: string; retry: () => void }) {
-  return <div className="request-error" role="alert"><p>{message}</p><button className="secondary-button" onClick={retry}><RefreshCw size={14} /> Try again</button></div>;
-}
-
-function NoteContent({ text }: { text: string }) {
-  return <div className="note-content">{text.split("\n\n").map((block, index) => {
-    if (block.startsWith("# ")) return <h2 key={index}>{block.slice(2)}</h2>;
-    if (block.startsWith("## ")) return <h3 key={index}>{block.slice(3)}</h3>;
-    return <p key={index}>{block}</p>;
-  })}</div>;
-}
-
-function SampleReader() {
-  const { sample, sampleState, sampleError, loadSample } = useWorkspace();
-  if (sampleState === "loading") return <LoadingLines />;
-  if (sampleState === "error") return <ErrorMessage message={sampleError} retry={() => void loadSample()} />;
-  if (!sample) return null;
-  return <>
-    <div className="source-metadata"><span>Original sample</span><span>Page 1</span></div>
-    <NoteContent text={sample.text} />
-    <a className="download-source" href={`data:text/markdown;charset=utf-8,${encodeURIComponent(sample.text)}`} download={sample.name}><ArrowDownToLine size={14} /> Download Markdown</a>
-  </>;
-}
-
-function ContractInspector() {
-  const { schemas, schemasState, schemasError, selectedSchema, selectSchema, loadSchemas } = useWorkspace();
-  if (schemasState === "loading") return <LoadingLines />;
-  if (schemasState === "error") return <ErrorMessage message={schemasError} retry={() => void loadSchemas()} />;
-  const selected = schemas.find((schema) => schema.name === selectedSchema);
-  return <div className="contract-inspector">
-    <p>These definitions come from the running API. Python and TypeScript use the same contracts.</p>
-    <label htmlFor="schema-name">Schema</label>
-    <select id="schema-name" value={selectedSchema} onChange={(event) => selectSchema(event.target.value)}>{schemas.map((schema) => <option key={schema.name}>{schema.name}</option>)}</select>
-    <pre tabIndex={0} aria-label={`${selectedSchema} JSON schema`}><code>{JSON.stringify(selected?.definition, null, 2)}</code></pre>
-    <a className="text-link" href={import.meta.env.VITE_API_REFERENCE_URL} target="_blank" rel="noreferrer">Open API reference <SquareArrowOutUpRight size={13} /></a>
-  </div>;
-}
-
-function StatusPanel() {
-  const { health, healthState, loadHealth } = useWorkspace();
-  const rows = [
-    ["SQLite", health?.sqlite === "ok" ? "Connected" : "Unavailable"],
-    ["ChromaDB", health?.chroma === "ok" ? "Connected" : "Unavailable"],
-    ["Model", health?.llm.provider === "mock" ? "Deterministic mock" : health?.llm.model ?? "Unavailable"],
-  ];
-  return <div className="status-panel">
-    <Database size={24} strokeWidth={1.3} />
-    <h2>Local workspace</h2>
-    <p>Graph records and vector collections have separate persistent stores on this computer.</p>
-    {healthState === "loading" ? <LoadingLines /> : healthState === "error" ? <ErrorMessage message="The API is not responding. Start it with the project launcher, then try again." retry={() => void loadHealth()} /> : <dl>{rows.map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{value === "Connected" && <Check size={13} />}{value}</dd></div>)}</dl>}
-    {health?.llm.provider === "mock" && <p className="status-note">Mock mode uses local fixtures. Reading the sample does not call an AI provider.</p>}
-    {health && !health.llm.configured && <p className="request-error">Set the selected provider key in .env, or use MOCK_LLM=1, then restart the API.</p>}
-    <button className="secondary-button" onClick={() => void loadHealth()} disabled={healthState === "loading"}><RefreshCw size={14} /> Check connection</button>
-  </div>;
-}
-
-function SidePanel() {
-  const { panel, setPanel } = useWorkspace();
-  const title = panel === "source" ? "Source notes" : panel === "contracts" ? "Data contracts" : "System status";
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { if (panel) heading.current?.focus(); }, [panel]);
-  if (!panel) return null;
-  return <aside id="workspace-panel" className="side-panel" aria-labelledby="panel-title">
-    <div className="panel-heading"><h2 id="panel-title" ref={heading} tabIndex={-1}>{title}</h2><button className="panel-close" aria-label="Back to canvas" onClick={() => setPanel(null)}><ArrowLeft className="mobile-back" size={16} /><span className="mobile-back">Back to canvas</span><X className="desktop-close" size={17} /></button></div>
-    <div className="panel-body">{panel === "source" ? <SampleReader /> : panel === "contracts" ? <ContractInspector /> : <StatusPanel />}</div>
-  </aside>;
-}
-
-export function App() {
-  const { panel, setPanel, loadHealth, loadSample, loadSchemas } = useWorkspace();
-  useEffect(() => { void loadHealth(); }, [loadHealth]);
-  useEffect(() => {
-    const closePanel = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && panel) {
-        setPanel(null);
-      }
-    };
-    window.addEventListener("keydown", closePanel);
-    return () => window.removeEventListener("keydown", closePanel);
-  }, [panel, setPanel]);
-  return <div className={`workspace ${panel ? "panel-open" : ""}`}>
-    <a className="skip-link" href="#workspace-main">Skip to canvas</a>
-    <header className="topbar">
-      <div className="workspace-title"><Orbit size={21} strokeWidth={1.4} /><span>Study space</span><span className="title-divider" /><span className="collection-name">Untitled collection</span></div>
-      <nav aria-label="Workspace tools"><button className={panel === "source" ? "active" : ""} onClick={() => void loadSample()} aria-expanded={panel === "source"} aria-controls="workspace-panel"><FileText size={15} /><span>Source</span></button><button className={panel === "contracts" ? "active" : ""} onClick={() => void loadSchemas()} aria-expanded={panel === "contracts"} aria-controls="workspace-panel"><Code2 size={15} /><span>Contracts</span></button><HealthIndicator compact /></nav>
-    </header>
-    <main id="workspace-main" className="workspace-body"><DocumentRail /><EmptyCanvas /><SidePanel /></main>
-    <footer className="workspace-footer"><span>Notes → connections → understanding</span><a href="https://github.com/stanbang/Grasp" target="_blank" rel="noreferrer">View project <ArrowUpRight size={12} /></a></footer>
-  </div>;
-}
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+const ForceGraph3D = lazy(()=>import('react-force-graph-3d')); 
+import { Orbit, Upload, BookOpen, MessageCircle, RotateCcw } from 'lucide-react';
+import type { GraphNode, GraphEdge, Chunk, ChatResponse, Progress } from './types/contracts';
+
+type Graph = { nodes: GraphNode[]; edges: GraphEdge[] };
+type Quiz = { attemptId: string; questions: { question: string; options: string[] }[] };
+async function request<T>(path: string, body?: unknown): Promise<T> {
+  const response = await fetch('/api'+path, body === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if (!response.ok) { const error = await response.json(); throw new Error(String(error.detail || 'Request failed.')); }
+  return response.json() as Promise<T>;
+}
+export function App() {
+  const [graph,setGraph] = useState<Graph>({nodes:[],edges:[]});
+  const [selected,setSelected] = useState<GraphNode|null>(null);
+  const [chunks,setChunks] = useState<Chunk[]>([]);
+  const [tab,setTab] = useState<'source'|'chat'|'quiz'>('source');
+  const [question,setQuestion] = useState('');
+  const [answer,setAnswer] = useState<ChatResponse|null>(null);
+  const [highlight,setHighlight] = useState<string[]>([]);
+  const [quote,setQuote] = useState('');
+  const [quiz,setQuiz] = useState<Quiz|null>(null);
+  const [answers,setAnswers] = useState<number[]>([-1,-1,-1]);
+  const [grade,setGrade] = useState<{score:number;passed:boolean;correctAnswers:number[]}|null>(null);
+  const [progress,setProgress] = useState<Progress|null>(null);
+  const [error,setError] = useState('');
+  const [busy,setBusy] = useState(false);
+  const [status,setStatus] = useState('Connecting to local workspace');
+  const [size,setSize] = useState({width:700,height:600});
+  const [sourceLoading,setSourceLoading]=useState(false);
+  const [names,setNames]=useState<Record<string,string>>({});
+  const [mode,setMode]=useState('mock');
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [pulse,setPulse]=useState(0);
+  useEffect(()=>{if(reduced)return;const timer=setInterval(()=>setPulse(Date.now()/400),120);return()=>clearInterval(timer);},[reduced]);
+  const selection=useRef(0);
+  const host = useRef<HTMLDivElement>(null);
+  const streams = useRef<Set<EventSource>>(new Set());
+  async function refresh() {
+    const [data,p] = await Promise.all([request<Graph>('/graph'),request<Progress>('/progress')]);
+    const docs=await request<{documents:{id:string;name:string}[]}>('/documents');setNames(Object.fromEntries(docs.documents.map(d=>[d.id,d.name])));const health=await request<{llm:{provider:string}}>('/health');setMode(health.llm.provider);setGraph(data);setProgress(p);setStatus('Local workspace ready');
+    setSelected(old => old ? data.nodes.find(n=>n.id===old.id) || null : null);
+  }
+  useEffect(()=>{ void refresh().catch(e=>setError(String(e))); return ()=>streams.current.forEach(s=>s.close()); },[]);
+  useEffect(()=>{ if(!host.current)return; const observer=new ResizeObserver(entries=>{const rect=entries[0]?.contentRect;if(rect)setSize({width:rect.width,height:rect.height});});observer.observe(host.current);return()=>observer.disconnect();},[]);
+  async function choose(node: GraphNode) {
+    const version=++selection.current;setChunks([]);setSourceLoading(true);setSelected(node);setTab('source');setQuote('');setQuiz(null);setGrade(null);
+    const results=await Promise.all(node.docIds.map(id=>request<{chunks:Chunk[]}>(`/documents/${id}/chunks`)));
+    if(version!==selection.current)return;setSourceLoading(false);document.querySelector('.study-panel')?.scrollIntoView({block:'nearest'});
+    setChunks(results.flatMap(r=>r.chunks).filter(c=>node.sourceChunkIds.includes(c.id)));
+    await request('/nodes/explore',{nodeId:node.id});await refresh();
+  }
+  async function upload(file: File) {
+    setError('');setStatus('Uploading '+file.name);
+    const form=new FormData();form.append('file',file);
+    const response=await fetch('/api/documents',{method:'POST',body:form});
+    if(!response.ok){const data=await response.json();throw new Error(data.detail);}
+    const document=await response.json() as {id:string};
+    await new Promise<void>((resolve,reject)=>{
+      const stream=new EventSource(`/api/documents/${document.id}/events`);streams.current.add(stream);const timeout=setTimeout(()=>{close();reject(new Error('Processing took too long. Refresh to check document status.'));},180000);
+      const close=()=>{clearTimeout(timeout);stream.close();streams.current.delete(stream);};
+      stream.addEventListener('status',event=>setStatus((JSON.parse((event as MessageEvent).data) as {message:string}).message));
+      stream.addEventListener('node',event=>{const n=JSON.parse((event as MessageEvent).data).node as GraphNode;setGraph(g=>({...g,nodes:[...g.nodes.filter(old=>old.id!==n.id),n]}));});
+      stream.addEventListener('edge',event=>{const edge=JSON.parse((event as MessageEvent).data).edge as GraphEdge;setGraph(g=>({...g,edges:[...g.edges.filter(old=>old.id!==edge.id),edge]}));});
+      stream.addEventListener('complete',()=>{close();resolve();});
+      stream.addEventListener('error',event=>{if(event instanceof MessageEvent){close();reject(new Error(JSON.parse(event.data).message));}else{close();reject(new Error('Connection interrupted. Refresh to reload stored results.'));}});
+    });await refresh();
+  }
+  async function run(action:()=>Promise<void>) {setBusy(true);setError('');try{await action();}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
+  async function demo(){await request('/demo',{});await refresh();}
+  const data=useMemo(()=>({nodes:graph.nodes.map(n=>({...n})),links:graph.edges.map(e=>({...e}))}),[graph]);
+  return <div className="study-app">
+    <header className="study-header"><div className="study-brand"><Orbit size={23}/><strong>Study space</strong><span>Knowledge canvas</span></div><div className="header-actions"><button onClick={()=>void run(demo)} disabled={busy}><BookOpen size={16}/> Sample graph</button><label className="upload-control"><Upload size={16}/> Add notes<input aria-label="Upload notes" type="file" accept=".pdf,.md,.txt" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void run(()=>upload(file));e.target.value='';}}/></label></div></header>
+    <div className="study-layout"><aside className="concept-library"><h2>Your concepts <span>{graph.nodes.length}</span></h2><p>Follow an idea back to its source.</p><div className="concept-list">{graph.nodes.map(n=><button key={n.id} aria-current={selected?.id===n.id?'true':undefined} className={selected?.id===n.id?'chosen':''} onClick={()=>void run(()=>choose(n))}><i className={n.masteryState}/><span>{n.label}</span>{n.docIds.length>1&&<small>{n.docIds.length} sources</small>}</button>)}</div><div className="coverage"><strong>{progress?.masteredCount||0} mastered</strong><span>{progress?.exploredCount||0} of {progress?.totalNodes||0} explored</span><progress aria-label="Concept coverage" max="100" value={progress?.coveragePercent||0}/><small>{progress?.crossDocLinks||0} cross-document connections</small></div></aside>
+    <main className="graph-space" ref={host}><div className="graph-caption"><span>Connections in your notes</span><small>Drag to orbit · Scroll to zoom · Click a concept</small></div>{graph.nodes.length?<Suspense fallback={<p>Loading the 3D canvas · </p>}><ForceGraph3D width={size.width} height={size.height} graphData={data} backgroundColor="#0b1119" showNavInfo={false} nodeLabel="label" nodeVal={n=>highlight.includes(String(n.id))?14+(reduced?0:Math.sin(pulse)*4):5} nodeColor={n=>n.masteryState==='mastered'?'#d9b66f':highlight.includes(String(n.id))?'#e7fff9':n.masteryState==='learning'?'#8ddbcf':'#526c82'} nodeOpacity={.9} linkColor={()=> '#3e6671'} linkWidth={.7} linkLabel="relationshipLabel" cooldownTicks={reduced?0:100} warmupTicks={reduced?100:0} linkDirectionalParticles={reduced?0:1} linkDirectionalParticleSpeed={.002} onNodeClick={n=>void run(()=>choose(n as GraphNode))} enableNodeDrag /></Suspense>:<div className="graph-empty"><Orbit size={48}/><h1>Find the connections<br/>in your notes.</h1><p>Add a document or start with the sample.</p><button onClick={()=>void run(demo)}>Open sample graph</button></div>}<div className="graph-status" role="status">{busy?'Working · ':''}{status}<button aria-label="Refresh workspace" onClick={()=>void run(refresh)}><RotateCcw size={15}/></button></div></main>
+    <aside className="study-panel"><nav>{(['source','chat','quiz'] as const).map(t=><button key={t} aria-pressed={tab===t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t==='source'?'Source notes':t==='chat'?'Ask your notes':'Check understanding'}</button>)}</nav><div className="study-panel-body">{error&&<p role="alert" className="request-error">{error}</p>}
+    {tab==='source'&&<>{quote?<><h2>Cited passage</h2><blockquote>{quote}</blockquote><button onClick={()=>setQuote('')}>Back to concept</button></>:selected?<><span className="state-label">{selected.masteryState}</span><h1>{selected.label}</h1><p>{selected.summary}</p><h3>Source passages</h3>{sourceLoading&&<p role='status'>Loading source passages · </p>}{chunks.map(c=><article key={c.id}><small>Page {c.page} · {c.charStart}–{c.charEnd}</small><blockquote>{c.text}</blockquote></article>)}<h3>Related concepts</h3>{graph.edges.filter(e=>e.source===selected.id||e.target===selected.id).map(e=>{const n=graph.nodes.find(n=>n.id===(e.source===selected.id?e.target:e.source));return n&&<button key={e.id} onClick={()=>void run(()=>choose(n))}>{n.label} →</button>;})}</>:<div className="panel-welcome"><BookOpen size={30}/><h2>Every idea has a source.</h2><p>Select a concept to read its passages, explore related ideas or check your understanding.</p><small>{mode==='mock'?'Deterministic mock mode  ·  No API key needed':`${mode} provider enabled`}</small></div>}</>}
+    {tab==='chat'&&<><MessageCircle size={26}/><h2>Ask your notes</h2><p>Answers cite passages from your uploaded documents.</p><form onSubmit={e=>{e.preventDefault();void run(async()=>{const result=await request<ChatResponse>('/chat',{question});setAnswer(result);setHighlight(result.referencedNodeIds);await refresh();});}}><label htmlFor="question">Your question</label><textarea id="question" value={question} onChange={e=>setQuestion(e.target.value)} required placeholder="How does retrieval practice help learning?"/><button disabled={busy||!question.trim()}>Find an answer</button></form>{answer&&<article><p className="answer-text">{answer.answer}</p>{answer.citations.map((c,i)=><button key={c.chunkId} onClick={()=>{setQuote(`${names[c.docId]||'Document'}  ·  Page ${c.page}\n\n${c.quote}`);setTab('source');}}>Source {i+1} · Page {c.page} ↗</button>)}</article>}</>}
+    {tab==='quiz'&&<><h2>Check understanding</h2><p>{selected?`Three questions using ${selected.label} and its source context.`:'Choose a concept on the canvas first.'}</p><button disabled={!selected||busy} onClick={()=>void run(async()=>{setQuiz(await request<Quiz>('/quiz',{nodeId:selected!.id}));setAnswers([-1,-1,-1]);setGrade(null);})}>Start a quiz</button>{quiz&&<form onSubmit={e=>{e.preventDefault();void run(async()=>{setGrade(await request('/quiz/grade',{attemptId:quiz.attemptId,answers}));await refresh();});}}>{quiz.questions.map((q,i)=><fieldset key={i}><legend>{i+1}. {q.question}</legend>{q.options.map((option,j)=><label key={j}><input type="radio" name={`q${i}`} checked={answers[i]===j} disabled={!!grade} onChange={()=>setAnswers(old=>old.map((v,k)=>k===i?j:v))}/>{option}</label>)}{grade&&<small>Correct answer: {q.options[grade.correctAnswers[i]!]}</small>}</fieldset>)}<button disabled={busy||answers.includes(-1)||!!grade}>Submit answers</button></form>}{grade&&<p role="status">{grade.score}/3 · {grade.passed?'Concept mastered.':'Keep learning and try a new quiz.'}</p>}</>}
+    </div></aside></div><footer className="study-footer">{mode==='mock'?'Mock mode  ·  Notes stay on this computer.':`${mode} mode  ·  Selected text is sent to your provider.`} <a href="https://github.com/stanbang/Grasp">View project ↗</a></footer></div>;
+}
