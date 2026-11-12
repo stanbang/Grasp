@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "tokens": {
+    "color": {
+      "background": "#0b1119", "surface": "#101923", "raised": "#17232e",
+      "line": "#263642", "text": "#e7edf1", "secondary": "#a4b3bf",
+      "quiet": "#8194a3", "accent": "#8ddbcf", "accentInk": "#0b2522",
+      "mastered": "#d9b66f", "error": "#f0aba6"
+    },
+    "spacing": [4, 8, 12, 16, 24, 32, 48, 64],
+    "radius": {"control": 10, "panel": 14},
+    "motion": {"panelMs": 160}
+  }
+}

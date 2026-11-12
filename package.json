@@ -1,0 +1,11 @@
+{
+  "name": "grasp-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "python scripts/dev.py",
+    "setup": "python scripts/dev.py --setup",
+    "build": "npm --prefix apps/web run build",
+    "check": "python scripts/check.py"
+  }
+}

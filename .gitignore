@@ -22,6 +22,7 @@ __pycache__/
 node_modules/
 dist/
 *.tsbuildinfo
+apps/web/src/tailwind.generated.css
 
 # Local tools and verification captures
 .agents/skills/
