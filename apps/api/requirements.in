@@ -1,0 +1,13 @@
+fastapi>=0.115,<1
+pydantic>=2.11,<3
+sqlmodel>=0.0.24,<0.1
+chromadb>=1,<2
+langchain-core>=1,<2
+langchain-community>=0.4,<0.5
+langchain-text-splitters>=1,<2
+langchain-openai>=1,<2
+langchain-google-genai>=4,<5
+langchain-chroma>=1,<2
+pypdf>=5,<7
+uvicorn>=0.34,<1
+python-dotenv>=1,<2
