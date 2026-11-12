@@ -48,6 +48,7 @@ class Storage:
             else f"{settings.llm_provider}:{settings.embedding_model}"
         )
         signature = hashlib.sha256(identity.encode()).hexdigest()[:16]
+        self.embedding_identity = identity
         self.collection_name = f"chunks_{signature}"
         self.collection = self.chroma.get_or_create_collection(
             self.collection_name, metadata={"embedding_identity": identity},

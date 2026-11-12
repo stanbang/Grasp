@@ -63,3 +63,25 @@ class ProgressRow(SQLModel, table=True):
     totalNodes: int = 0
     coveragePercent: float = 0
     crossDocLinks: int = 0
+
+
+class SourcePageRow(SQLModel, table=True):
+    __tablename__ = "source_pages"
+    docId: str = Field(foreign_key="documents.id", primary_key=True)
+    page: int = Field(primary_key=True)
+    text: str
+
+
+class NodeEmbeddingRow(SQLModel, table=True):
+    __tablename__ = "node_embeddings"
+    nodeId: str = Field(foreign_key="graph_nodes.id", primary_key=True)
+    identity: str = Field(primary_key=True)
+    vector: list[float] = Field(sa_column=Column(JSON, nullable=False))
+
+
+class IngestionEventRow(SQLModel, table=True):
+    __tablename__ = "ingestion_events"
+    id: int | None = Field(default=None, primary_key=True)
+    docId: str = Field(foreign_key="documents.id", index=True)
+    type: str
+    payload: dict[str, object] = Field(sa_column=Column(JSON, nullable=False))

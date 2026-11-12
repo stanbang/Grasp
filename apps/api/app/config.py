@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
@@ -20,6 +20,15 @@ class Settings(BaseModel):
     data_dir: Path = PROJECT_ROOT / "data"
     max_nodes_per_document: int = Field(default=40, ge=1, le=200)
     concept_similarity_threshold: float = Field(default=0.9, ge=0, le=1)
+    chunk_size: int = Field(default=900, ge=100, le=4000)
+    chunk_overlap: int = Field(default=150, ge=0, le=3999)
+    max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
+
+    @model_validator(mode="after")
+    def check_chunk_overlap(self) -> "Settings":
+        if self.chunk_overlap >= self.chunk_size:
+            raise ValueError("CHUNK_OVERLAP must be smaller than CHUNK_SIZE.")
+        return self
 
 
 @lru_cache
@@ -41,4 +50,7 @@ def get_settings() -> Settings:
         data_dir=data_dir,
         max_nodes_per_document=os.getenv("MAX_NODES_PER_DOCUMENT", "40"),
         concept_similarity_threshold=os.getenv("CONCEPT_SIMILARITY_THRESHOLD", "0.90"),
+        chunk_size=os.getenv("CHUNK_SIZE", "900"),
+        chunk_overlap=os.getenv("CHUNK_OVERLAP", "150"),
+        max_upload_bytes=os.getenv("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)),
     )

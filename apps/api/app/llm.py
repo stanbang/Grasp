@@ -2,6 +2,7 @@ import hashlib
 import math
 import re
 from typing import Any, TypeVar
+from collections.abc import Callable
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.exceptions import OutputParserException
@@ -95,13 +96,19 @@ class LLMClient:
     def __init__(self, model: BaseChatModel):
         self.model = model
 
-    def generate(self, prompt: str, schema: type[ResponseModel]) -> ResponseModel:
+    def generate(
+        self, prompt: str, schema: type[ResponseModel],
+        validate: Callable[[ResponseModel], None] | None = None,
+    ) -> ResponseModel:
         structured_model = self.model.with_structured_output(schema)
         current_prompt = prompt
         for attempt in range(2):
             try:
                 output = structured_model.invoke(current_prompt)
-                return schema.model_validate(output)
+                response = schema.model_validate(output)
+                if validate:
+                    validate(response)
+                return response
             except (ValidationError, OutputParserException):
                 if attempt == 1:
                     raise

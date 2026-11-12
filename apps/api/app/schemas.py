@@ -89,7 +89,7 @@ class ProviderCheck(Schema):
 
 class HealthResponse(Schema):
     status: Literal["ok", "degraded"]
-    phase: Literal[1]
+    phase: Literal[2]
     sqlite: Literal["ok", "unavailable"]
     chroma: Literal["ok", "unavailable"]
     llm: ProviderCheck
@@ -111,23 +111,68 @@ class SchemasResponse(Schema):
 
 
 class ExtractedConcept(Schema):
-    label: str
-    summary: str
-    sourceChunkIds: list[str]
+    label: str = Field(min_length=1, max_length=120)
+    summary: str = Field(min_length=1, max_length=1200)
+    sourceChunkIds: list[str] = Field(min_length=1, max_length=16)
 
 
 class ExtractedRelationship(Schema):
-    sourceLabel: str
-    targetLabel: str
-    relationshipLabel: str
+    sourceLabel: str = Field(min_length=1, max_length=120)
+    targetLabel: str = Field(min_length=1, max_length=120)
+    relationshipLabel: str = Field(min_length=1, max_length=120)
 
 
 class ExtractionResult(Schema):
-    concepts: list[ExtractedConcept]
-    relationships: list[ExtractedRelationship]
+    concepts: list[ExtractedConcept] = Field(max_length=200)
+    relationships: list[ExtractedRelationship] = Field(max_length=400)
+
+
+class DocumentsResponse(Schema):
+    documents: list[Document]
+
+
+class ChunksResponse(Schema):
+    chunks: list[Chunk]
+
+
+class PageResponse(Schema):
+    docId: str
+    page: int = Field(ge=1)
+    text: str
+
+
+class GraphResponse(Schema):
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+
+
+class IngestionEvent(Schema):
+    id: int = Field(ge=1)
+    docId: str
+    type: Literal["status", "node", "edge", "complete", "error"]
+    document: Document | None = None
+    message: str | None = None
+    completedBatches: int | None = None
+    totalBatches: int | None = None
+    node: GraphNode | None = None
+    edge: GraphEdge | None = None
+    chunkCount: int | None = None
+    nodeCount: int | None = None
+    edgeCount: int | None = None
+
+    @model_validator(mode="after")
+    def check_payload(self) -> "IngestionEvent":
+        if self.type == "node" and self.node is None:
+            raise ValueError("A node event needs a node.")
+        if self.type == "edge" and self.edge is None:
+            raise ValueError("An edge event needs an edge.")
+        if self.type in {"status", "complete", "error"} and self.document is None:
+            raise ValueError("Document events need the current document.")
+        return self
 
 
 PUBLIC_MODELS: tuple[type[Schema], ...] = (
     Quiz, GraphNode, GraphEdge, Chunk, Document, Citation, ChatResponse, Progress,
     ProviderCheck, HealthResponse, SampleResponse, SchemaDescription, SchemasResponse,
+    DocumentsResponse, ChunksResponse, PageResponse, GraphResponse, IngestionEvent,
 )

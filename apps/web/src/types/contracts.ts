@@ -69,7 +69,7 @@ export interface ProviderCheck {
 
 export interface HealthResponse {
   status: "ok" | "degraded";
-  phase: 1;
+  phase: 2;
   sqlite: "ok" | "unavailable";
   chroma: "ok" | "unavailable";
   llm: ProviderCheck;
@@ -88,4 +88,38 @@ export interface SchemaDescription {
 
 export interface SchemasResponse {
   schemas: Array<SchemaDescription>;
+}
+
+export interface DocumentsResponse {
+  documents: Array<Document>;
+}
+
+export interface ChunksResponse {
+  chunks: Array<Chunk>;
+}
+
+export interface PageResponse {
+  docId: string;
+  page: number;
+  text: string;
+}
+
+export interface GraphResponse {
+  nodes: Array<GraphNode>;
+  edges: Array<GraphEdge>;
+}
+
+export interface IngestionEvent {
+  id: number;
+  docId: string;
+  type: "status" | "node" | "edge" | "complete" | "error";
+  document?: Document;
+  message?: string;
+  completedBatches?: number;
+  totalBatches?: number;
+  node?: GraphNode;
+  edge?: GraphEdge;
+  chunkCount?: number;
+  nodeCount?: number;
+  edgeCount?: number;
 }
