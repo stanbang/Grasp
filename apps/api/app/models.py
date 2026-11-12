@@ -17,6 +17,7 @@ class ChunkRow(SQLModel, table=True):
     __table_args__ = (
         CheckConstraint("page >= 1"),
         CheckConstraint('"charStart" >= 0 AND "charEnd" >= "charStart"'),
+        CheckConstraint('"charEnd" - "charStart" = length(text)'),
     )
     id: str = Field(primary_key=True)
     docId: str = Field(foreign_key="documents.id", index=True)
@@ -28,6 +29,7 @@ class ChunkRow(SQLModel, table=True):
 
 class GraphNodeRow(SQLModel, table=True):
     __tablename__ = "graph_nodes"
+    __table_args__ = (CheckConstraint('"masteryState" IN (\'unexplored\', \'learning\', \'mastered\')'),)
     id: str = Field(primary_key=True)
     label: str = Field(index=True)
     summary: str
