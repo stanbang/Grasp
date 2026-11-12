@@ -1,4 +1,5 @@
 import json
+from collections.abc import Iterator
 from pathlib import Path
 from uuid import uuid4
 
@@ -12,7 +13,7 @@ from .test_chunking import write_pdf
 
 
 @pytest.fixture
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     settings = Settings(data_dir=tmp_path / "data", max_upload_bytes=2048)
     monkeypatch.setattr("app.main.get_settings", lambda: settings)
     with TestClient(app) as test_client:
@@ -38,6 +39,8 @@ def test_upload_stream_replay_and_exact_sources(client: TestClient) -> None:
     assert events[-1].type == "complete"
     assert [event.id for event in events] == sorted({event.id for event in events})
     assert client.get(f"/documents/{doc_id}").json()["status"] == "done"
+    assert client.get(f"/documents/{doc_id}").json()["uploadedAt"] == document["uploadedAt"]
+    assert all(event.document.uploadedAt.tzinfo is not None for event in events if event.document)
     assert client.get("/documents").json()["documents"][0]["id"] == doc_id
     page = client.get(f"/documents/{doc_id}/pages/1").json()
     chunks = client.get(f"/documents/{doc_id}/chunks").json()["chunks"]

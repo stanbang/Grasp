@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Schema(BaseModel):
@@ -52,6 +52,12 @@ class Document(Schema):
     name: str
     status: Literal["queued", "chunking", "extracting", "done", "failed"]
     uploadedAt: datetime
+
+    @field_validator("uploadedAt")
+    @classmethod
+    def normalize_upload_time(cls, value: datetime) -> datetime:
+        # SQLite returns naive datetimes; uploads are always stored as UTC.
+        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
 
 
 class Citation(Schema):

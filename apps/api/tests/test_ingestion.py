@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any, Literal
 from uuid import uuid4
 
 import pytest
@@ -11,10 +13,11 @@ from app.graph_repository import graph_snapshot
 from app.ingestion import IngestionQueue
 from app.models import ChunkRow, DocumentRow, ProgressRow, SourcePageRow
 from app.storage import Storage
+from app.schemas import IngestionEvent
 
 
 @pytest.fixture
-def queue(tmp_path: Path):
+def queue(tmp_path: Path) -> Iterator[IngestionQueue]:
     storage = Storage(Settings(data_dir=tmp_path / "data"))
     ingestion = IngestionQueue(storage)
     yield ingestion
@@ -82,7 +85,7 @@ def test_cross_document_merge_and_duplicate_job_are_idempotent(queue: IngestionQ
 
 def test_extraction_failure_rolls_back_domain_data_and_removes_vectors(queue: IngestionQueue, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     doc_id, path = enqueue_record(queue, tmp_path, "## Memory\n\nAn original note.")
-    def fail(*args, **kwargs):
+    def fail(*args: object, **kwargs: object) -> None:
         raise RuntimeError("provider unavailable")
     monkeypatch.setattr("app.ingestion.extract_concepts", fail)
     queue.process(doc_id, path)
@@ -119,7 +122,7 @@ def test_sql_failure_preserves_existing_graph_and_discards_uncommitted_events(qu
     first_id, first_path = enqueue_record(queue, tmp_path, text)
     queue.process(first_id, first_path)
     second_id, second_path = enqueue_record(queue, tmp_path, text)
-    def fail_on_edge(session, document, kind, **payload):
+    def fail_on_edge(session: Session, document: DocumentRow, kind: Literal["status", "node", "edge", "complete", "error"], **payload: Any) -> IngestionEvent:
         if kind == "edge":
             raise RuntimeError("forced transaction failure")
         return append_event(session, document, kind, **payload)
