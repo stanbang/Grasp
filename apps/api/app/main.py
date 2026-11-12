@@ -7,6 +7,7 @@ from sqlmodel import Session
 from .config import PROJECT_ROOT, get_settings
 from .llm import provider_check
 from .document_routes import router as document_router
+from .study_routes import router as study_router
 from .graph_repository import graph_snapshot
 from .ingestion import IngestionQueue
 from .models import ProgressRow
@@ -35,6 +36,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(document_router)
+app.include_router(study_router)
 
 
 @app.get("/health", response_model=HealthResponse)

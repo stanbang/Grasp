@@ -57,6 +57,10 @@ def commit_document(
         for chunk in chunks:
             session.add(ChunkRow(**chunk.model_dump()))
         for node in merger.touched_nodes.values():
+            existing = session.get(GraphNodeRow, node.id)
+            if existing:
+                node.masteryState = existing.masteryState
+                node.quiz = existing.quiz
             session.merge(GraphNodeRow(**node.model_dump()))
         session.flush()
         for node in merger.touched_nodes.values():

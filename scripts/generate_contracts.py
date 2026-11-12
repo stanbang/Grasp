@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 
 from app.schemas import PUBLIC_MODELS
+from app.study_routes import ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse
+PUBLIC_MODELS = (*PUBLIC_MODELS, ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse)
 
 
 def typescript_type(schema: dict[str, Any], *, optional: bool = False) -> str:

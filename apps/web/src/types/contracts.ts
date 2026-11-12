@@ -123,3 +123,34 @@ export interface IngestionEvent {
   nodeCount?: number;
   edgeCount?: number;
 }
+
+export interface ChatRequest {
+  question: string;
+  topK?: number;
+}
+
+export interface NodeRequest {
+  nodeId: string;
+}
+
+export interface Question {
+  question: string;
+  options: [string, string, string];
+}
+
+export interface QuizResponse {
+  attemptId: string;
+  questions: Array<Question>;
+}
+
+export interface GradeRequest {
+  attemptId: string;
+  answers: [number, number, number];
+}
+
+export interface GradeResponse {
+  score: number;
+  passed: boolean;
+  correctAnswers: Array<number>;
+  nodeIds: Array<string>;
+}
