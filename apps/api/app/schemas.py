@@ -95,7 +95,7 @@ class ProviderCheck(Schema):
 
 class HealthResponse(Schema):
     status: Literal["ok", "degraded"]
-    phase: Literal[2]
+    phase: Literal[5]
     sqlite: Literal["ok", "unavailable"]
     chroma: Literal["ok", "unavailable"]
     llm: ProviderCheck

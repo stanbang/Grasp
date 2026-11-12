@@ -69,7 +69,7 @@ export interface ProviderCheck {
 
 export interface HealthResponse {
   status: "ok" | "degraded";
-  phase: 2;
+  phase: 5;
   sqlite: "ok" | "unavailable";
   chroma: "ok" | "unavailable";
   llm: ProviderCheck;

@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="Grasp API", version="0.2.0",
+    title="Grasp API", version="0.5.0",
     description="Phase 2: document ingestion, source provenance and graph extraction.",
     lifespan=lifespan,
 )
@@ -47,7 +47,7 @@ def health(request: Request) -> HealthResponse:
     chroma_ok = storage.check_chroma()
     return HealthResponse(
         status="ok" if sqlite_ok and chroma_ok and llm.configured else "degraded",
-        phase=2,
+        phase=5,
         sqlite="ok" if sqlite_ok else "unavailable",
         chroma="ok" if chroma_ok else "unavailable",
         llm=llm,
