@@ -102,7 +102,7 @@ function ContractInspector() {
     <label htmlFor="schema-name">Schema</label>
     <select id="schema-name" value={selectedSchema} onChange={(event) => selectSchema(event.target.value)}>{schemas.map((schema) => <option key={schema.name}>{schema.name}</option>)}</select>
     <pre tabIndex={0} aria-label={`${selectedSchema} JSON schema`}><code>{JSON.stringify(selected?.definition, null, 2)}</code></pre>
-    <a className="text-link" href="/api/docs" target="_blank" rel="noreferrer">Open API reference <SquareArrowOutUpRight size={13} /></a>
+    <a className="text-link" href={import.meta.env.VITE_API_REFERENCE_URL} target="_blank" rel="noreferrer">Open API reference <SquareArrowOutUpRight size={13} /></a>
   </div>;
 }
 
