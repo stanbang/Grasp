@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 const ForceGraph3D = lazy(() => import('react-force-graph-3d'));
 import type { ForceGraphMethods } from 'react-force-graph-3d';
-import { Orbit, Upload, BookOpen, MessageCircle, RotateCcw } from 'lucide-react';
+import { Orbit, Upload, BookOpen, MessageCircle, RotateCcw, FolderOpen, ArrowUpRight, Files } from 'lucide-react';
+import { droppedFiles, isSupportedNote } from './folder-upload';
 import { useStudyGraph } from './study-store';
 import type { GraphNode, Chunk, ChatResponse, Progress, QuizResponse as Quiz } from './types/contracts';
 type Graph = import('./study-store').StudyGraph;
@@ -14,10 +15,21 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
     return response.json() as Promise<T>;
 }
 export function App() {
+    const [started, setStarted] = useState(false);
+    const [dragging, setDragging] = useState(false);
+    const [ingesting, setIngesting] = useState(false);
+    const [queue, setQueue] = useState<{
+        name: string;
+        state: string;
+    }[]>([]);
+    const [scope, setScope] = useState('');
+    const lastImport = useRef<File[]>([]);
+    const folderInput = useRef<HTMLInputElement>(null);
+    useEffect(() => { folderInput.current?.setAttribute('webkitdirectory', ''); }, [started]);
     const { graph, setGraph } = useStudyGraph();
     const [selected, setSelected] = useState<GraphNode | null>(null);
     const [chunks, setChunks] = useState<Chunk[]>([]);
-    const [tab, setTab] = useState<'source' | 'chat' | 'quiz'>('source');
+    const [tab, setTab] = useState<'source' | 'chat' | 'quiz'>('chat');
     const [question, setQuestion] = useState('');
     const [answer, setAnswer] = useState<ChatResponse | null>(null);
     const [highlight, setHighlight] = useState<string[]>([]);
@@ -39,8 +51,7 @@ export function App() {
     const [mode, setMode] = useState('mock');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const [pulse, setPulse] = useState(0);
-    useEffect(() => { if (reduced)
-        return; const timer = setInterval(() => setPulse(Date.now() / 400), 120); return () => clearInterval(timer); }, [reduced]);
+    useEffect(() => { const timer = setInterval(() => setPulse(Date.now() / 400), 120); return () => clearInterval(timer); }, [reduced]);
     const selection = useRef(0);
     const host = useRef<HTMLDivElement>(null);
     const streams = useRef<Set<EventSource>>(new Set());
@@ -62,12 +73,20 @@ export function App() {
         setGraph(data);
         setProgress(p);
         setStatus('Local workspace ready');
-        setSelected(old => old ? data.nodes.find(n => n.id === old.id) || null : null);
+        setSelected(old => old ? old.id.startsWith('doc:') ? old : data.nodes.find(n => n.id === old.id) || null : null);
     }
     useEffect(() => { void refresh().catch(e => setError(String(e))); return () => streams.current.forEach(s => s.close()); }, []);
-    useEffect(() => { if (!host.current)
-        return; const observer = new ResizeObserver(entries => { const rect = entries[0]?.contentRect; if (rect)
-        setSize({ width: rect.width, height: rect.height }); }); observer.observe(host.current); return () => observer.disconnect(); }, []);
+    useEffect(() => {
+        if (!host.current)
+            return;
+        const observer = new ResizeObserver(entries => {
+            const rect = entries[0]?.contentRect;
+            if (rect)
+                setSize({ width: rect.width, height: rect.height });
+        });
+        observer.observe(host.current);
+        return () => observer.disconnect();
+    }, []);
     async function choose(node: GraphNode) {
         const version = ++selection.current;
         setChunks([]);
@@ -79,7 +98,8 @@ export function App() {
         setGrade(null);
         const results = await Promise.all(node.docIds.map(id => request<{
             chunks: Chunk[];
-        }>(`/documents/${id}/chunks`))).catch(error=>{if(version===selection.current)setSourceLoading(false);throw error;});
+        }>(`/documents/${id}/chunks`))).catch(error => { if (version === selection.current)
+            setSourceLoading(false); throw error; });
         if (version !== selection.current)
             return;
         setSourceLoading(false);
@@ -112,47 +132,145 @@ export function App() {
             stream.addEventListener('node', event => { const n = JSON.parse((event as MessageEvent).data).node as GraphNode; setGraph(g => ({ ...g, nodes: [...g.nodes.filter(old => old.id !== n.id), n] })); });
             stream.addEventListener('edge', event => { const edge = JSON.parse((event as MessageEvent).data).edge as import('./types/contracts').GraphEdge; setGraph(g => ({ ...g, edges: [...g.edges.filter(old => old.id !== edge.id), edge] })); });
             stream.addEventListener('complete', () => { close(); resolve(); });
-            stream.addEventListener('error', event => { if (event instanceof MessageEvent) {
-                close();
-                reject(new Error(JSON.parse(event.data).message));
-            }
-            else {
-                close();
-                reject(new Error('Connection interrupted. Refresh to reload stored results.'));
-            } });
+            stream.addEventListener('error', event => {
+                if (event instanceof MessageEvent) {
+                    close();
+                    reject(new Error(JSON.parse(event.data).message));
+                }
+                else {
+                    close();
+                    reject(new Error('Connection interrupted. Refresh to reload stored results.'));
+                }
+            });
         });
         await refresh();
     }
-    async function run(action: () => Promise<void>) { setBusy(true); setError(''); try {
-        await action();
+    async function importFiles(files: File[], readErrors: string[] = []) {
+        if (ingesting)
+            return;
+        const notes = files.filter(isSupportedNote);
+        if (!notes.length) {
+            setError(readErrors.join(' ') || 'No supported documents found. Choose PDF, Markdown or TXT files.');
+            return;
+        }
+        setStarted(true);
+        setTab('chat');
+        setIngesting(true);
+        setError('');
+        lastImport.current = notes;
+        const jobs = [...notes.map(file => ({ name: file.webkitRelativePath || file.name, state: 'waiting' })), ...readErrors.map(message => ({ name: 'Folder entry', state: message }))];
+        let failed = readErrors.length;
+        setQueue(jobs);
+        for (const [index, file] of notes.entries()) {
+            setQueue(old => old.map((job, i) => i === index ? { ...job, state: 'processing' } : job));
+            try {
+                await upload(file);
+                setQueue(old => old.map((job, i) => i === index ? { ...job, state: 'ready' } : job));
+            }
+            catch (error) {
+                failed++;
+                setQueue(old => old.map((job, i) => i === index ? { ...job, state: error instanceof Error ? error.message : 'Upload failed' } : job));
+            }
+        }
+        setIngesting(false);
+        await refresh().catch(error => setError(String(error)));
+        if (failed)
+            setError(`${failed} file or folder entries could not be processed. Ready documents are still available. Retry failed files or choose the folder again.`);
     }
-    catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+    async function handleDrop(transfer: DataTransfer) {
+        setDragging(false);
+        if (ingesting) {
+            setError('Wait for this folder to finish before adding another.');
+            return;
+        }
+        try {
+            const result = await droppedFiles(transfer);
+            await importFiles(result.files, result.errors);
+        }
+        catch (error) {
+            setError('Could not read that folder. Try Choose folder or select files. ' + String(error));
+        }
     }
-    finally {
-        setBusy(false);
-    } }
-    async function demo() { await request('/demo', {}); await refresh(); }
-    const graphRef=useRef<ForceGraphMethods>();
-    const fitted=useRef(-1);
+    async function chooseDocument(id: string) {
+        const version = ++selection.current;
+        setTab('source');
+        setSourceLoading(true);
+        setChunks([]);
+        setQuote('');
+        setQuiz(null);
+        setSelected({ id: 'doc:' + id, label: names[id] || 'Document', summary: 'Read the source passages from this document.', docIds: [id], sourceChunkIds: [], masteryState: 'unexplored' });
+        try {
+            const result = await request<{
+                chunks: Chunk[];
+            }>(`/documents/${id}/chunks`);
+            if (version === selection.current)
+                setChunks(result.chunks);
+        }
+        finally {
+            if (version === selection.current)
+                setSourceLoading(false);
+        }
+    }
+    async function run(action: () => Promise<void>) {
+        setBusy(true);
+        setError('');
+        try {
+            await action();
+        }
+        catch (e) {
+            setError(e instanceof Error ? e.message : String(e));
+        }
+        finally {
+            setBusy(false);
+        }
+    }
+    async function demo() { setStarted(true); setTab('chat'); await request('/demo', {}); await refresh(); }
+    const graphRef = useRef<ForceGraphMethods>();
+    const fitted = useRef(-1);
     const cache = useRef(new Map<string, GraphNode>());
-    const data = useMemo(() => ({ nodes: graph.nodes.map(n => { const old = cache.current.get(n.id); const value = old ? Object.assign(old, n) : { ...n }; cache.current.set(n.id, value); return value; }), links: graph.edges.map(e => ({ ...e })) }), [graph]);
-    return <div className="study-app">
+    const data = useMemo(() => {
+        const concepts = graph.nodes.map(n => { const old = cache.current.get(n.id); const value = old ? Object.assign(old, n) : { ...n }; cache.current.set(n.id, value); return value; });
+        const documentIds = [...new Set(graph.nodes.flatMap(n => n.docIds))];
+        const documents = documentIds.map(id => { const key = 'doc:' + id; const node = { id: key, label: names[id] || 'Document', summary: 'Source document', docIds: [id], sourceChunkIds: [], masteryState: 'unexplored' as const }; const old = cache.current.get(key); const value = old ? Object.assign(old, node) : node; cache.current.set(key, value); return value; });
+        return { nodes: [...concepts, ...documents], links: [...graph.edges.map(e => ({ ...e })), ...documentIds.flatMap(id => graph.nodes.filter(n => n.docIds.includes(id)).map(n => ({ id: 'source:' + id + ':' + n.id, source: 'doc:' + id, target: n.id, relationshipLabel: 'contains concept', docIds: [id] })))] };
+    }, [graph, names]);
+    const documentLabels = data.nodes.filter(n => n.id.startsWith('doc:')).flatMap(node => {
+        const position = node as GraphNode & {
+            x?: number;
+            y?: number;
+            z?: number;
+        };
+        if (!graphRef.current || position.x === undefined || position.y === undefined || position.z === undefined)
+            return [];
+        const point = graphRef.current.graph2ScreenCoords(position.x, position.y, position.z);
+        return Number.isFinite(point.x) && Number.isFinite(point.y) ? [{ id: node.id, label: node.label, ...point }] : [];
+    });
+    return <div className={`study-app folder-first ${started ? 'workspace-open' : 'landing-open'} ${dragging ? 'drag-over' : ''}`} onDragOver={e => { if (Array.from(e.dataTransfer.types).includes('Files')) {
+        e.preventDefault();
+        setDragging(true);
+    } }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+        setDragging(false); }} onDrop={e => { e.preventDefault(); void handleDrop(e.dataTransfer); }}>
+    {!started && <section className="folder-landing" aria-labelledby="start-heading"><div className="landing-orbit" aria-hidden="true"><Orbit size={36}/></div><h1 id="start-heading">drop folder to get started</h1><p>Your documents become a connected mindmap.<br />Ask a question. Follow the answer back to its source.</p><div className="landing-actions"><button className="choose-folder" onClick={() => folderInput.current?.click()}><FolderOpen size={18}/> Choose folder <ArrowUpRight size={16}/></button><label className="choose-files">or select files<input aria-label="Select document files" type="file" multiple accept=".pdf,.md,.txt" onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/></label></div><small>PDF, Markdown and TXT · Nested folders supported</small>{error && <p role="alert" className="request-error">{error}</p>}<div className="landing-secondary"><button onClick={() => void run(demo)}>Try the sample</button>{graph.nodes.length > 0 && <button onClick={() => { setStarted(true); setTab('chat'); }}>Continue with {Object.keys(names).length} saved documents</button>}</div></section>}
+    <input className="folder-input" ref={folderInput} aria-label="Choose document folder" tabIndex={-1} type="file" multiple onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/>
+    {dragging && <div className="drop-curtain"><FolderOpen size={40}/><strong>Drop to connect your documents</strong></div>}
 
-    <header className="study-header"><div className="study-brand"><Orbit size={23}/><strong>Study space</strong><span>Knowledge canvas</span></div><div className="header-actions"><button onClick={() => void run(demo)} disabled={busy}><BookOpen size={16}/> Sample graph</button><label className="upload-control"><Upload size={16}/> Add notes<input aria-label="Upload notes" type="file" accept=".pdf,.md,.txt" disabled={busy} onChange={e => { const file = e.target.files?.[0]; if (file)
-        void run(() => upload(file)); e.target.value = ''; }}/></label></div></header>
 
-    <div className="study-layout"><aside className="concept-library"><h2>Your concepts <span>{graph.nodes.length}</span></h2><p>Follow an idea back to its source.</p><div className="concept-list">{graph.nodes.map(n => <button key={n.id} aria-current={selected?.id === n.id ? 'true' : undefined} className={selected?.id === n.id ? 'chosen' : ''} onClick={() => void run(() => choose(n))}><i className={n.masteryState}/><span>{n.label}</span>{n.docIds.length > 1 && <small>{n.docIds.length} sources</small>}</button>)}</div><div className="coverage"><strong>{progress?.masteredCount || 0} mastered</strong><span>{progress?.exploredCount || 0} of {progress?.totalNodes || 0} explored</span><progress aria-label="Concept coverage" max="100" value={progress?.coveragePercent || 0}/><small>{progress?.crossDocLinks || 0} cross-document connections</small></div></aside>
+    <header className="study-header"><div className="study-brand"><Orbit size={23}/><strong>Study space</strong><span>Knowledge canvas</span></div><div className="header-actions"><button onClick={() => folderInput.current?.click()} disabled={ingesting}><FolderOpen size={16}/> Add folder</button><button onClick={() => void run(demo)} disabled={busy}><BookOpen size={16}/> Sample graph</button><label className="upload-control"><Upload size={16}/> Add notes<input aria-label="Upload notes" type="file" accept=".pdf,.md,.txt" multiple disabled={ingesting} onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/></label></div></header>
 
-    <main className="graph-space" ref={host}><div className="graph-caption"><span>Connections in your notes</span><small>Drag to orbit · Scroll to zoom · Click a concept</small></div>{graph.nodes.length ? <Suspense fallback={<p>Loading the 3D canvas · </p>}><ForceGraph3D ref={graphRef} onEngineStop={()=>{if(fitted.current!==graph.nodes.length){graphRef.current?.zoomToFit(reduced?0:700,50);fitted.current=graph.nodes.length;}}} width={size.width} height={size.height} graphData={data} backgroundColor="#0b1119" showNavInfo={false} nodeLabel="label" nodeResolution={20} nodeVal={n => highlight.includes(String(n.id)) ? 14 + (reduced ? 0 : Math.sin(pulse) * 4) : 5} nodeColor={n => n.masteryState === 'mastered' ? '#d9b66f' : highlight.includes(String(n.id)) ? '#e7fff9' : n.masteryState === 'learning' ? '#8ddbcf' : '#526c82'} nodeOpacity={.9} linkColor={() => '#3e6671'} linkWidth={.7} linkLabel="relationshipLabel" cooldownTicks={reduced ? 0 : 100} warmupTicks={reduced ? 100 : 0} linkDirectionalParticles={reduced ? 0 : 1} linkDirectionalParticleSpeed={.002} onNodeClick={n => void run(() => choose(n as GraphNode))} enableNodeDrag/></Suspense> : <div className="graph-empty"><Orbit size={48}/><h1>Find the connections<br />in your notes.</h1><p>Add a document or start with the sample.</p><button onClick={() => void run(demo)}>Open sample graph</button></div>}<div className="graph-status" role="status">{busy ? 'Working · ' : ''}{status}<button aria-label="Refresh workspace" onClick={() => void run(refresh)}><RotateCcw size={15}/></button></div></main>
+    <div className="study-layout"><aside className="concept-library"><h2>Documents <span>{Object.keys(names).length}</span></h2><p>Shared ideas connect your sources.</p><div className="document-list">{Object.entries(names).map(([id, name]) => <button key={id} onClick={() => void run(() => chooseDocument(id))}><Files size={14}/><span>{name}</span></button>)}</div>{queue.length > 0 && <details className="import-progress" open={ingesting || queue.some(job => !['ready', 'waiting', 'processing'].includes(job.state))}><summary>{queue.filter(j => j.state === 'ready').length}/{queue.length} documents ready</summary>{queue.map((job, i) => <p key={i}><span>{job.name}</span><small>{job.state}</small></p>)}{!ingesting && lastImport.current.some((_, i) => queue[i]?.state !== 'ready') && <button onClick={() => void importFiles(lastImport.current.filter((_, i) => queue[i]?.state !== 'ready'))}>Retry failed files</button>}</details>}<h2 className="concept-heading">Connected ideas <span>{graph.nodes.length}</span></h2><div className="concept-list">{graph.nodes.map(n => <button key={n.id} aria-current={selected?.id === n.id ? 'true' : undefined} className={selected?.id === n.id ? 'chosen' : ''} onClick={() => void run(() => choose(n))}><i className={n.masteryState}/><span>{n.label}</span>{n.docIds.length > 1 && <small>{n.docIds.length} sources</small>}</button>)}</div><div className="coverage"><strong>{progress?.masteredCount || 0} mastered</strong><span>{progress?.exploredCount || 0} of {progress?.totalNodes || 0} explored</span><progress aria-label="Concept coverage" max="100" value={progress?.coveragePercent || 0}/><small>{progress?.crossDocLinks || 0} cross-document connections</small></div></aside>
 
-    <aside className="study-panel"><nav>{(['source', 'chat', 'quiz'] as const).map(t => <button key={t} aria-pressed={tab === t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>{t === 'source' ? 'Source notes' : t === 'chat' ? 'Ask your notes' : 'Check understanding'}</button>)}</nav><div className="study-panel-body">{error && <p role="alert" className="request-error">{error}</p>}
+    <main className="graph-space" ref={host}><div className="graph-caption"><span>Connections in your notes</span><small>Drag to orbit · Scroll to zoom · Click a concept</small></div>{graph.nodes.length ? <Suspense fallback={<p>Loading the 3D canvas · </p>}><ForceGraph3D ref={graphRef} onEngineStop={() => { if (fitted.current !== data.nodes.length) {
+        graphRef.current?.zoomToFit(reduced ? 0 : 900, 12);
+        fitted.current = data.nodes.length;
+    } }} width={size.width} height={size.height} graphData={data} backgroundColor="#0b1119" showNavInfo={false} nodeLabel="label" nodeResolution={20} nodeVal={n => String(n.id).startsWith('doc:') ? 18 : highlight.includes(String(n.id)) ? 14 + (reduced ? 0 : Math.sin(pulse) * 4) : 5} nodeColor={n => String(n.id).startsWith('doc:') ? '#b1c9d9' : n.masteryState === 'mastered' ? '#d9b66f' : highlight.includes(String(n.id)) ? '#e7fff9' : n.masteryState === 'learning' ? '#8ddbcf' : '#526c82'} nodeOpacity={.9} linkColor={() => '#3e6671'} linkWidth={.7} linkLabel="relationshipLabel" cooldownTicks={reduced ? 0 : 100} warmupTicks={reduced ? 100 : 0} linkDirectionalParticles={reduced ? 0 : 1} linkDirectionalParticleSpeed={.002} onNodeClick={n => void run(() => String(n.id).startsWith('doc:') ? chooseDocument(String(n.id).slice(4)) : choose(n as GraphNode))} enableNodeDrag/></Suspense> : <div className="graph-empty"><Orbit size={48}/><h1>{ingesting ? 'Connecting your documents…' : 'Your map is ready for notes.'}</h1><p>{ingesting ? `${queue.filter(job => job.state === 'ready').length} of ${queue.length} ready. Ideas appear as each document finishes.` : 'Add documents or try the sample graph.'}</p>{!ingesting && <button onClick={() => void run(demo)}>Open sample graph</button>}</div>}<div className="document-labels" aria-hidden="true">{documentLabels.map(label => <span key={label.id} style={{ left: label.x, top: label.y }}>{label.label}</span>)}</div><div className="graph-status" role="status">{busy ? 'Working · ' : ''}{status}<button aria-label="Refresh workspace" onClick={() => void run(refresh)}><RotateCcw size={15}/></button></div></main>
 
-    {tab === 'source' && <>{quote ? <><h2>Cited passage</h2><blockquote>{quote}</blockquote><button onClick={() => setQuote('')}>Back to concept</button></> : selected ? <><span className="state-label">{selected.masteryState}</span><h1>{selected.label}</h1><p>{selected.summary}</p><h3>Source passages</h3>{sourceLoading && <p role='status'>Loading source passages · </p>}{chunks.map(c => <article key={c.id}><small>{names[c.docId] || 'Document'} · Page {c.page}</small><blockquote>{c.text}</blockquote></article>)}<h3>Related concepts</h3>{graph.edges.filter(e => e.source === selected.id || e.target === selected.id).map(e => { const n = graph.nodes.find(n => n.id === (e.source === selected.id ? e.target : e.source)); return n && <button key={e.id} onClick={() => void run(() => choose(n))}>{n.label} →</button>; })}</> : <div className="panel-welcome"><BookOpen size={30}/><h2>Every idea has a source.</h2><p>Select a concept to read its passages, explore related ideas or check your understanding.</p><small>{mode === 'mock' ? 'Deterministic mock mode  ·  No API key needed' : `${mode} provider enabled`}</small></div>}</>}
+    <aside className="study-panel"><nav>{(['chat', 'source', 'quiz'] as const).map(t => <button key={t} aria-pressed={tab === t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>{t === 'source' ? 'Source notes' : t === 'chat' ? 'Ask your documents' : 'Check understanding'}</button>)}</nav><div className="study-panel-body">{error && <p role="alert" className="request-error">{error}</p>}
 
-    {tab === 'chat' && <><MessageCircle size={26}/><h2>Ask your notes</h2><p>{mode==='mock'?'Mock mode shows retrieved source excerpts. Configure a provider for generated answers.':'Answers cite passages from your uploaded documents.'}</p><form onSubmit={e => { e.preventDefault(); void run(async () => { const result = await request<ChatResponse>('/chat', { question }); setAnswer(result); setHighlight(result.referencedNodeIds); await refresh(); }); }}><label htmlFor="question">Your question</label><textarea id="question" value={question} onChange={e => setQuestion(e.target.value)} required placeholder="How does retrieval practice help learning?"/><button disabled={busy || !question.trim()}>Find an answer</button></form>{answer && <article><p className="answer-text">{answer.answer}</p>{answer.citations.map((c, i) => <button key={c.chunkId} onClick={() => { setQuote(`${names[c.docId] || 'Document'}  ·  Page ${c.page}\n\n${c.quote}`); setTab('source'); }}>Source {i + 1} · {names[c.docId] || 'Document'} · Page {c.page} ↗</button>)}</article>}</>}
+    {tab === 'source' && <>{quote ? <><h2>Cited passage</h2><blockquote>{quote}</blockquote><button onClick={() => { setQuote(''); setTab('chat'); }}>Back to answer</button></> : selected ? <><span className="state-label">{selected.masteryState}</span><h1>{selected.label}</h1><p>{selected.summary}</p><h3>Source passages</h3>{sourceLoading && <p role='status'>Loading source passages · </p>}{chunks.map(c => <article key={c.id}><small>{names[c.docId] || 'Document'} · Page {c.page}</small><blockquote>{c.text}</blockquote></article>)}<h3>Related concepts</h3>{graph.edges.filter(e => e.source === selected.id || e.target === selected.id).map(e => { const n = graph.nodes.find(n => n.id === (e.source === selected.id ? e.target : e.source)); return n && <button key={e.id} onClick={() => void run(() => choose(n))}>{n.label} →</button>; })}</> : <div className="panel-welcome"><BookOpen size={30}/><h2>Every idea has a source.</h2><p>Select a concept to read its passages, explore related ideas or check your understanding.</p><small>{mode === 'mock' ? 'Deterministic mock mode  ·  No API key needed' : `${mode} provider enabled`}</small></div>}</>}
 
-    {tab === 'quiz' && <><h2>Check understanding</h2><p>{selected ? `Three questions using ${selected.label} and its source context.` : 'Choose a concept on the canvas first.'}</p><button disabled={!selected || busy} onClick={() => void run(async () => { setQuiz(await request<Quiz>('/quiz', { nodeId: selected!.id })); setAnswers([-1, -1, -1]); setGrade(null); })}>Start a quiz</button>{quiz && <form onSubmit={e => { e.preventDefault(); void run(async () => { setGrade(await request('/quiz/grade', { attemptId: quiz.attemptId, answers })); await refresh(); }); }}>{quiz.questions.map((q, i) => <fieldset key={i}><legend>{i + 1}. {q.question}</legend>{q.options.map((option, j) => <label key={j}><input type="radio" name={`q${i}`} checked={answers[i] === j} disabled={!!grade} onChange={() => setAnswers(old => old.map((v, k) => k === i ? j : v))}/>{option}</label>)}{grade && <small>Correct answer: {q.options[grade.correctAnswers[i]!]}</small>}</fieldset>)}<button disabled={busy || answers.includes(-1) || !!grade}>Submit answers</button></form>}{grade && <p role="status">{grade.score}/3 · {grade.passed ? 'Concept mastered.' : 'Keep learning and try a new quiz.'}</p>}</>}
+    {tab === 'chat' && <><MessageCircle size={26}/><h2>What would you like to know?</h2><p>{mode === 'mock' ? 'Mock mode shows retrieved source excerpts. Configure a provider for generated answers.' : 'Answers cite passages from your uploaded documents.'}</p><form onSubmit={e => { e.preventDefault(); void run(async () => { const result = await request<ChatResponse>('/chat', { question, docIds: scope ? [scope] : [] }); setAnswer(result); setHighlight(result.referencedNodeIds); await refresh(); }); }}><label htmlFor="document-scope">Search in</label><select id="document-scope" value={scope} onChange={e => { setScope(e.target.value); setAnswer(null); }}><option value="">All documents</option>{Object.entries(names).map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select><label htmlFor="question">Your question</label><textarea id="question" value={question} onChange={e => setQuestion(e.target.value)} required placeholder="How does retrieval practice help learning?"/><button disabled={busy || !question.trim()}>Ask question <ArrowUpRight size={15}/></button></form>{answer && <article><p className="answer-text">{answer.answer}</p>{answer.citations.map((c, i) => <button key={c.chunkId} onClick={() => { setQuote(`${names[c.docId] || 'Document'}  ·  Page ${c.page}\n\n${c.quote}`); setTab('source'); }}>Source {i + 1} · {names[c.docId] || 'Document'} · Page {c.page} ↗</button>)}</article>}</>}
+
+    {tab === 'quiz' && <><h2>Check understanding</h2><p>{selected ? `Three questions using ${selected.label} and its source context.` : 'Choose a concept on the canvas first.'}</p><button disabled={!selected || selected.id.startsWith('doc:') || busy} onClick={() => void run(async () => { setQuiz(await request<Quiz>('/quiz', { nodeId: selected!.id })); setAnswers([-1, -1, -1]); setGrade(null); })}>Start a quiz</button>{quiz && <form onSubmit={e => { e.preventDefault(); void run(async () => { setGrade(await request('/quiz/grade', { attemptId: quiz.attemptId, answers })); await refresh(); }); }}>{quiz.questions.map((q, i) => <fieldset key={i}><legend>{i + 1}. {q.question}</legend>{q.options.map((option, j) => <label key={j}><input type="radio" name={`q${i}`} checked={answers[i] === j} disabled={!!grade} onChange={() => setAnswers(old => old.map((v, k) => k === i ? j : v))}/>{option}</label>)}{grade && <small>Correct answer: {q.options[grade.correctAnswers[i]!]}</small>}</fieldset>)}<button disabled={busy || answers.includes(-1) || !!grade}>Submit answers</button></form>}{grade && <p role="status">{grade.score}/3 · {grade.passed ? 'Concept mastered.' : 'Keep learning and try a new quiz.'}</p>}</>}
 
     </div></aside></div><footer className="study-footer">{mode === 'mock' ? 'Mock mode  ·  Notes stay on this computer.' : `${mode} mode  ·  Selected text is sent to your provider.`} <a href="https://github.com/stanbang/Grasp">View project ↗</a></footer></div>;
 }
