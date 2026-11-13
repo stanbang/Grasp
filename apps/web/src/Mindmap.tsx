@@ -8,7 +8,8 @@ function tooltip(label: string): string {
   return label.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
 }
 
-export function Mindmap({ graph, highlight, onSelect }: {
+export function Mindmap({ graph, highlight, onSelect, active = true }: {
+  active?: boolean;
   graph: GraphResponse;
   highlight: string[];
   onSelect: (id: string) => void;
@@ -41,6 +42,8 @@ export function Mindmap({ graph, highlight, onSelect }: {
     return () => clearInterval(timer);
   }, [highlight, reduced]);
 
+  useEffect(() => { const update = () => { if (!active || document.hidden) engine.current?.pauseAnimation(); else engine.current?.resumeAnimation(); }; update(); document.addEventListener('visibilitychange', update); return () => document.removeEventListener('visibilitychange', update); }, [active]);
+
   const data = useMemo(() => ({
     nodes: graph.nodes.map(node => {
       const previous = cache.current.get(node.id);
@@ -64,6 +67,7 @@ export function Mindmap({ graph, highlight, onSelect }: {
         cooldownTicks={reduced ? 0 : 100} warmupTicks={reduced ? 100 : 0}
         linkDirectionalParticles={0} onNodeClick={node => onSelect(String(node.id))}
         onEngineStop={() => {
+          if (!active || document.hidden) engine.current?.pauseAnimation();
           const view = `${data.nodes.length}:${size.width}:${size.height}`;
           if (fitted.current !== view) {
             engine.current?.zoomToFit(reduced ? 0 : 800, -Math.min(size.width, size.height) * .25);

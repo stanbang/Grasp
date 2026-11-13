@@ -2,3 +2,5 @@
 .live-workspace .composer-transition{width:100%;border:1px solid #354a57;border-radius:16px;background:#101923;transition:width 350ms ease,border-radius 400ms ease,background 350ms ease;margin-inline:auto}.live-workspace .research-composer{border:0}.live-workspace .composer-processing{width:260px;border-radius:130px;background:#0b1119;border-color:transparent}.live-workspace .live-processing{background:transparent}.live-workspace .composer-processing .preview-thread{display:none}
 
 @media(max-width:1000px){.live-workspace.answer-visible .orbit-list .live-document-paper{display:none}.live-workspace.answer-visible .orbit-list .live-document-card{width:160px!important;background:#101923!important;padding:4px 10px!important;border:1px solid #263642!important}.live-workspace.answer-visible .live-document-grid{padding:12px 20px}.live-workspace.answer-visible .orbit-list{max-height:80px}}
+
+.live-workspace .preview-thread,.live-workspace .composer-scope{overflow-wrap:anywhere;min-width:0}
