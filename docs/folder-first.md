@@ -1,33 +1,13 @@
-# Folder-first workspace
+# Same-page import
 
-The landing headline is “drop folder to get started”. Importing a folder opens the 3D workspace and makes document Q&A the primary panel. Existing notes are retained and available through Continue.
+The opening headline is “drop folder to get started”. Dropping a file or folder reveals the question box over the 3D mindmap without navigation, a new window or a picker. A picker opens only after an explicit Choose a file or Choose folder action.
 
-## Run and try it
+Nested directories are traversed across all browser entry batches. Readable siblings continue when an entry fails. Supported extensions are PDF, Markdown and TXT. The composer waits until at least one source is ready; a completely failed import cannot query unrelated older notes.
 
-Run `python scripts/dev.py --setup` from the repository, then open http://127.0.0.1:5173. On later runs use `python scripts/dev.py`.
+The main screen contains the map, question box and conversation. There are no source lists or connected-ideas panels. The question label is “what question would you like to ask”. Citation buttons open a source dialog, including an inline original PDF when available. Workspace options holds source management, saved conversations and quizzes.
 
-Choose a folder with PDF, Markdown or UTF-8 text notes. Nested folders are traversed, including directory entries returned in multiple browser batches. Choose files is the fallback when folder selection is unavailable. Unsupported files are skipped; a folder without supported notes produces a message.
+New imports start a conversation scoped to successful sources. Additional imports retain the stored graph, allowing shared concepts to connect documents. New conversation resets the source scope to the workspace. Graph positions stay in the browser.
 
-Each supported file gets a waiting, processing, ready or failure state. One failed file does not prevent other files from processing. Unreadable directory entries are reported while readable siblings continue. Failed uploads stay visible and can be retried. For directory-access failures, choose the folder again.
+Run `python scripts/dev.py`, then open http://127.0.0.1:5173. The seven Node tests in `scripts/tests/folder-upload.test.cjs` cover recursive import, partial failures, preventing native file navigation and leaving ordinary text drops alone. OS drag gestures are not automated; browser verification uses the file chooser and the same importer.
 
-Document roots are transient canvas nodes linked to the persistent extracted concepts. Shared concepts bridge their source documents. Visible document labels track projected graph positions. Clicking a document opens its source passages; clicking a concept opens the passages behind that concept. Canvas positions are not stored.
-
-Q&A defaults to all documents. Search in can limit retrieval to a single document. Citation buttons open exact quotes and Back to answer restores the retained response. The server applies the document filter during vector retrieval, before generating the answer. Quizzes remain a secondary tool.
-
-## Verification
-
-`python scripts/check.py` runs 52 backend tests, five folder traversal tests using Node's built-in runner, and strict TypeScript checks. `npm run build` creates the production bundle. No dependencies were added.
-
-Browser verification used an isolated local library so the user's existing notes were not modified. The native folder chooser imported two original test notes, including one nested file. Both became ready, with shared concepts and named document nodes. A question scoped to review.md returned a citation only from that document. The 390px layout showed Q&A first, retained Add folder and had no horizontal document overflow. Native operating-system drag gestures were not automated; the same recursive traversal used by drops has unit coverage.
-
-The two independent Impeccable reviews covered design and source/error evidence. Their original findings were corrected and reviewed again: processing feedback, citation return, persistent document labels, mobile Q&A priority, keyboard focus, folder availability, partial failures and source selection. The detector ran once, with one advisory on inactive historical canvas styles. No visual overlay is claimed. Questions skipped: the user specified the headline, progression and Q&A priority and requested implementation.
-
-## Still missing
-
-- Real-provider evaluation: mock mode returns retrieved excerpts. Live answer quality, retrieval relevance and reliable abstention on unsupported questions need evaluation.
-- Conversation history: questions are independent; follow-up context and saved conversations are not implemented.
-- Source management: deletion, replacement/re-indexing, duplicate-file detection and PDF-page previews are not implemented.
-- OCR: scanned PDFs still require text extraction outside this app.
-- Deployment: authentication, production limits, rate limiting and hosting remain part of the shipping work.
-
-Folder APIs vary by browser. Directory paths are used for import feedback, but the API currently stores the source filename rather than a full folder hierarchy. Graph document links show source membership; they do not claim a causal or semantic relationship between every linked document.
+Folder APIs vary by browser. The API stores source filenames rather than a full folder hierarchy. See [Phase 6](phase-6.md) for current verification and [the demo](demo.md) for a short walkthrough.

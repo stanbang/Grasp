@@ -28,7 +28,7 @@ The repository is named Grasp. The user wants quiet naming and an attractive wor
 
 ## Capabilities and Constraints
 
-Work in six phases and stop for approval between them. Phase 1 includes schemas, local storage initialization, provider/mock configuration, sample notes, a health endpoint and a lightweight workspace preview. Upload and ingestion begin in Phase 2. Interactive 3D begins in Phase 3. Chat begins in Phase 4. Mastery quizzes begin in Phase 5. Evaluation and shipping checks finish Phase 6.
+The user authorized completion of all six phases. The app includes ingestion, the interactive map, cited conversational Q&A, mastery quizzes, retrieval evaluation and self-hosting controls. Dropping a file reveals the question box on the same page, with the graph behind it. Source lists, saved conversations and quizzes belong in explicitly opened dialogs.
 
 The final Progress schema has masteredCount, exploredCount, totalNodes, coveragePercent and crossDocLinks. XP, levels, streaks and bonuses are excluded. Node positions are computed on the client and never stored. Every node retains source chunk IDs. Real document text stays local in mock mode; live mode sends selected text to the configured provider.
 
@@ -38,7 +38,7 @@ Dark, calm, scientific star-chart feel. One cool accent for selected content and
 
 ## Evidence on Hand
 
-The user's supplied specification establishes the behavior and schemas. Phase 1 provides the workspace preview; Phase 2 provides ingestion and persistent source-linked graph data. Two original sample notes demonstrate cross-document merging. Mock-mode tests verify the pipeline and contracts. There are no user study results, semantic retrieval benchmarks or completed mastery results to claim.
+The user's supplied specification establishes the behavior and schemas. Two original notes demonstrate cross-document merging. Automated tests verify provenance, conversations, lifecycle and mastery. The 20-question retrieval check uses only three sample chunks, so it measures pipeline behavior rather than broad semantic quality. There are no user-study results to claim.
 
 ## Product Principles
 

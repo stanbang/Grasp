@@ -10,7 +10,7 @@ The final mastery specification takes precedence over the earlier XP wording. No
 
 ## Storage
 
-SQLite holds documents, extracted source pages, chunks, nodes, edges, concept embeddings, cross-document provenance, event history and a single progress record. SQLModel creates missing tables at startup. Foreign keys and WAL are enabled. There are no layout-coordinate columns. Changes to existing columns need explicit migrations before existing study data can be reused.
+SQLite holds documents, extracted source pages, chunks, nodes, edges, concept embeddings, cross-document provenance, event history, file digests, conversations, chat turns, pending cleanup records and a single progress record. SQLModel creates missing tables at startup. Foreign keys and WAL are enabled. There are no layout-coordinate columns. Changes to existing columns need explicit migrations before existing study data can be reused.
 
 Chroma stores chunk vectors in `data/chroma`. The collection name includes a hash of the embedding provider/model identity. Mock embeddings use a separate collection so changing to a live provider cannot silently mix vector spaces. Chroma's default embedding function is disabled; reading health does not download a model. The LangChain Chroma wrapper receives the configured Embeddings implementation when needed.
 
@@ -18,7 +18,7 @@ The sample reader reads `samples/memory-and-learning.md`. Reading it does not in
 
 ## Ingestion
 
-Uploads create a queued Document and a durable event, then enter a single worker. PDFs use PyPDFLoader in page mode; UTF-8 text and Markdown form one page. RecursiveCharacterTextSplitter preserves whitespace and adds each chunk's start index. Every span is checked against the extracted source page before indexing.
+Uploads create a queued Document and a durable event, then enter a single worker. PDFs use PyPDFLoader in page mode; UTF-8 text and Markdown form one page. With OCR enabled, textless PDF pages are rendered by Poppler and recognized by local Tesseract. Their recognized page text becomes the citation source. RecursiveCharacterTextSplitter preserves whitespace and adds each chunk's start index. Every span is checked against the extracted source page before indexing.
 
 Chroma receives chunk text, IDs and source metadata through the configured Embeddings implementation. Extraction runs in batches of eight chunks with a remaining concept budget. Output must pass Pydantic validation, use source IDs from its batch and refer only to returned concept labels. Schema or grounding failures get one retry.
 
@@ -32,11 +32,11 @@ Event IDs support SSE replay through Last-Event-ID or an after cursor. On restar
 
 ## Model adapters
 
-`LLMClient` accepts a LangChain BaseChatModel. Live providers use `.with_structured_output()` with a Pydantic schema. Invalid output is retried once. Provider network errors are surfaced without a hidden retry loop.
+`LLMClient` accepts a LangChain BaseChatModel. Live providers use `.with_structured_output()` and validate each result with its Pydantic schema. Gemini receives a reduced JSON schema without string-length and array-cardinality constraints because its schema compiler rejected the nested extraction limits. The complete Pydantic constraints and grounding checks still run locally. Invalid output is retried once. Provider network errors are surfaced without a hidden retry loop.
 
 FakeListChatModel does not implement structured tool binding, so `FixtureChatModel` composes it with LangChain's PydanticOutputParser. This keeps the same `with_structured_output` call and validation in mock mode. Fixtures are supplied for the requested schema; the mock never pretends to answer an arbitrary document question.
 
-The mock Embeddings implementation hashes normalized tokens into 256 dimensions and normalizes the vector. It is deterministic and makes no network calls. It supports storage and pipeline tests, not claims about semantic retrieval quality. Live retrieval quality must be measured separately in Phase 6.
+The mock Embeddings implementation hashes normalized tokens into 256 dimensions and normalizes the vector. It is deterministic and makes no network calls. It supports storage and pipeline tests, not claims about semantic retrieval quality. The evaluation script reports retrieval ranks separately for mock and live embeddings. The original sample has only three chunks, so Hit@5 provides a pipeline check rather than a broad relevance benchmark.
 
 ## Current endpoints
 
@@ -56,8 +56,18 @@ The mock Embeddings implementation hashes normalized tokens into 256 dimensions 
 
 Health checks verify local stores and the presence of provider configuration. They do not validate a live provider key or make a paid request. FastAPI's API reference is at `/docs`.
 
-## Later phases
+## Questions and mastery
 
-Phase 3 adds the lazy-loaded 3D canvas and its source inspector. Phase 4 adds grounded chat. Phase 5 adds quiz grading and mastery updates. Phase 6 adds retrieval evaluation and shipping limits. The current React workspace remains the Phase 1 preview.
+POST /chat retrieves vector matches under the supplied document scope, resolves them to committed SQLite chunks, then generates an answer strictly from those passages. Citations must match exact quote substrings, IDs and pages. The server derives referenced node IDs from retrieved chunk membership. Recent saved turns supply context for follow-up questions but never count as source evidence. Unsupported answers may abstain without citations. Conversation scope is sent with each request; opening an old conversation searches the current workspace.
 
-For PDF text, PyPDFLoader page metadata is zero-based. Ingestion converts it to the public one-based page convention. Character offsets are Unicode code points in the extracted page text; they are not byte positions or PDF text-box coordinates. The browser must account for JavaScript's UTF-16 indexing when applying them.
+Quiz generation reads a concept and neighbour sources. Three questions each carry server-side evidence and an answer index. The public response hides answer keys until POST /quiz/grade consumes the attempt. Passing two questions marks the assessed concept mastered. Progress is recomputed from persisted nodes.
+
+## Lifecycle and serving
+
+New uploads are deduplicated by SHA256 bytes under an upload lock. Re-indexing and replacement process a new version before removing the old one. Removal repairs shared provenance, removes orphan graph records, invalidates affected quizzes and records a cleanup tombstone in the same SQLite transaction. Native vector/original cleanup follows; failures remain queued for startup retry. Historical conversation quotes remain until their conversation is removed.
+
+The production ASGI application mounts the API at /api and serves the Vite bundle at /. Request controls apply an optional owner token, mutation rate limits and streamed body limits. Fetch-based SSE can carry the token and replay cursor. The app has no account or tenant separation. See [deployment](deployment.md).
+
+Additional endpoints are POST /chat, POST /quiz, POST /quiz/grade, POST /nodes/explore, POST /demo, GET /documents/{id}/original, DELETE /documents/{id}, PUT /documents/{id}, POST /documents/{id}/reindex, GET/POST /conversations and GET/DELETE /conversations/{id}. OpenAPI documents their typed requests and responses, except raw file/stream responses.
+
+For PDF text, PyPDFLoader page metadata is zero-based. Ingestion converts it to the public one-based page convention. Character offsets are Unicode code points in extracted or OCR-recognized page text; they are not byte positions or PDF text-box coordinates. The browser highlights exact quote strings without treating offsets as JavaScript UTF-16 indices.

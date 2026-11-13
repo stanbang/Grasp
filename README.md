@@ -1,73 +1,77 @@
 # Grasp
 
-A local study workspace for tracing concepts and answers back to your notes. Phases 1–5 are implemented: upload notes, explore a 3D concept graph, ask questions with source citations, and check understanding with server-graded quizzes. The app runs locally in deterministic mock mode without a key.
+A document Q&A app with an interactive 3D mindmap. Drop notes onto the page, ask a question and inspect the exact passages behind the answer. PDF, Markdown and UTF-8 text files are supported. The full pipeline also runs offline with deterministic fixtures.
 
 ## Run
 
-Install Python 3.11 and a supported Node.js release (20.19+ or 22.12+), then run this command from the repository root:
+Install Python 3.11 and Node.js 20.19+ or 22.12+, then run from the repository root:
 
 ```sh
 python scripts/dev.py --setup
 ```
 
-On Windows with several Python versions, use `py -3.11 scripts/dev.py --setup`. The command creates `.venv`, installs the locked dependencies, copies `.env.example` to `.env` if needed and starts both servers. The default `MOCK_LLM=1` needs no API key. Open `http://127.0.0.1:5173`. Ctrl+C stops both servers.
+On Windows with several Python versions, use `py -3.11 scripts/dev.py --setup`. Setup creates `.venv`, installs the locked dependencies, copies `.env.example` when needed and starts both servers. Open [the workspace](http://127.0.0.1:5173). Later runs use `python scripts/dev.py`. Ctrl+C stops both servers.
 
-On later runs, use `python scripts/dev.py`. Use `python scripts/dev.py --install-only` to install without starting the app.
+The default `MOCK_LLM=1` needs no key. Mock answers show retrieved excerpts; they do not simulate generated explanations.
 
-## Try the study workspace
+## Use
 
-The opening screen says “drop folder to get started”. Drop a folder, choose a folder, or select multiple PDF/Markdown/TXT files. The mindmap expands as processing starts, showing named document roots and shared concepts. Q&A opens first; choose one document or search all notes. Select a concept to read its named source passages. Use **Ask your notes** for cited answers and **Check understanding** for a three-question quiz. Passing two questions marks the selected concept mastered. No XP or streaks are used.
+The landing headline is “drop folder to get started”. Drop a file or folder anywhere on the page. A question box appears over the interactive mindmap on that same page. Drops prevent the browser from opening the file. Choose a file and Choose folder are explicit picker alternatives.
 
-See [the folder-first walkthrough](docs/folder-first.md) and [the Phases 3–5 walkthrough](docs/phase-5.md).
+Ask a question, then ask a follow-up. Citation buttons open exact quotes and the extracted page in a dialog. Original PDFs appear inline when available. There is no document list or connected-ideas panel on the main screen. Workspace options contains saved conversations, source replacement, re-indexing, removal and three-question mastery checks. Passing at least two marks the assessed concept mastered; there are no points or streaks.
 
-## API tools
+New imports scope questions to successfully imported notes. A new conversation searches the workspace. Duplicate file bytes reuse the existing document. Replacing or re-indexing a source retains the original if processing fails.
 
-Open `http://127.0.0.1:8000/docs` for uploads, graph records, chat and quiz endpoints.
+## Configure AI and OCR
 
-For a repeatable mock demonstration, run this in a second terminal while the API is running:
+Keep keys in the ignored root `.env`, never in frontend variables. For Gemini:
 
-```sh
-python scripts/verify_ingestion.py
+```dotenv
+MOCK_LLM=0
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-3.1-flash-lite
+EMBEDDING_MODEL=gemini-embedding-001
+GOOGLE_API_KEY=your-key
+DATA_DIR=data/gemini
 ```
 
-It uploads two original samples, checks exact source spans and event replay, and verifies that their shared concepts merge. The sample uploads remain in local storage. See [the Phase 2 checks](docs/phase-2.md) for verification and limitations.
+Model availability depends on the account; consult [Google's model reference](https://ai.google.dev/gemini-api/docs/models). OpenAI uses `LLM_PROVIDER=openai`, `OPENAI_API_KEY` and matching chat/embedding model names. Restart after changing configuration. Keep a separate data directory when switching embedding providers, or re-index existing notes.
 
-## Check and build
+Live mode sends selected passages and recent conversation context to the configured provider. Mock mode keeps document processing local. Native OCR also stays local: the container includes Poppler and Tesseract with English recognition. Set `OCR_ENABLED=1` to read PDF pages without extractable text. Other languages need their Tesseract language packs. On a native installation, install both tools and place them on PATH first.
+
+## Check
 
 ```sh
 python scripts/check.py
 npm run build
 ```
 
-The check command verifies generated contracts, runs backend unit and HTTP tests with pytest, and checks strict TypeScript. The build writes the web bundle to `apps/web/dist`. Runtime requirements are declared in `apps/api/requirements.in`; test dependencies are in `apps/api/requirements-dev.in`. The combined development environment is locked in `apps/api/requirements.lock`. Frontend versions are locked in `apps/web/package-lock.json`.
+The check command verifies generated Pydantic/TypeScript contracts, backend tests, folder traversal and file-drop tests, and strict TypeScript. The web bundle is written to `apps/web/dist`; the 3D engine is loaded separately.
 
-## Model configuration
+Using the repository's virtual-environment Python, run `apps/api/eval/run.py` for the 20-case offline retrieval check. Add `--live --output docs/evaluation-live.json` for configured provider embeddings. `scripts/verify_live.py` checks generated answers, exact citations, follow-up persistence, unsupported questions and quiz grading in a temporary library. Live checks make provider requests and can incur charges.
 
-Keep keys in the root `.env`. For OpenAI, set `MOCK_LLM=0`, `LLM_PROVIDER=openai`, OPENAI_API_KEY, LLM_MODEL and EMBEDDING_MODEL. For Gemini, use `LLM_PROVIDER=gemini` and GOOGLE_API_KEY with Gemini model names. Restart the servers after changing configuration. Both providers use LangChain interfaces and validate structured responses with Pydantic.
+## Self-host
 
-Mock extraction derives deterministic fixtures from uploaded headings and passages, then validates them through FakeListChatModel. Embeddings use local token hashes. Mock mode makes no model calls and downloads no embedding model. It does not measure semantic extraction or retrieval quality. Live mode sends source chunks and concept descriptions to the configured provider. Do not commit `.env`, uploaded notes or the `data` directory.
+With Docker running:
+
+```sh
+docker compose up --build -d
+```
+
+Open [the container preview](http://127.0.0.1:8080). The frontend and API share one origin, the container runs as a non-root user and local study data uses a named volume. Compose reads provider configuration from `.env` and binds only to loopback.
+
+This is a single-owner app. Set a long `ACCESS_TOKEN` before exposing the API, use HTTPS at the host's reverse proxy and keep backups of the complete data volume. Token access is not a multi-user account system. See [deployment](docs/deployment.md) for limits, backup and verification instructions.
 
 ## Layout
 
 ```text
-apps/
-  api/app/          FastAPI, ingestion, source stores and model adapters
-  api/tests/        Contracts, chunking, merging, storage and HTTP checks
-  web/src/          React workspace and generated TypeScript contracts
-docs/              Architecture, schemas and phase verification
-samples/           Two original study notes with shared concepts
-scripts/           Setup, launcher, contracts and ingestion verification
+apps/api/app/       API, ingestion, provenance, conversations and mastery
+apps/api/tests/     Storage, source spans, merging and HTTP checks
+apps/api/eval/      Original 20-case retrieval evaluation
+apps/web/src/       React canvas, questions, source dialogs and contracts
+docs/              Schemas, architecture, checks and demo instructions
+samples/           Original demonstration notes
+scripts/           Setup, contracts and repeatable verification
 ```
 
-## Phases
-
-1. Complete: scaffold, contracts, local stores and preview.
-2. Complete: document ingestion, extraction, merging and SSE.
-3. Complete: interactive 3D canvas and source panels.
-4. Complete: grounded chat with exact citations.
-5. Complete: mastery quizzes and persistent progress.
-6. Retrieval evaluation and shipping checks.
-
-Each phase ends at a runnable checkpoint. The next phase starts after approval. The final mastery specification has no XP, levels or streaks.
-
-[Architecture](docs/architecture.md) · [Data contracts](docs/schemas.md) · [Design review](docs/design-review-phase-1.md) · [Working rules](AGENTS.md) · [Product](PRODUCT.md) · [Design](DESIGN.md)
+All six phases are implemented. [Phase 6](docs/phase-6.md) records verification and remaining deployment limits. Earlier phase documents describe their historical checkpoints. See [the demo script](docs/demo.md), [architecture](docs/architecture.md), [contracts](docs/schemas.md) and [working rules](AGENTS.md).
