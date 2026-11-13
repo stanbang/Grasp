@@ -1,51 +1,801 @@
-import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, FolderOpen, Orbit, Paperclip, Plus, Settings, Network, Pause, Play } from 'lucide-react';
-import { Mindmap } from './Mindmap';
-import { DocumentOrbit } from './DocumentOrbit';
-import { DocumentInspector } from './DocumentInspector';
-import { ConceptView, SourceView, WorkspaceSettings } from './WorkspaceDialogs';
-import { IconButton } from './IconButton';
-import { api, apiFetch, ApiError, documentEvents, setAccessToken } from './client';
-import { droppedFiles, isSupportedNote, installFileDropHandlers } from './folder-upload';
-import { useStudyGraph } from './study-store';
-import { updateUpload, type UploadState } from './upload-state';
-import type { ChatResponse, Citation, Document, DocumentsResponse, GraphResponse, Turn } from './types/contracts';
-import './preview/preview.css';
-import './workspace.css';
-function savedConversation(){try{return localStorage.getItem('grasp-conversation');}catch{return null;}}
-export function App(){
- const {graph,setGraph}=useStudyGraph();const [documents,setDocuments]=useState<Document[]>([]),[view,setView]=useState<'documents'|'knowledge'>('documents');
- const [question,setQuestion]=useState(''),[turns,setTurns]=useState<Turn[]>([]),[conversation,setConversation]=useState<string|null>(savedConversation),[busy,setBusy]=useState(false),[pending,setPending]=useState('');
- const [jobs,setJobs]=useState<UploadState[]>([]),[reading,setReading]=useState(false),[arriving,setArriving]=useState<string|null>(null),[dragging,setDragging]=useState(false),[error,setError]=useState('');
- const [selected,setSelected]=useState<string|null>(null),[citation,setCitation]=useState<Citation|null>(null),[scope,setScope]=useState<string[]>([]),[inspector,setInspector]=useState(false),[concept,setConcept]=useState<string|null>(null),[settings,setSettings]=useState(false),[paused,setPaused]=useState(false),[highlight,setHighlight]=useState<string[]>([]),[mode,setMode]=useState('Connecting');
- const [locked,setLocked]=useState(false),[token,setToken]=useState('');const fileInput=useRef<HTMLInputElement>(null),folderInput=useRef<HTMLInputElement>(null),input=useRef<HTMLTextAreaElement>(null),canvas=useRef<HTMLElement>(null),toolbar=useRef<HTMLElement>(null),thread=useRef<HTMLDivElement>(null);
- const resuming=useRef(new Set<string>());const active=useRef(false),files=useRef(new Map<string,File>()),controllers=useRef(new Set<AbortController>()),latestDrop=useRef<(transfer:DataTransfer)=>Promise<void>>(async()=>{});
- function remember(id:string|null){setConversation(id);try{if(id)localStorage.setItem('grasp-conversation',id);else localStorage.removeItem('grasp-conversation');}catch{}}
- function failure(value:unknown){if(value instanceof ApiError&&value.status===401)setLocked(true);setError(value instanceof Error?value.message:String(value));}
- async function refresh(){const [data,docs,health]=await Promise.all([api<GraphResponse>('/graph'),api<DocumentsResponse>('/documents'),api<{llm:{provider:string}}>('/health')]);setGraph(data);setDocuments(docs.documents);setMode(health.llm.provider);}
- async function openConversation(id:string){if(busy)return;const result=await api<{turns:Turn[]}>(`/conversations/${id}`);remember(id);setTurns(result.turns);}
- useEffect(()=>{folderInput.current?.setAttribute('webkitdirectory','');void refresh().then(()=>{const id=savedConversation();if(id)void openConversation(id).catch(e=>{if(e instanceof ApiError&&e.status===404)remember(null);else failure(e);});}).catch(failure);return()=>controllers.current.forEach(controller=>controller.abort());},[]);
- useEffect(()=>installFileDropHandlers(window,transfer=>{void latestDrop.current(transfer);},setDragging),[]);
- useEffect(()=>{if(input.current){input.current.style.height='auto';input.current.style.height=Math.min(input.current.scrollHeight,130)+'px';}},[question]);
- useEffect(()=>{thread.current?.scrollTo({top:thread.current.scrollHeight});},[turns,pending,busy]);
- useEffect(()=>{const media=window.matchMedia('(max-width:700px)');function update(){if(canvas.current)canvas.current.inert=inspector&&media.matches;if(toolbar.current)toolbar.current.inert=inspector&&media.matches;}update();media.addEventListener('change',update);return()=>{media.removeEventListener('change',update);if(canvas.current)canvas.current.inert=false;if(toolbar.current)toolbar.current.inert=false;};},[inspector]);
- useEffect(()=>{if(active.current)return;for(const doc of documents){if(['done','failed'].includes(doc.status)||resuming.current.has(doc.id))continue;resuming.current.add(doc.id);const controller=new AbortController();controllers.current.add(controller);setJobs(old=>[...old,{name:doc.name,docId:doc.id,status:doc.status as UploadState['status'],message:'Reconnecting to processing',cursor:0}]);void documentEvents(doc.id,event=>updateJob(doc.name,job=>updateUpload(job,event)),controller.signal).then(refresh).catch(value=>{updateJob(doc.name,job=>({...job,status:'failed',message:'Connection interrupted. Select the source again or reopen the workspace to resume.'}));failure(value);}).finally(()=>{controllers.current.delete(controller);resuming.current.delete(doc.id);});}},[documents]);
- function updateJob(name:string,update:(old:UploadState)=>UploadState){setJobs(old=>old.map(job=>job.name===name?update(job):job));}
- async function importFiles(incoming:File[]){if(active.current){setError('Wait for this batch to finish before adding more files.');return;}const valid=incoming.filter(isSupportedNote);if(!valid.length){setError('Choose PDF, Markdown or TXT files.');return;}const known=new Set(documents.map(doc=>doc.id));active.current=true;setReading(true);setError('');setJobs(valid.map((file,index)=>({name:`${index+1}. ${file.name}`,status:'uploading',message:'Waiting to upload',cursor:0})));let last:string|null=null;
- try{for(const [index,file]of valid.entries()){const name=`${index+1}. ${file.name}`;files.current.set(name,file);const controller=new AbortController();controllers.current.add(controller);try{updateJob(name,job=>({...job,message:'Uploading document'}));const form=new FormData();form.append('file',file);const response=await apiFetch('/documents',{method:'POST',body:form,signal:controller.signal});const doc=await response.json() as Document;updateJob(name,job=>({...job,docId:doc.id}));await documentEvents(doc.id,event=>{updateJob(name,job=>updateUpload(job,event));if(event.type==='complete'&&event.document){const finished=event.document;setDocuments(old=>[...old.filter(doc=>doc.id!==finished.id),finished]);}if(event.type==='node'&&event.node){const node=event.node;setGraph(old=>({...old,nodes:[...old.nodes.filter(n=>n.id!==node.id),node]}));}if(event.type==='edge'&&event.edge){const edge=event.edge;setGraph(old=>({...old,edges:[...old.edges.filter(e=>e.id!==edge.id),edge]}));}},controller.signal);last=doc.id;files.current.delete(name);await refresh();}catch(e){updateJob(name,job=>({...job,status:'failed',message:e instanceof Error?e.message:String(e)}));failure(e);}finally{controllers.current.delete(controller);}}}finally{active.current=false;setReading(false);if(valid.length===1&&last){setSelected(last);if(!known.has(last))setArriving(last);setView('documents');}}}
- latestDrop.current=async transfer=>{try{const result=await droppedFiles(transfer);await importFiles(result.files);if(result.errors.length)setError(result.errors.join(' '));}catch(e){failure(e);}};
- async function ask(){if(busy||!question.trim()||!documents.some(doc=>doc.status==='done'))return;const value=question.trim();setBusy(true);setPending(value);setQuestion('');setError('');try{let id=conversation;if(!id){id=(await api<{id:string}>('/conversations',{})).id;remember(id);}const response=await api<ChatResponse>('/chat',{question:value,conversationId:id,docIds:scope});setTurns(old=>[...old,{id:Date.now(),question:value,response,createdAt:new Date().toISOString()}]);setHighlight(response.referencedNodeIds);await refresh();}catch(e){setQuestion(current=>current||value);failure(e);}finally{setBusy(false);setPending('');input.current?.focus();}}
- function inspect(id:string,source:Citation|null=null){setSelected(id);setCitation(source);setInspector(true);}
- const source=documents.find(doc=>doc.id===selected),hasSources=documents.some(doc=>doc.status==='done'),processing=reading||!!arriving;
- return <div className="design-preview live-workspace"><div className={`proposed-workspace ${inspector?'inspector-open':''} ${turns.length||busy?'answer-visible':''}`}><header className="workspace-topbar" ref={toolbar}><div className="workspace-wordmark"><Orbit size={23}/><span>grasp</span><small>Personal workspace</small></div><div className="view-switch"><button aria-pressed={view==='documents'} onClick={()=>setView('documents')}><Orbit size={15}/>Documents</button><button aria-pressed={view==='knowledge'} onClick={()=>setView('knowledge')}><Network size={15}/>Knowledge</button></div><div className="workspace-utilities"><IconButton icon={Plus} label="Start new conversation" disabled={busy} onClick={()=>{remember(null);setTurns([]);setScope([]);}}/><IconButton icon={Settings} label="Workspace settings" disabled={busy} onClick={()=>setSettings(true)}/></div></header>
- <main className="proposed-canvas" ref={canvas}><div className={view==='documents'?'visualization-layer':'visualization-layer hidden-view'}><DocumentOrbit documents={documents.filter(doc=>doc.status==='done')} selected={selected} paused={paused||inspector} onSelect={id=>inspect(id)} arrivingId={arriving} onArrived={()=>setArriving(null)}/></div><div className={view==='knowledge'?'visualization-layer':'visualization-layer hidden-view'}><Mindmap active={view==='knowledge'} graph={graph} highlight={selected?[...highlight,...graph.nodes.filter(n=>n.docIds.includes(selected)).map(n=>n.id)]:highlight} onSelect={id=>{setConcept(id);void api('/nodes/explore',{nodeId:id}).then(refresh).catch(failure);}}/></div>
- <section className={`research-conversation ${turns.length||busy?'with-answer':''}`} aria-label="Document questions"><div className="preview-thread" ref={thread} aria-live="polite">{turns.map(turn=><article key={turn.id}><p className="sample-question">{turn.question}</p><p>{turn.response.answer}</p><div className="source-buttons">{turn.response.citations.map((source,index)=><button className="named-citation" key={source.chunkId+index} onClick={()=>inspect(source.docId,source)}><Paperclip size={13}/>{documents.find(doc=>doc.id===source.docId)?.name||'Saved source'} · p. {source.page}</button>)}</div></article>)}{busy&&<article><p className="sample-question">{pending}</p><p role="status">Reading the relevant passages…</p></article>}</div>
- <div data-composer-anchor className={`composer-transition ${processing?'composer-processing':''}`}>
- {processing?<div className="live-processing" role="status"><div className="processing-loop"><div className="processing-track"/><div className="processing-arc"/><div className={`processing-file ${arriving?'transfer-owner-hidden':''}`}><Paperclip size={30}/><span>{jobs.find(job=>job.status!=='done'&&job.status!=='failed')?.name||jobs.at(-1)?.name}</span></div></div><p>{arriving?'Ready to explore':jobs.find(job=>job.status!=='done'&&job.status!=='failed')?.message||'Finishing this batch'}</p>{jobs.length>1&&<ul>{jobs.map(job=><li key={job.name}>{job.name}: {job.status}</li>)}</ul>}</div>:<form className="research-composer" onSubmit={event=>{event.preventDefault();void ask();}}><div className="composer-scope">{scope.length?`Asking ${documents.find(doc=>doc.id===scope[0])?.name||'selected source'}`:'Ask across your documents'}{scope.length>0&&<button type="button" onClick={()=>setScope([])}>Use all sources</button>}</div><label htmlFor="question">{hasSources?'what question would you like to ask':'drop folder to get started'}</label><textarea ref={input} id="question" value={question} onChange={event=>setQuestion(event.target.value)} placeholder={hasSources?'Ask about your documents…':'Add a source before asking a question.'} maxLength={2000} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();void ask();}}}/><div className="composer-actions"><div><IconButton icon={Paperclip} label="Add documents" onClick={()=>fileInput.current?.click()}/><IconButton icon={FolderOpen} label="Upload folder" onClick={()=>folderInput.current?.click()}/>{!hasSources&&<button type="button" onClick={()=>{void api('/demo',{}).then(refresh).catch(failure);}}>Load sample</button>}</div><IconButton icon={ArrowUp} label="Ask question" disabled={busy||!hasSources||!question.trim()} onClick={()=>void ask()}/></div></form>}</div>
- {!processing&&jobs.some(job=>!['done','failed'].includes(job.status))&&<p role="status" className="composer-note">Sources are processing in the background.</p>}{jobs.filter(job=>job.status==='failed').map(job=><div className="upload-failure" key={job.name}><p>{job.name}: {job.message}</p><button onClick={()=>{const file=files.current.get(job.name);if(file)void importFiles([file]);else fileInput.current?.click();}}>Retry</button><button onClick={()=>setJobs(old=>old.filter(value=>value.name!==job.name))}>Dismiss</button></div>)}{error&&<p className="minimal-error" role="alert">{error}</p>}<p className="composer-note">{mode==='mock'?'Offline mock · answers show retrieved excerpts':`${mode} · answers cite your sources`}</p></section>
- <div className="canvas-navigation"><span>{documents.filter(doc=>doc.status==='done').length} documents · PDF / MD / TXT</span><IconButton icon={paused?Play:Pause} label={paused?'Resume orbit':'Pause orbit'} onClick={()=>setPaused(!paused)} pressed={paused}/></div></main>
- {inspector&&source&&<DocumentInspector key={source.id+String(citation?.chunkId)} document={source} citation={citation} graph={graph} onClose={()=>setInspector(false)} onScope={()=>{setScope([source.id]);setInspector(false);input.current?.focus();}} onKnowledge={()=>{setView('knowledge');setInspector(false);}} onRemoved={()=>{setInspector(false);setSelected(null);setScope(old=>old.filter(id=>id!==source.id));void refresh();}}/>}</div>
- <input className="hidden-file" ref={fileInput} type="file" multiple accept=".pdf,.md,.txt" onChange={event=>{void importFiles(Array.from(event.target.files||[]));event.target.value='';}}/><input className="hidden-file" ref={folderInput} type="file" multiple onChange={event=>{void importFiles(Array.from(event.target.files||[]));event.target.value='';}}/>
- {dragging&&<div className="preview-drop"><Paperclip size={30}/><p>Drop to add documents</p></div>}{inspector&&citation&&!source&&<SourceView citation={citation} onClose={()=>setInspector(false)}/>} {concept&&graph.nodes.find(node=>node.id===concept)&&<ConceptView node={graph.nodes.find(node=>node.id===concept)!} graph={graph} onSelect={setConcept} onClose={()=>setConcept(null)} onSource={value=>{setConcept(null);inspect(value.docId,value);}}/>}{settings&&<WorkspaceSettings onClose={()=>setSettings(false)} onRefresh={refresh} onConversation={openConversation} onConversationRemoved={id=>{if(id===conversation){remember(null);setTurns([]);}}} onDocumentChanged={(oldId,newId)=>{setScope(old=>old.includes(oldId)?old.filter(id=>id!==oldId).concat(newId?[newId]:[]):old);setSelected(newId||null);setInspector(false);}}/>}
- {locked&&<div className="access-gate"><form onSubmit={event=>{event.preventDefault();setAccessToken(token);void refresh().then(()=>setLocked(false)).catch(failure);}}><h2>Open your workspace</h2><label htmlFor="token">Workspace access token</label><input id="token" type="password" value={token} onChange={event=>setToken(event.target.value)}/><button>Unlock</button></form></div>}</div>;
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowUp,
+  FolderOpen,
+  Orbit,
+  Paperclip,
+  Plus,
+  Settings,
+  Network,
+  Pause,
+  Play,
+} from "lucide-react";
+import { Mindmap } from "./Mindmap";
+import { DocumentOrbit } from "./DocumentOrbit";
+import { DocumentInspector } from "./DocumentInspector";
+import { ConceptView, SourceView, WorkspaceSettings } from "./WorkspaceDialogs";
+import { IconButton } from "./IconButton";
+import {
+  api,
+  apiFetch,
+  ApiError,
+  documentEvents,
+  setAccessToken,
+} from "./client";
+import {
+  droppedFiles,
+  isSupportedNote,
+  installFileDropHandlers,
+} from "./folder-upload";
+import { useStudyGraph } from "./study-store";
+import { updateUpload, type UploadState } from "./upload-state";
+import type {
+  ChatResponse,
+  Citation,
+  Document,
+  DocumentsResponse,
+  GraphResponse,
+  Turn,
+} from "./types/contracts";
+import "./preview/preview.css";
+import "./workspace.css";
+function savedConversation() {
+  try {
+    return localStorage.getItem("grasp-conversation");
+  } catch {
+    return null;
+  }
+}
+export function App() {
+  const { graph, setGraph } = useStudyGraph();
+  const [documents, setDocuments] = useState<Document[]>([]),
+    [view, setView] = useState<"documents" | "knowledge">("documents");
+  const [question, setQuestion] = useState(""),
+    [turns, setTurns] = useState<Turn[]>([]),
+    [conversation, setConversation] = useState<string | null>(
+      savedConversation,
+    ),
+    [busy, setBusy] = useState(false),
+    [pending, setPending] = useState("");
+  const [jobs, setJobs] = useState<UploadState[]>([]),
+    [reading, setReading] = useState(false),
+    [arriving, setArriving] = useState<string | null>(null),
+    [dragging, setDragging] = useState(false),
+    [error, setError] = useState("");
+  const [selected, setSelected] = useState<string | null>(null),
+    [citation, setCitation] = useState<Citation | null>(null),
+    [scope, setScope] = useState<string[]>([]),
+    [inspector, setInspector] = useState(false),
+    [concept, setConcept] = useState<string | null>(null),
+    [settings, setSettings] = useState(false),
+    [paused, setPaused] = useState(false),
+    [highlight, setHighlight] = useState<string[]>([]),
+    [mode, setMode] = useState("Connecting");
+  const [locked, setLocked] = useState(false),
+    [token, setToken] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null),
+    folderInput = useRef<HTMLInputElement>(null),
+    input = useRef<HTMLTextAreaElement>(null),
+    canvas = useRef<HTMLElement>(null),
+    toolbar = useRef<HTMLElement>(null),
+    thread = useRef<HTMLDivElement>(null);
+  const inspectorOpener = useRef<HTMLElement | null>(null);
+  const resuming = useRef(new Set<string>());
+  const active = useRef(false),
+    files = useRef(new Map<string, File>()),
+    controllers = useRef(new Set<AbortController>()),
+    latestDrop = useRef<(transfer: DataTransfer) => Promise<void>>(
+      async () => {},
+    );
+  function remember(id: string | null) {
+    setConversation(id);
+    try {
+      if (id) localStorage.setItem("grasp-conversation", id);
+      else localStorage.removeItem("grasp-conversation");
+    } catch {}
+  }
+  function failure(value: unknown) {
+    if (value instanceof ApiError && value.status === 401) setLocked(true);
+    setError(value instanceof Error ? value.message : String(value));
+  }
+  async function refresh() {
+    const [data, docs, health] = await Promise.all([
+      api<GraphResponse>("/graph"),
+      api<DocumentsResponse>("/documents"),
+      api<{ llm: { provider: string } }>("/health"),
+    ]);
+    setGraph(data);
+    setDocuments(docs.documents);
+    setMode(health.llm.provider);
+  }
+  async function openConversation(id: string) {
+    if (busy) return;
+    const result = await api<{ turns: Turn[] }>(`/conversations/${id}`);
+    remember(id);
+    setTurns(result.turns);
+  }
+  useEffect(() => {
+    folderInput.current?.setAttribute("webkitdirectory", "");
+    void refresh()
+      .then(() => {
+        const id = savedConversation();
+        if (id)
+          void openConversation(id).catch((e) => {
+            if (e instanceof ApiError && e.status === 404) remember(null);
+            else failure(e);
+          });
+      })
+      .catch(failure);
+    return () =>
+      controllers.current.forEach((controller) => controller.abort());
+  }, []);
+  useEffect(
+    () =>
+      installFileDropHandlers(
+        window,
+        (transfer) => {
+          void latestDrop.current(transfer);
+        },
+        setDragging,
+      ),
+    [],
+  );
+  useEffect(() => {
+    if (input.current) {
+      input.current.style.height = "auto";
+      input.current.style.height =
+        Math.min(input.current.scrollHeight, 130) + "px";
+    }
+  }, [question]);
+  useEffect(() => {
+    thread.current?.scrollTo({ top: thread.current.scrollHeight });
+  }, [turns, pending, busy]);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width:700px)");
+    function update() {
+      if (canvas.current) canvas.current.inert = inspector && media.matches;
+      if (toolbar.current) toolbar.current.inert = inspector && media.matches;
+    }
+    update();
+    if (!inspector && inspectorOpener.current?.isConnected)
+      inspectorOpener.current.focus();
+    media.addEventListener("change", update);
+    return () => {
+      media.removeEventListener("change", update);
+      if (canvas.current) canvas.current.inert = false;
+      if (toolbar.current) toolbar.current.inert = false;
+    };
+  }, [inspector]);
+  useEffect(() => {
+    if (active.current) return;
+    for (const doc of documents) {
+      if (
+        ["done", "failed"].includes(doc.status) ||
+        resuming.current.has(doc.id)
+      )
+        continue;
+      resuming.current.add(doc.id);
+      const controller = new AbortController();
+      controllers.current.add(controller);
+      setJobs((old) => [
+        ...old,
+        {
+          name: doc.name,
+          docId: doc.id,
+          status: doc.status as UploadState["status"],
+          message: "Reconnecting to processing",
+          cursor: 0,
+        },
+      ]);
+      void documentEvents(
+        doc.id,
+        (event) => updateJob(doc.name, (job) => updateUpload(job, event)),
+        controller.signal,
+      )
+        .then(refresh)
+        .catch((value) => {
+          updateJob(doc.name, (job) => ({
+            ...job,
+            status: "failed",
+            message:
+              "Connection interrupted. Select the source again or reopen the workspace to resume.",
+          }));
+          failure(value);
+        })
+        .finally(() => {
+          controllers.current.delete(controller);
+          resuming.current.delete(doc.id);
+        });
+    }
+  }, [documents]);
+  function updateJob(name: string, update: (old: UploadState) => UploadState) {
+    setJobs((old) => old.map((job) => (job.name === name ? update(job) : job)));
+  }
+  async function importFiles(incoming: File[]) {
+    if (active.current) {
+      setError("Wait for this batch to finish before adding more files.");
+      return;
+    }
+    const valid = incoming.filter(isSupportedNote);
+    if (!valid.length) {
+      setError("Choose PDF, Markdown or TXT files.");
+      return;
+    }
+    const known = new Set(documents.map((doc) => doc.id));
+    active.current = true;
+    setReading(true);
+    setError("");
+    setJobs(
+      valid.map((file, index) => ({
+        name: `${index + 1}. ${file.name}`,
+        status: "uploading",
+        message: "Waiting to upload",
+        cursor: 0,
+      })),
+    );
+    let last: string | null = null;
+    try {
+      for (const [index, file] of valid.entries()) {
+        const name = `${index + 1}. ${file.name}`;
+        files.current.set(name, file);
+        const controller = new AbortController();
+        controllers.current.add(controller);
+        try {
+          updateJob(name, (job) => ({ ...job, message: "Uploading document" }));
+          const form = new FormData();
+          form.append("file", file);
+          const response = await apiFetch("/documents", {
+            method: "POST",
+            body: form,
+            signal: controller.signal,
+          });
+          const doc = (await response.json()) as Document;
+          updateJob(name, (job) => ({ ...job, docId: doc.id }));
+          await documentEvents(
+            doc.id,
+            (event) => {
+              updateJob(name, (job) => updateUpload(job, event));
+              if (event.type === "complete" && event.document) {
+                const finished = event.document;
+                setDocuments((old) => [
+                  ...old.filter((doc) => doc.id !== finished.id),
+                  finished,
+                ]);
+              }
+              if (event.type === "node" && event.node) {
+                const node = event.node;
+                setGraph((old) => ({
+                  ...old,
+                  nodes: [...old.nodes.filter((n) => n.id !== node.id), node],
+                }));
+              }
+              if (event.type === "edge" && event.edge) {
+                const edge = event.edge;
+                setGraph((old) => ({
+                  ...old,
+                  edges: [...old.edges.filter((e) => e.id !== edge.id), edge],
+                }));
+              }
+            },
+            controller.signal,
+          );
+          last = doc.id;
+          files.current.delete(name);
+          await refresh();
+        } catch (e) {
+          updateJob(name, (job) => ({
+            ...job,
+            status: "failed",
+            message: e instanceof Error ? e.message : String(e),
+          }));
+          failure(e);
+        } finally {
+          controllers.current.delete(controller);
+        }
+      }
+    } finally {
+      active.current = false;
+      setReading(false);
+      if (valid.length === 1 && last) {
+        setSelected(last);
+        if (!known.has(last)) setArriving(last);
+        setView("documents");
+      }
+    }
+  }
+  latestDrop.current = async (transfer) => {
+    try {
+      const result = await droppedFiles(transfer);
+      await importFiles(result.files);
+      if (result.errors.length) setError(result.errors.join(" "));
+    } catch (e) {
+      failure(e);
+    }
+  };
+  async function ask() {
+    if (
+      busy ||
+      !question.trim() ||
+      !documents.some((doc) => doc.status === "done")
+    )
+      return;
+    const value = question.trim();
+    setBusy(true);
+    setPending(value);
+    setQuestion("");
+    setError("");
+    try {
+      let id = conversation;
+      if (!id) {
+        id = (await api<{ id: string }>("/conversations", {})).id;
+        remember(id);
+      }
+      const response = await api<ChatResponse>("/chat", {
+        question: value,
+        conversationId: id,
+        docIds: scope,
+      });
+      setTurns((old) => [
+        ...old,
+        {
+          id: Date.now(),
+          question: value,
+          response,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      setHighlight(response.referencedNodeIds);
+      await refresh();
+    } catch (e) {
+      setQuestion((current) => current || value);
+      failure(e);
+    } finally {
+      setBusy(false);
+      setPending("");
+      input.current?.focus();
+    }
+  }
+  function inspect(id: string, source: Citation | null = null) {
+    inspectorOpener.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    setSelected(id);
+    setCitation(source);
+    setInspector(true);
+  }
+  const source = documents.find((doc) => doc.id === selected),
+    hasSources = documents.some((doc) => doc.status === "done"),
+    processing = reading || !!arriving;
+  return (
+    <div className="design-preview live-workspace">
+      <div
+        className={`proposed-workspace ${inspector ? "inspector-open" : ""} ${turns.length || busy ? "answer-visible" : ""}`}
+      >
+        <header className="workspace-topbar" ref={toolbar}>
+          <div className="workspace-wordmark">
+            <Orbit size={23} />
+            <span>grasp</span>
+            <small>Personal workspace</small>
+          </div>
+          <div className="view-switch">
+            <button
+              aria-pressed={view === "documents"}
+              onClick={() => setView("documents")}
+            >
+              <Orbit size={15} />
+              Documents
+            </button>
+            <button
+              aria-pressed={view === "knowledge"}
+              onClick={() => setView("knowledge")}
+            >
+              <Network size={15} />
+              Knowledge
+            </button>
+          </div>
+          <div className="workspace-utilities">
+            <IconButton
+              icon={Plus}
+              label="Start new conversation"
+              disabled={busy}
+              onClick={() => {
+                remember(null);
+                setTurns([]);
+                setScope([]);
+              }}
+            />
+            <IconButton
+              icon={Settings}
+              label="Workspace settings"
+              disabled={busy}
+              onClick={() => setSettings(true)}
+            />
+          </div>
+        </header>
+        <main className="proposed-canvas" ref={canvas}>
+          {view === "knowledge" && (
+            <select
+              className="knowledge-picker"
+              aria-label="Inspect a knowledge concept"
+              value=""
+              onChange={(event) => {
+                if (event.target.value) {
+                  setConcept(event.target.value);
+                  void api("/nodes/explore", { nodeId: event.target.value })
+                    .then(refresh)
+                    .catch(failure);
+                }
+              }}
+            >
+              <option value="">Inspect a concept…</option>
+              {graph.nodes.map((node) => (
+                <option key={node.id} value={node.id}>
+                  {node.label}
+                </option>
+              ))}
+            </select>
+          )}
+          <div
+            className={
+              view === "documents"
+                ? "visualization-layer"
+                : "visualization-layer hidden-view"
+            }
+          >
+            <DocumentOrbit
+              documents={documents.filter((doc) => doc.status === "done")}
+              selected={selected}
+              paused={paused || inspector}
+              onSelect={(id) => inspect(id)}
+              arrivingId={arriving}
+              onArrived={() => setArriving(null)}
+            />
+          </div>
+          <div
+            className={
+              view === "knowledge"
+                ? "visualization-layer"
+                : "visualization-layer hidden-view"
+            }
+          >
+            <Mindmap
+              active={view === "knowledge"}
+              graph={graph}
+              highlight={
+                selected
+                  ? [
+                      ...highlight,
+                      ...graph.nodes
+                        .filter((n) => n.docIds.includes(selected))
+                        .map((n) => n.id),
+                    ]
+                  : highlight
+              }
+              onSelect={(id) => {
+                setConcept(id);
+                void api("/nodes/explore", { nodeId: id })
+                  .then(refresh)
+                  .catch(failure);
+              }}
+            />
+          </div>
+          <section
+            className={`research-conversation ${turns.length || busy ? "with-answer" : ""}`}
+            aria-label="Document questions"
+          >
+            <div className="preview-thread" ref={thread} aria-live="polite">
+              {turns.map((turn) => (
+                <article key={turn.id}>
+                  <p className="sample-question">{turn.question}</p>
+                  <p>{turn.response.answer}</p>
+                  <div className="source-buttons">
+                    {turn.response.citations.map((source, index) => (
+                      <button
+                        className="named-citation"
+                        key={source.chunkId + index}
+                        onClick={() => inspect(source.docId, source)}
+                      >
+                        <Paperclip size={13} />
+                        {documents.find((doc) => doc.id === source.docId)
+                          ?.name || "Saved source"}{" "}
+                        · p. {source.page}
+                      </button>
+                    ))}
+                  </div>
+                </article>
+              ))}
+              {busy && (
+                <article>
+                  <p className="sample-question">{pending}</p>
+                  <p role="status">Reading the relevant passages…</p>
+                </article>
+              )}
+            </div>
+            <div
+              data-composer-anchor
+              className={`composer-transition ${processing ? "composer-processing" : ""}`}
+            >
+              {processing ? (
+                <div className="live-processing" role="status">
+                  <div className="processing-loop">
+                    <div className="processing-track" />
+                    <div className="processing-arc" />
+                    <div
+                      className={`processing-file ${arriving ? "transfer-owner-hidden" : ""}`}
+                    >
+                      <Paperclip size={30} />
+                      <span>
+                        {jobs.find(
+                          (job) =>
+                            job.status !== "done" && job.status !== "failed",
+                        )?.name || jobs.at(-1)?.name}
+                      </span>
+                    </div>
+                  </div>
+                  <p>
+                    {arriving
+                      ? "Ready to explore"
+                      : jobs.find(
+                          (job) =>
+                            job.status !== "done" && job.status !== "failed",
+                        )?.message || "Finishing this batch"}
+                  </p>
+                  {jobs.length > 1 && (
+                    <ul>
+                      {jobs.map((job) => (
+                        <li key={job.name}>
+                          {job.name}: {job.status}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                <form
+                  className="research-composer"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void ask();
+                  }}
+                >
+                  <div className="composer-scope">
+                    {scope.length
+                      ? `Asking ${documents.find((doc) => doc.id === scope[0])?.name || "selected source"}`
+                      : "Ask across your documents"}
+                    {scope.length > 0 && (
+                      <button type="button" onClick={() => setScope([])}>
+                        Use all sources
+                      </button>
+                    )}
+                  </div>
+                  <label htmlFor="question">
+                    {hasSources
+                      ? "what question would you like to ask"
+                      : "drop folder to get started"}
+                  </label>
+                  <textarea
+                    ref={input}
+                    id="question"
+                    value={question}
+                    onChange={(event) => setQuestion(event.target.value)}
+                    placeholder={
+                      hasSources
+                        ? "Ask about your documents…"
+                        : "Add a source before asking a question."
+                    }
+                    maxLength={2000}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        void ask();
+                      }
+                    }}
+                  />
+                  <div className="composer-actions">
+                    <div>
+                      <IconButton
+                        icon={Paperclip}
+                        label="Add documents"
+                        onClick={() => fileInput.current?.click()}
+                      />
+                      <IconButton
+                        icon={FolderOpen}
+                        label="Upload folder"
+                        onClick={() => folderInput.current?.click()}
+                      />
+                      {!hasSources && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void api("/demo", {}).then(refresh).catch(failure);
+                          }}
+                        >
+                          Load sample
+                        </button>
+                      )}
+                    </div>
+                    <IconButton
+                      icon={ArrowUp}
+                      label="Ask question"
+                      disabled={busy || !hasSources || !question.trim()}
+                      onClick={() => void ask()}
+                    />
+                  </div>
+                </form>
+              )}
+            </div>
+            {!processing &&
+              jobs.some((job) => !["done", "failed"].includes(job.status)) && (
+                <p role="status" className="composer-note">
+                  Sources are processing in the background.
+                </p>
+              )}
+            {jobs
+              .filter((job) => job.status === "failed")
+              .map((job) => (
+                <div className="upload-failure" key={job.name}>
+                  <p>
+                    {job.name}: {job.message}
+                  </p>
+                  <button
+                    onClick={() => {
+                      const file = files.current.get(job.name);
+                      if (file) void importFiles([file]);
+                      else fileInput.current?.click();
+                    }}
+                  >
+                    Retry
+                  </button>
+                  <button
+                    onClick={() =>
+                      setJobs((old) =>
+                        old.filter((value) => value.name !== job.name),
+                      )
+                    }
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              ))}
+            {error && (
+              <p className="minimal-error" role="alert">
+                {error}
+              </p>
+            )}
+            <p className="composer-note">
+              {mode === "mock"
+                ? "Offline mock · answers show retrieved excerpts"
+                : `${mode} · answers cite your sources`}
+            </p>
+          </section>
+          <div className="canvas-navigation">
+            <span>
+              {documents.filter((doc) => doc.status === "done").length}{" "}
+              documents · PDF / MD / TXT
+            </span>
+            <IconButton
+              icon={paused ? Play : Pause}
+              label={paused ? "Resume orbit" : "Pause orbit"}
+              onClick={() => setPaused(!paused)}
+              pressed={paused}
+            />
+          </div>
+        </main>
+        {inspector && source && (
+          <DocumentInspector
+            key={source.id + String(citation?.chunkId)}
+            document={source}
+            citation={citation}
+            graph={graph}
+            onClose={() => setInspector(false)}
+            onScope={() => {
+              inspectorOpener.current = input.current;
+              setScope([source.id]);
+              setInspector(false);
+              input.current?.focus();
+            }}
+            onKnowledge={() => {
+              inspectorOpener.current = null;
+              setView("knowledge");
+              setInspector(false);
+            }}
+            onRemoved={() => {
+              setInspector(false);
+              setSelected(null);
+              setScope((old) => old.filter((id) => id !== source.id));
+              void refresh();
+            }}
+          />
+        )}
+      </div>
+      <input
+        className="hidden-file"
+        ref={fileInput}
+        type="file"
+        multiple
+        accept=".pdf,.md,.txt"
+        onChange={(event) => {
+          void importFiles(Array.from(event.target.files || []));
+          event.target.value = "";
+        }}
+      />
+      <input
+        className="hidden-file"
+        ref={folderInput}
+        type="file"
+        multiple
+        onChange={(event) => {
+          void importFiles(Array.from(event.target.files || []));
+          event.target.value = "";
+        }}
+      />
+      {dragging && (
+        <div className="preview-drop">
+          <Paperclip size={30} />
+          <p>Drop to add documents</p>
+        </div>
+      )}
+      {inspector && citation && !source && (
+        <SourceView citation={citation} onClose={() => setInspector(false)} />
+      )}{" "}
+      {concept && graph.nodes.find((node) => node.id === concept) && (
+        <ConceptView
+          node={graph.nodes.find((node) => node.id === concept)!}
+          graph={graph}
+          onSelect={setConcept}
+          onClose={() => setConcept(null)}
+          onSource={(value) => {
+            setConcept(null);
+            inspect(value.docId, value);
+          }}
+        />
+      )}
+      {settings && (
+        <WorkspaceSettings
+          onClose={() => setSettings(false)}
+          onRefresh={refresh}
+          onConversation={openConversation}
+          onConversationRemoved={(id) => {
+            if (id === conversation) {
+              remember(null);
+              setTurns([]);
+            }
+          }}
+          onDocumentChanged={(oldId, newId) => {
+            setScope((old) =>
+              old.includes(oldId)
+                ? old.filter((id) => id !== oldId).concat(newId ? [newId] : [])
+                : old,
+            );
+            setSelected(newId || null);
+            setInspector(false);
+          }}
+        />
+      )}
+      {locked && (
+        <div className="access-gate">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              setAccessToken(token);
+              void refresh()
+                .then(() => setLocked(false))
+                .catch(failure);
+            }}
+          >
+            <h2>Open your workspace</h2>
+            <label htmlFor="token">Workspace access token</label>
+            <input
+              id="token"
+              type="password"
+              value={token}
+              onChange={(event) => setToken(event.target.value)}
+            />
+            <button>Unlock</button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
 }

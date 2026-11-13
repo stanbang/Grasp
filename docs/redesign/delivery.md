@@ -30,3 +30,5 @@ Browser verification exercised real duplicate ingestion, preserved saved turns, 
 The document scene uses CSS3DRenderer, so it does not require WebGL. The Knowledge View retains the existing Three/WebGL force graph. PDF cards render only page one, bounded to 600px, with a 20-second render deadline and 2MB image cap. Originals load only on inspection. Exact quote matching proves provenance, not every inference in an answer. Native PDF page presentation depends on browser viewer support; the extracted quote remains readable beside it.
 
 The existing provider, owner-token, single-worker and local-storage limits still apply. This delivery updates the local app and feature branch, not a public host. The old phase documents are historical checkpoints; the user removed their stop-for-approval requirement for this completion run.
+
+Final verification on 14 November 2026 repeated the full 75-backend/13-Node suite and strict TypeScript successfully. The final focus-restoration fix returns focus only after mobile background controls are no longer inert. Source files were formatted for review, and the Docker image was rebuilt.
