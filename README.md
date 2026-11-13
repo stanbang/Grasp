@@ -16,11 +16,15 @@ The default `MOCK_LLM=1` needs no key. Mock answers show retrieved excerpts; the
 
 ## Use
 
-The landing headline is “drop folder to get started”. Drop a file or folder anywhere on the page. A question box appears over the interactive mindmap on that same page. Drops prevent the browser from opening the file. Choose a file and Choose folder are explicit picker alternatives.
+The workspace opens with a question/upload composer. Drop PDF, Markdown or TXT notes anywhere, or use the file and folder actions. During ingestion, the composer contracts into a processing loop driven by actual SSE events. Completed sources enter the document orbit; failed files retain their names and offer Retry/Dismiss. Adding notes preserves the current conversation.
 
-Ask a question, then ask a follow-up. Citation buttons open exact quotes and the extracted page in a dialog. Original PDFs appear inline when available. There is no document list or connected-ideas panel on the main screen. Workspace options contains saved conversations, source replacement, re-indexing, removal and three-question mastery checks. Passing at least two marks the assessed concept mastered; there are no points or streaks.
+Documents use a Three.js CSS3D orbit with stable server IDs, hover/focus pause and reduced-motion support. Narrow screens and large libraries use a scrollable document strip. Switch to Knowledge to explore the existing force graph without discarding its layout. Selecting a document highlights its concepts.
 
-New imports scope questions to successfully imported notes. A new conversation searches the workspace. Duplicate file bytes reuse the existing document. Replacing or re-indexing a source retains the original if processing fails.
+Ask a question; your message appears immediately while the API retrieves evidence. Answers appear as complete responses because the current chat API does not stream tokens. Named citations open the original PDF page and exact extracted quote in a side inspector. Use Ask this document to change scope explicitly, or return to all sources. Exact quotes are highlighted in extracted text; no PDF rectangle positions are fabricated.
+
+Workspace settings retains saved conversations, replacement, re-indexing, removal and mastery quizzes. Passing at least two of three questions marks the assessed concept mastered. Duplicate files select their existing source rather than create another card.
+
+See [the completed UI redesign](docs/redesign/delivery.md). A separate manual design-state viewer remains at `/design-preview.html`; it is labelled as sample content and makes no AI/upload requests.
 
 ## Configure AI and OCR
 
