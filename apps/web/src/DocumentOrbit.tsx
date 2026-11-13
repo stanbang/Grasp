@@ -59,7 +59,7 @@ function DocumentCard({ source, selected, onSelect }: { source: Document; select
 
 export function DocumentOrbit({ documents, selected, paused, onSelect, arrivingId = null, onArrived }: OrbitProps) {
   const ready = useMemo(() => documents.filter(source => source.status === 'done'), [documents]);
-  const [narrow, setNarrow] = useState(window.matchMedia('(max-width: 760px)').matches);
+  const [narrow, setNarrow] = useState(window.matchMedia('(max-width: 1000px)').matches);
   const [reduced, setReduced] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [unsupported, setUnsupported] = useState(!CSS.supports('transform-style', 'preserve-3d'));
   const host = useRef<HTMLDivElement>(null);
@@ -93,7 +93,7 @@ export function DocumentOrbit({ documents, selected, paused, onSelect, arrivingI
   }, [ready]);
 
   useEffect(() => {
-    const width = window.matchMedia('(max-width: 760px)');
+    const width = window.matchMedia('(max-width: 1000px)');
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => { setNarrow(width.matches); setReduced(motion.matches); };
     width.addEventListener('change', update); motion.addEventListener('change', update);
@@ -153,6 +153,7 @@ export function DocumentOrbit({ documents, selected, paused, onSelect, arrivingI
         const theta = item.slot * 2.399963 + 3.5 + angle;
         const ring = 1 + Math.floor(item.slot / 7) * .14;
         target.set(Math.cos(theta) * width * .37 * scale * ring, (Math.sin(theta) * height * .22 + height * .1) * scale, Math.sin(theta) * 90);
+        if(id === state.selected) { target.x = -width * .28 * scale; target.y = height * .27 * scale; target.z = 180; }
         if (arrival?.id === id) {
           const progress = state.reduced ? 1 : Math.min((now - arrival.started) / 850, 1);
           const eased = 1 - Math.pow(1 - progress, 3);
