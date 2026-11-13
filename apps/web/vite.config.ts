@@ -22,6 +22,6 @@ export default defineConfig(({ mode, command }) => {
         },
       },
     },
-    build: { target: "es2022", sourcemap: true },
+    build: { target: "es2022", sourcemap: true, rollupOptions: { input: { app: fileURLToPath(new URL("./index.html", import.meta.url)), preview: fileURLToPath(new URL("./design-preview.html", import.meta.url)) } } },
   };
 });
