@@ -127,6 +127,7 @@ export interface IngestionEvent {
 export interface ChatRequest {
   question: string;
   topK?: number;
+  docIds?: Array<string>;
 }
 
 export interface NodeRequest {

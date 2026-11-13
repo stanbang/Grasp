@@ -26,3 +26,13 @@ def test_failed_quiz_does_not_master(client):
     result=client.post('/quiz/grade',json={'attemptId':quiz['attemptId'],'answers':[1,1,0]}).json()
     assert result['score']==0 and not result['passed']
     assert client.get('/progress').json()['masteredCount']==0
+
+
+def test_chat_scope_excludes_other_documents(client):
+    client.post('/demo')
+    documents = client.get('/documents').json()['documents']
+    doc_id = documents[0]['id']
+    result = client.post('/chat',json={'question':'What are the main ideas?','docIds':[doc_id]})
+    assert result.status_code == 200
+    assert result.json()['citations']
+    assert all(c['docId'] == doc_id for c in result.json()['citations'])

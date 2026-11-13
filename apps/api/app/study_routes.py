@@ -15,6 +15,7 @@ router = APIRouter()
 class ChatRequest(Schema):
     question: str = Field(min_length=1, max_length=2000)
     topK: int = Field(default=5, ge=1, le=10)
+    docIds: list[str] = Field(default_factory=list, max_length=100)
 class GroundedAnswer(Schema):
     answer: str
     citations: list[Citation]
@@ -63,7 +64,8 @@ def explore(body: NodeRequest, request: Request) -> dict[str, str]:
 @router.post('/chat', response_model=ChatResponse)
 def chat(body: ChatRequest, request: Request) -> ChatResponse:
     storage = request.app.state.storage
-    matches = storage.vector_store().similarity_search(body.question, k=body.topK)
+    search_filter = {'docId': {'$in': body.docIds}} if body.docIds else None
+    matches = storage.vector_store().similarity_search(body.question, k=body.topK, filter=search_filter)
     with Session(storage.engine) as session:
         ids = [item.metadata.get('docId') for item in matches]
         done = set(session.exec(select(DocumentRow.id).where(DocumentRow.id.in_(ids), DocumentRow.status == 'done')).all())
