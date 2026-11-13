@@ -10,7 +10,8 @@ sys.path.insert(0, str(ROOT / "apps" / "api"))
 from app.schemas import PUBLIC_MODELS
 from app.conversations import Conversation, Conversations, Turn, Turns
 from app.study_routes import ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse
-PUBLIC_MODELS = (*PUBLIC_MODELS, Conversation, Conversations, Turn, Turns, ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse)
+from app.preview_routes import PreviewMetadata
+PUBLIC_MODELS = (*PUBLIC_MODELS, Conversation, Conversations, Turn, Turns, ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse, PreviewMetadata)
 
 
 def typescript_type(schema: dict[str, Any], *, optional: bool = False) -> str:

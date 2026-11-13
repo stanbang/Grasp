@@ -8,6 +8,7 @@ from .config import PROJECT_ROOT, get_settings
 from .request_controls import RequestControls
 from .llm import provider_check
 from .document_routes import router as document_router
+from .preview_routes import router as preview_router
 from .study_routes import router as study_router
 from .conversations import router as conversation_router
 from .graph_repository import graph_snapshot
@@ -42,6 +43,7 @@ app = FastAPI(
 )
 app.add_middleware(RequestControls)
 app.include_router(document_router)
+app.include_router(preview_router)
 app.include_router(study_router)
 app.include_router(conversation_router)
 

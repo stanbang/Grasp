@@ -177,3 +177,10 @@ export interface GradeResponse {
   correctAnswers: Array<number>;
   nodeIds: Array<string>;
 }
+
+export interface PreviewMetadata {
+  docId: string;
+  contentType: string;
+  pageCount: number;
+  chunkCount: number;
+}

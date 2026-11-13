@@ -81,7 +81,9 @@ def cleanup_document(storage: Storage, doc_id: str) -> bool:
             for collection in storage.chroma.list_collections():
                 storage.chroma.get_collection(collection.name,embedding_function=None).delete(where={'docId':doc_id})
             path=storage.settings.data_dir/'uploads'/f'{doc_id}{Path(pending.name).suffix.lower()}'
-            path.unlink(missing_ok=True)
+            with storage.upload_lock:
+                path.unlink(missing_ok=True)
+                (storage.settings.data_dir/'previews'/f'{doc_id}.png').unlink(missing_ok=True)
         except Exception:
             # Keep a durable cleanup record if a native vector handle or file is unavailable.
             return False
