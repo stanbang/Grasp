@@ -1,0 +1,7 @@
+{
+  "imageOnlyInput": true,
+  "nativeOcr": true,
+  "exactOffsets": true,
+  "chunks": 1,
+  "recognizedText": "Retrieval practice\n\nRecall an idea before looking at the answer."
+}

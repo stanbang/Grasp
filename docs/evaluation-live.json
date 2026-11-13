@@ -1,0 +1,272 @@
+{
+  "mode": "live",
+  "embeddingIdentity": "gemini:gemini-embedding-001",
+  "sampleSha256": "7665d8df640d7aa256a4ad40f3131200dc82864c7e7b2ee84eb0c8543eea4bd7",
+  "chunkCount": 3,
+  "questions": 20,
+  "hitAt5": 1.0,
+  "mrr": 0.875,
+  "cases": [
+    {
+      "question": "What does working memory hold?",
+      "expectedQuote": "Working memory holds information briefly",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "Why can unfamiliar ideas make a task difficult?",
+      "expectedQuote": "Keeping several unfamiliar ideas active",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:854-1561"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "How can smaller steps reduce working memory demand?",
+      "expectedQuote": "Breaking a task into smaller steps",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "What does long-term memory store?",
+      "expectedQuote": "Long-term memory stores knowledge",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "What makes a concept easier to revisit?",
+      "expectedQuote": "a clear name, a short explanation and an example",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 2
+    },
+    {
+      "question": "How does new knowledge connect to earlier learning?",
+      "expectedQuote": "New knowledge can connect",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "What is retrieval practice?",
+      "expectedQuote": "Retrieval practice means trying to recall",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 2
+    },
+    {
+      "question": "What should a learner do before looking at the answer?",
+      "expectedQuote": "trying to recall an idea before looking",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 2
+    },
+    {
+      "question": "Why check the source after recalling an answer?",
+      "expectedQuote": "Checking the source afterward helps identify",
+      "expectedChunkIds": [
+        "eval-sample:p1:0-874"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:854-1561"
+      ],
+      "rank": 2
+    },
+    {
+      "question": "What is spaced practice?",
+      "expectedQuote": "Spaced practice separates study sessions",
+      "expectedChunkIds": [
+        "eval-sample:p1:854-1561"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "What can begin a later spaced study session?",
+      "expectedQuote": "A later session can begin with retrieval practice",
+      "expectedChunkIds": [
+        "eval-sample:p1:854-1561"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:1534-2059"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "What does feedback compare?",
+      "expectedQuote": "Feedback compares a response",
+      "expectedChunkIds": [
+        "eval-sample:p1:854-1561"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:0-874"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "What does specific feedback identify?",
+      "expectedQuote": "Specific feedback identifies what was correct",
+      "expectedChunkIds": [
+        "eval-sample:p1:854-1561"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:0-874"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "How can feedback choose the next concept to study?",
+      "expectedQuote": "choose the next concept to study",
+      "expectedChunkIds": [
+        "eval-sample:p1:854-1561"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:0-874"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "What do nodes and labelled connections represent in concept maps?",
+      "expectedQuote": "A concept map represents ideas as nodes",
+      "expectedChunkIds": [
+        "eval-sample:p1:854-1561"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:0-874"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "Can one concept link to multiple documents?",
+      "expectedQuote": "One node can link to several passages or documents",
+      "expectedChunkIds": [
+        "eval-sample:p1:854-1561"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:0-874"
+      ],
+      "rank": 2
+    },
+    {
+      "question": "What does mastery require in this app?",
+      "expectedQuote": "Mastery requires a separate quiz",
+      "expectedChunkIds": [
+        "eval-sample:p1:1534-2059"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:0-874"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "Does mastery prove long-term retention?",
+      "expectedQuote": "The mastery state does not prove long-term retention",
+      "expectedChunkIds": [
+        "eval-sample:p1:1534-2059"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:854-1561"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "What identifies an exact citation?",
+      "expectedQuote": "An exact citation identifies a document",
+      "expectedChunkIds": [
+        "eval-sample:p1:1534-2059"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:854-1561",
+        "eval-sample:p1:0-874"
+      ],
+      "rank": 1
+    },
+    {
+      "question": "Are source reference end offsets exclusive?",
+      "expectedQuote": "End offsets are exclusive",
+      "expectedChunkIds": [
+        "eval-sample:p1:1534-2059"
+      ],
+      "retrievedChunkIds": [
+        "eval-sample:p1:1534-2059",
+        "eval-sample:p1:0-874",
+        "eval-sample:p1:854-1561"
+      ],
+      "rank": 1
+    }
+  ],
+  "limitation": "Small original sample with fewer than five chunks: Hit@5 is a wiring check, not a semantic-quality benchmark."
+}

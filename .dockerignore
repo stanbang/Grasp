@@ -1,0 +1,16 @@
+.git
+.env
+api.env
+.env.*
+!.env.example
+.venv
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+apps/web/dist
+data
+uploads
+work
+.agents
+.impeccable
+*.log

@@ -1,0 +1,22 @@
+[
+ {"question":"What does working memory hold?","expectedQuote":"Working memory holds information briefly"},
+ {"question":"Why can unfamiliar ideas make a task difficult?","expectedQuote":"Keeping several unfamiliar ideas active"},
+ {"question":"How can smaller steps reduce working memory demand?","expectedQuote":"Breaking a task into smaller steps"},
+ {"question":"What does long-term memory store?","expectedQuote":"Long-term memory stores knowledge"},
+ {"question":"What makes a concept easier to revisit?","expectedQuote":"a clear name, a short explanation and an example"},
+ {"question":"How does new knowledge connect to earlier learning?","expectedQuote":"New knowledge can connect"},
+ {"question":"What is retrieval practice?","expectedQuote":"Retrieval practice means trying to recall"},
+ {"question":"What should a learner do before looking at the answer?","expectedQuote":"trying to recall an idea before looking"},
+ {"question":"Why check the source after recalling an answer?","expectedQuote":"Checking the source afterward helps identify"},
+ {"question":"What is spaced practice?","expectedQuote":"Spaced practice separates study sessions"},
+ {"question":"What can begin a later spaced study session?","expectedQuote":"A later session can begin with retrieval practice"},
+ {"question":"What does feedback compare?","expectedQuote":"Feedback compares a response"},
+ {"question":"What does specific feedback identify?","expectedQuote":"Specific feedback identifies what was correct"},
+ {"question":"How can feedback choose the next concept to study?","expectedQuote":"choose the next concept to study"},
+ {"question":"What do nodes and labelled connections represent in concept maps?","expectedQuote":"A concept map represents ideas as nodes"},
+ {"question":"Can one concept link to multiple documents?","expectedQuote":"One node can link to several passages or documents"},
+ {"question":"What does mastery require in this app?","expectedQuote":"Mastery requires a separate quiz"},
+ {"question":"Does mastery prove long-term retention?","expectedQuote":"The mastery state does not prove long-term retention"},
+ {"question":"What identifies an exact citation?","expectedQuote":"An exact citation identifies a document"},
+ {"question":"Are source reference end offsets exclusive?","expectedQuote":"End offsets are exclusive"}
+]

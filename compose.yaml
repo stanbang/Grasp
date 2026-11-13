@@ -1,0 +1,24 @@
+services:
+  grasp:
+    image: grasp:local
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      MOCK_LLM: ${MOCK_LLM:-1}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4.1-mini}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      ACCESS_TOKEN: ${ACCESS_TOKEN:-}
+      OCR_ENABLED: ${OCR_ENABLED:-0}
+      OCR_LANGUAGE: ${OCR_LANGUAGE:-eng}
+      REQUESTS_PER_MINUTE: ${REQUESTS_PER_MINUTE:-120}
+    volumes:
+      - grasp-data:/data
+    mem_limit: 2g
+    cpus: 2
+    restart: unless-stopped
+volumes:
+  grasp-data:
