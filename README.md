@@ -16,9 +16,9 @@ On later runs, use `python scripts/dev.py`. Use `python scripts/dev.py --install
 
 ## Try the study workspace
 
-Open the sample graph, select a concept, and read its named source passages. Use **Ask your notes** for cited answers and **Check understanding** for a three-question quiz. Passing two questions marks the selected concept mastered. No XP or streaks are used.
+The opening screen says “drop folder to get started”. Drop a folder, choose a folder, or select multiple PDF/Markdown/TXT files. The mindmap expands as processing starts, showing named document roots and shared concepts. Q&A opens first; choose one document or search all notes. Select a concept to read its named source passages. Use **Ask your notes** for cited answers and **Check understanding** for a three-question quiz. Passing two questions marks the selected concept mastered. No XP or streaks are used.
 
-See [the Phases 3–5 walkthrough](docs/phase-5.md).
+See [the folder-first walkthrough](docs/folder-first.md) and [the Phases 3–5 walkthrough](docs/phase-5.md).
 
 ## API tools
 

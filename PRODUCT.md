@@ -24,7 +24,7 @@ The same source chunks support the knowledge graph, answer citations and mastery
 
 ## Operating Context
 
-The repository is named Grasp. The user wants quiet naming and an attractive workspace, not a branding-heavy landing page. Local development is the initial delivery target. Public hosting and portfolio embedding are later deployment decisions.
+The repository is named Grasp. The user wants quiet naming and an attractive workspace, not a branding-heavy landing page. The opening headline is "drop folder to get started". Importing notes reveals a document mindmap, with Q&A as the primary panel. Local development is the initial delivery target. Public hosting and portfolio embedding are later deployment decisions.
 
 ## Capabilities and Constraints
 
@@ -43,7 +43,7 @@ The user's supplied specification establishes the behavior and schemas. Phase 1 
 ## Product Principles
 
 - Show the source behind an answer.
-- Make exploration the main activity.
+- Make document questions the primary activity, with the graph providing source context.
 - Keep mastery separate from activity counts.
 - Keep mock data and live results distinguishable.
 - Ship a runnable checkpoint before expanding scope.
