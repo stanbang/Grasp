@@ -54,3 +54,34 @@ export async function droppedFiles(transfer: DataTransfer): Promise<{
     }
     return { files, errors };
 }
+export function installFileDropHandlers(target: Pick<Window, 'addEventListener' | 'removeEventListener'>, onDrop: (transfer: DataTransfer) => void, onDrag: (active: boolean) => void): () => void {
+    let depth = 0;
+    const isFile = (event: DragEvent) => Array.from(event.dataTransfer?.types || []).includes('Files');
+    const enter = (event: DragEvent) => { if (isFile(event)) {
+        event.preventDefault();
+        depth++;
+        onDrag(true);
+    } };
+    const over = (event: DragEvent) => { if (isFile(event)) {
+        event.preventDefault();
+        if (event.dataTransfer)
+            event.dataTransfer.dropEffect = 'copy';
+    } };
+    const leave = (event: DragEvent) => { if (isFile(event)) {
+        depth = Math.max(0, depth - 1);
+        if (!depth)
+            onDrag(false);
+    } };
+    const drop = (event: DragEvent) => { if (isFile(event) && event.dataTransfer) {
+        event.preventDefault();
+        event.stopPropagation();
+        depth = 0;
+        onDrag(false);
+        onDrop(event.dataTransfer);
+    } };
+    target.addEventListener('dragenter', enter, { capture: true });
+    target.addEventListener('dragover', over, { capture: true });
+    target.addEventListener('dragleave', leave, { capture: true });
+    target.addEventListener('drop', drop, { capture: true });
+    return () => { target.removeEventListener('dragenter', enter, { capture: true }); target.removeEventListener('dragover', over, { capture: true }); target.removeEventListener('dragleave', leave, { capture: true }); target.removeEventListener('drop', drop, { capture: true }); };
+}

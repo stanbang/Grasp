@@ -1,276 +1,221 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-const ForceGraph3D = lazy(() => import('react-force-graph-3d'));
-import type { ForceGraphMethods } from 'react-force-graph-3d';
-import { Orbit, Upload, BookOpen, MessageCircle, RotateCcw, FolderOpen, ArrowUpRight, Files } from 'lucide-react';
-import { droppedFiles, isSupportedNote } from './folder-upload';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowUp, FolderOpen, Orbit, Paperclip, Plus, Settings } from 'lucide-react';
+import { Mindmap } from './Mindmap';
+import { ConceptView, SourceView, WorkspaceSettings } from './WorkspaceDialogs';
+import { api, apiFetch, ApiError, documentEvents, setAccessToken } from './client';
+import { droppedFiles, isSupportedNote, installFileDropHandlers } from './folder-upload';
 import { useStudyGraph } from './study-store';
-import type { GraphNode, Chunk, ChatResponse, Progress, QuizResponse as Quiz } from './types/contracts';
-type Graph = import('./study-store').StudyGraph;
-async function request<T>(path: string, body?: unknown): Promise<T> {
-    const response = await fetch('/api' + path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(String(error.detail || 'Request failed.'));
-    }
-    return response.json() as Promise<T>;
+import type { ChatResponse, Citation, GraphResponse } from './types/contracts';
+type Turn = {
+    id: number;
+    question: string;
+    response: ChatResponse;
+    createdAt: string;
+};
+type Conversation = {
+    id: string;
+    title: string;
+};
+function savedConversation(): string | null { try {
+    return localStorage.getItem('grasp-conversation');
 }
+catch {
+    return null;
+} }
 export function App() {
-    const [started, setStarted] = useState(false);
-    const [dragging, setDragging] = useState(false);
-    const [ingesting, setIngesting] = useState(false);
-    const [queue, setQueue] = useState<{
-        name: string;
-        state: string;
-    }[]>([]);
-    const [scope, setScope] = useState('');
-    const lastImport = useRef<File[]>([]);
-    const folderInput = useRef<HTMLInputElement>(null);
-    useEffect(() => { folderInput.current?.setAttribute('webkitdirectory', ''); }, [started]);
     const { graph, setGraph } = useStudyGraph();
-    const [selected, setSelected] = useState<GraphNode | null>(null);
-    const [chunks, setChunks] = useState<Chunk[]>([]);
-    const [tab, setTab] = useState<'source' | 'chat' | 'quiz'>('chat');
+    const [started, setStarted] = useState(false);
     const [question, setQuestion] = useState('');
-    const [answer, setAnswer] = useState<ChatResponse | null>(null);
-    const [highlight, setHighlight] = useState<string[]>([]);
-    const [quote, setQuote] = useState('');
-    const [quiz, setQuiz] = useState<Quiz | null>(null);
-    const [answers, setAnswers] = useState<number[]>([-1, -1, -1]);
-    const [grade, setGrade] = useState<{
-        score: number;
-        passed: boolean;
-        correctAnswers: number[];
-    } | null>(null);
-    const [progress, setProgress] = useState<Progress | null>(null);
-    const [error, setError] = useState('');
+    const [turns, setTurns] = useState<Turn[]>([]);
+    const [conversation, setConversation] = useState<string | null>(savedConversation);
     const [busy, setBusy] = useState(false);
-    const [status, setStatus] = useState('Connecting to local workspace');
-    const [size, setSize] = useState({ width: 700, height: 600 });
-    const [sourceLoading, setSourceLoading] = useState(false);
-    const [names, setNames] = useState<Record<string, string>>({});
+    const [reading, setReading] = useState(false);
+    const [status, setStatus] = useState('');
+    const [error, setError] = useState('');
+    const [dragging, setDragging] = useState(false);
     const [mode, setMode] = useState('mock');
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const [pulse, setPulse] = useState(0);
-    useEffect(() => { const timer = setInterval(() => setPulse(Date.now() / 400), 120); return () => clearInterval(timer); }, [reduced]);
-    const selection = useRef(0);
-    const host = useRef<HTMLDivElement>(null);
-    const streams = useRef<Set<EventSource>>(new Set());
-    async function refresh() {
-        const [data, p] = await Promise.all([request<Graph>('/graph'), request<Progress>('/progress')]);
-        const docs = await request<{
-            documents: {
-                id: string;
-                name: string;
-            }[];
-        }>('/documents');
-        setNames(Object.fromEntries(docs.documents.map(d => [d.id, d.name])));
-        const health = await request<{
+    const [highlight, setHighlight] = useState<string[]>([]);
+    const [scope, setScope] = useState<string[]>([]);
+    const [citation, setCitation] = useState<Citation | null>(null);
+    const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
+    const [settings, setSettings] = useState(false);
+    const [locked, setLocked] = useState(false);
+    const [token, setToken] = useState('');
+    const [readyCount, setReadyCount] = useState(0);
+    const generation = useRef(0);
+    const [scopeEmpty, setScopeEmpty] = useState(false);
+    const textarea = useRef<HTMLTextAreaElement>(null);
+    const fileInput = useRef<HTMLInputElement>(null);
+    const folderInput = useRef<HTMLInputElement>(null);
+    const importLock = useRef(false);
+    const controllers = useRef(new Set<AbortController>());
+    const latestDrop = useRef<(transfer: DataTransfer) => Promise<void>>(async () => { });
+    const thread = useRef<HTMLDivElement>(null);
+    function remember(id: string | null) { setConversation(id); try {
+        if (id)
+            localStorage.setItem('grasp-conversation', id);
+        else
+            localStorage.removeItem('grasp-conversation');
+    }
+    catch { /* Private browsing can deny storage; the server conversation still works. */ } }
+    function failure(value: unknown) { if (value instanceof ApiError && value.status === 401)
+        setLocked(true); setError(value instanceof Error ? value.message : String(value)); }
+    async function refresh() { const [data, health] = await Promise.all([api<GraphResponse>('/graph'), api<{
             llm: {
                 provider: string;
             };
-        }>('/health');
-        setMode(health.llm.provider);
-        setGraph(data);
-        setProgress(p);
-        setStatus('Local workspace ready');
-        setSelected(old => old ? old.id.startsWith('doc:') ? old : data.nodes.find(n => n.id === old.id) || null : null);
-    }
-    useEffect(() => { void refresh().catch(e => setError(String(e))); return () => streams.current.forEach(s => s.close()); }, []);
-    useEffect(() => {
-        if (!host.current)
-            return;
-        const observer = new ResizeObserver(entries => {
-            const rect = entries[0]?.contentRect;
-            if (rect)
-                setSize({ width: rect.width, height: rect.height });
-        });
-        observer.observe(host.current);
-        return () => observer.disconnect();
-    }, []);
-    async function choose(node: GraphNode) {
-        const version = ++selection.current;
-        setChunks([]);
-        setSourceLoading(true);
-        setSelected(node);
-        setTab('source');
-        setQuote('');
-        setQuiz(null);
-        setGrade(null);
-        const results = await Promise.all(node.docIds.map(id => request<{
-            chunks: Chunk[];
-        }>(`/documents/${id}/chunks`))).catch(error => { if (version === selection.current)
-            setSourceLoading(false); throw error; });
-        if (version !== selection.current)
-            return;
-        setSourceLoading(false);
-        document.querySelector('.study-panel')?.scrollIntoView({ block: 'nearest' });
-        setChunks(results.flatMap(r => r.chunks).filter(c => node.sourceChunkIds.includes(c.id)));
-        await request('/nodes/explore', { nodeId: node.id });
-        await refresh();
-    }
-    async function upload(file: File) {
-        setError('');
-        setStatus('Uploading ' + file.name);
-        const form = new FormData();
-        form.append('file', file);
-        const response = await fetch('/api/documents', { method: 'POST', body: form });
-        if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.detail);
-        }
-        const document = await response.json() as {
-            id: string;
-        };
-        await new Promise<void>((resolve, reject) => {
-            const stream = new EventSource(`/api/documents/${document.id}/events`);
-            streams.current.add(stream);
-            const timeout = setTimeout(() => { close(); reject(new Error('Processing took too long. Refresh to check document status.')); }, 180000);
-            const close = () => { clearTimeout(timeout); stream.close(); streams.current.delete(stream); };
-            stream.addEventListener('status', event => setStatus((JSON.parse((event as MessageEvent).data) as {
-                message: string;
-            }).message));
-            stream.addEventListener('node', event => { const n = JSON.parse((event as MessageEvent).data).node as GraphNode; setGraph(g => ({ ...g, nodes: [...g.nodes.filter(old => old.id !== n.id), n] })); });
-            stream.addEventListener('edge', event => { const edge = JSON.parse((event as MessageEvent).data).edge as import('./types/contracts').GraphEdge; setGraph(g => ({ ...g, edges: [...g.edges.filter(old => old.id !== edge.id), edge] })); });
-            stream.addEventListener('complete', () => { close(); resolve(); });
-            stream.addEventListener('error', event => {
-                if (event instanceof MessageEvent) {
-                    close();
-                    reject(new Error(JSON.parse(event.data).message));
-                }
-                else {
-                    close();
-                    reject(new Error('Connection interrupted. Refresh to reload stored results.'));
-                }
-            });
-        });
-        await refresh();
-    }
-    async function importFiles(files: File[], readErrors: string[] = []) {
-        if (ingesting)
-            return;
-        const notes = files.filter(isSupportedNote);
-        if (!notes.length) {
-            setError(readErrors.join(' ') || 'No supported documents found. Choose PDF, Markdown or TXT files.');
-            return;
-        }
-        setStarted(true);
-        setTab('chat');
-        setIngesting(true);
-        setError('');
-        lastImport.current = notes;
-        const jobs = [...notes.map(file => ({ name: file.webkitRelativePath || file.name, state: 'waiting' })), ...readErrors.map(message => ({ name: 'Folder entry', state: message }))];
-        let failed = readErrors.length;
-        setQueue(jobs);
-        for (const [index, file] of notes.entries()) {
-            setQueue(old => old.map((job, i) => i === index ? { ...job, state: 'processing' } : job));
-            try {
-                await upload(file);
-                setQueue(old => old.map((job, i) => i === index ? { ...job, state: 'ready' } : job));
-            }
-            catch (error) {
-                failed++;
-                setQueue(old => old.map((job, i) => i === index ? { ...job, state: error instanceof Error ? error.message : 'Upload failed' } : job));
-            }
-        }
-        setIngesting(false);
-        await refresh().catch(error => setError(String(error)));
-        if (failed)
-            setError(`${failed} file or folder entries could not be processed. Ready documents are still available. Retry failed files or choose the folder again.`);
-    }
-    async function handleDrop(transfer: DataTransfer) {
-        setDragging(false);
-        if (ingesting) {
-            setError('Wait for this folder to finish before adding another.');
-            return;
-        }
+        }>('/health')]); setGraph(data); setMode(health.llm.provider); }
+    async function openConversation(id: string) { generation.current++; setScopeEmpty(false); const result = await api<{
+        turns: Turn[];
+    }>(`/conversations/${id}`); remember(id); setTurns(result.turns); setStarted(true); setScope([]); }
+    useEffect(() => { folderInput.current?.setAttribute('webkitdirectory', ''); void refresh().then(async () => { const saved = savedConversation(); if (saved) {
         try {
-            const result = await droppedFiles(transfer);
-            await importFiles(result.files, result.errors);
-        }
-        catch (error) {
-            setError('Could not read that folder. Try Choose folder or select files. ' + String(error));
-        }
-    }
-    async function chooseDocument(id: string) {
-        const version = ++selection.current;
-        setTab('source');
-        setSourceLoading(true);
-        setChunks([]);
-        setQuote('');
-        setQuiz(null);
-        setSelected({ id: 'doc:' + id, label: names[id] || 'Document', summary: 'Read the source passages from this document.', docIds: [id], sourceChunkIds: [], masteryState: 'unexplored' });
-        try {
-            const result = await request<{
-                chunks: Chunk[];
-            }>(`/documents/${id}/chunks`);
-            if (version === selection.current)
-                setChunks(result.chunks);
-        }
-        finally {
-            if (version === selection.current)
-                setSourceLoading(false);
-        }
-    }
-    async function run(action: () => Promise<void>) {
-        setBusy(true);
-        setError('');
-        try {
-            await action();
+            await openConversation(saved);
         }
         catch (e) {
-            setError(e instanceof Error ? e.message : String(e));
+            if (e instanceof ApiError && e.status === 404)
+                remember(null);
+            else
+                throw e;
+        }
+    } }).catch(failure); return () => controllers.current.forEach(c => c.abort()); }, []);
+    useEffect(() => { if (started)
+        textarea.current?.focus(); }, [started]);
+    useEffect(() => { thread.current?.scrollTo({ top: thread.current.scrollHeight, behavior: 'instant' }); }, [turns, busy]);
+    useEffect(() => installFileDropHandlers(window, transfer => { void latestDrop.current(transfer); }, setDragging), []);
+    async function importFiles(files: File[], readErrors: string[] = []) {
+        if (busy) {
+            setError('Wait for the current answer before adding files.');
+            return;
+        }
+        if (importLock.current) {
+            setError('Wait for the current files to finish.');
+            return;
+        }
+        const notes = files.filter(isSupportedNote);
+        if (!notes.length) {
+            setError(readErrors.join(' ') || 'Drop a PDF, Markdown or TXT document.');
+            return;
+        }
+        generation.current++;
+        setScopeEmpty(false);
+        importLock.current = true;
+        setReading(true);
+        setStarted(true);
+        setError('');
+        setTurns([]);
+        remember(null);
+        setScope([]);
+        setReadyCount(0);
+        let failures = readErrors.length;
+        const imported: string[] = [];
+        try {
+            for (const [index, file] of notes.entries()) {
+                setStatus(`Reading files ${index + 1} of ${notes.length}`);
+                const controller = new AbortController();
+                controllers.current.add(controller);
+                try {
+                    const form = new FormData();
+                    form.append('file', file);
+                    const response = await apiFetch('/documents', { method: 'POST', body: form, signal: controller.signal });
+                    const document = await response.json() as {
+                        id: string;
+                    };
+                    await documentEvents(document.id, event => { if (event.type === 'node' && event.node) {
+                        const node = event.node;
+                        setGraph(old => ({ ...old, nodes: [...old.nodes.filter(n => n.id !== node.id), node] }));
+                    } if (event.type === 'edge' && event.edge) {
+                        const edge = event.edge;
+                        setGraph(old => ({ ...old, edges: [...old.edges.filter(e => e.id !== edge.id), edge] }));
+                    } }, controller.signal);
+                    imported.push(document.id);
+                    setScope([...imported]);
+                    setReadyCount(imported.length);
+                    await refresh();
+                }
+                catch (e) {
+                    failures++;
+                    failure(e);
+                }
+                finally {
+                    controllers.current.delete(controller);
+                }
+            }
+            setStatus(`${imported.length} of ${notes.length} files ready`);
+            setScopeEmpty(imported.length === 0);
+            if (failures)
+                setError(`${failures} files or folder entries could not be read. ${imported.length ? 'Ready sources are available; drop the failed files again to retry.' : 'No sources were imported. Drop a readable document to retry.'}`);
         }
         finally {
-            setBusy(false);
+            importLock.current = false;
+            setReading(false);
         }
     }
-    async function demo() { setStarted(true); setTab('chat'); await request('/demo', {}); await refresh(); }
-    const graphRef = useRef<ForceGraphMethods>();
-    const fitted = useRef(-1);
-    const cache = useRef(new Map<string, GraphNode>());
-    const data = useMemo(() => {
-        const concepts = graph.nodes.map(n => { const old = cache.current.get(n.id); const value = old ? Object.assign(old, n) : { ...n }; cache.current.set(n.id, value); return value; });
-        const documentIds = [...new Set(graph.nodes.flatMap(n => n.docIds))];
-        const documents = documentIds.map(id => { const key = 'doc:' + id; const node = { id: key, label: names[id] || 'Document', summary: 'Source document', docIds: [id], sourceChunkIds: [], masteryState: 'unexplored' as const }; const old = cache.current.get(key); const value = old ? Object.assign(old, node) : node; cache.current.set(key, value); return value; });
-        return { nodes: [...concepts, ...documents], links: [...graph.edges.map(e => ({ ...e })), ...documentIds.flatMap(id => graph.nodes.filter(n => n.docIds.includes(id)).map(n => ({ id: 'source:' + id + ':' + n.id, source: 'doc:' + id, target: n.id, relationshipLabel: 'contains concept', docIds: [id] })))] };
-    }, [graph, names]);
-    const documentLabels = data.nodes.filter(n => n.id.startsWith('doc:')).flatMap(node => {
-        const position = node as GraphNode & {
-            x?: number;
-            y?: number;
-            z?: number;
-        };
-        if (!graphRef.current || position.x === undefined || position.y === undefined || position.z === undefined)
-            return [];
-        const point = graphRef.current.graph2ScreenCoords(position.x, position.y, position.z);
-        return Number.isFinite(point.x) && Number.isFinite(point.y) ? [{ id: node.id, label: node.label, ...point }] : [];
-    });
-    return <div className={`study-app folder-first ${started ? 'workspace-open' : 'landing-open'} ${dragging ? 'drag-over' : ''}`} onDragOver={e => { if (Array.from(e.dataTransfer.types).includes('Files')) {
+    latestDrop.current = async (transfer) => { try {
+        const result = await droppedFiles(transfer);
+        await importFiles(result.files, result.errors);
+    }
+    catch (e) {
+        failure(e);
+    } };
+    async function ask() { if (busy || !question.trim() || (reading && readyCount === 0) || scopeEmpty)
+        return; const requestGeneration = generation.current; const draft = question; setBusy(true); setError(''); const value = question.trim(); try {
+        let id = conversation;
+        if (!id) {
+            const created = await api<Conversation>('/conversations', {});
+            id = created.id;
+            remember(id);
+        }
+        const response = await api<ChatResponse>('/chat', { question: value, conversationId: id, docIds: scope });
+        if (requestGeneration !== generation.current)
+            return;
+        setTurns(old => [...old, { id: Date.now(), question: value, response, createdAt: new Date().toISOString() }]);
+        setQuestion(current => current === draft ? '' : current);
+        setHighlight(response.referencedNodeIds);
+        await refresh();
+    }
+    catch (e) {
+        failure(e);
+    }
+    finally {
+        setBusy(false);
+        textarea.current?.focus();
+    } }
+    async function demo() { setBusy(true); try {
+        await api('/demo', {});
+        await refresh();
+        setStarted(true);
+        remember(null);
+        setTurns([]);
+        setScope([]);
+    }
+    catch (e) {
+        failure(e);
+    }
+    finally {
+        setBusy(false);
+    } }
+    return <div className={`minimal-workspace ${started ? 'question-open' : 'entry-open'}`}><Mindmap graph={graph} highlight={highlight} onSelect={id => { setSelectedConcept(id); void api('/nodes/explore', {nodeId: id}).then(refresh).catch(failure); }}/><header className="minimal-header"><span><Orbit size={23}/> Study space</span><div><button aria-label="Add files" onClick={() => fileInput.current?.click()} disabled={reading || busy}><Paperclip size={18}/></button><button aria-label="Choose folder" onClick={() => folderInput.current?.click()} disabled={reading || busy}><FolderOpen size={18}/></button>{started && <button aria-label="New conversation" disabled={busy || reading} onClick={() => { generation.current++; setScopeEmpty(false); remember(null); setTurns([]); setQuestion(''); setScope([]); textarea.current?.focus(); }}><Plus size={18}/></button>}<button aria-label="Workspace options" disabled={busy || reading} onClick={() => setSettings(true)}><Settings size={18}/></button></div></header>
+    <input ref={fileInput} className="hidden-file" tabIndex={-1} aria-label="Select files" type="file" multiple accept=".pdf,.md,.txt" onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/><input ref={folderInput} className="hidden-file" tabIndex={-1} aria-label="Select folder" type="file" multiple onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/>
+    {!started ? <main className="minimal-entry"><Orbit size={34}/><h1>drop folder to get started</h1><p>Drop a file or folder here.<br />Your mindmap and questions stay on this page.</p><button onClick={() => fileInput.current?.click()}>Choose a file</button><small>PDF · Markdown · TXT</small><div><button disabled={busy} onClick={() => void demo()}>Try the sample</button>{graph.nodes.length > 0 && <button onClick={() => setStarted(true)}>Continue with saved notes</button>}</div>{error && <p role="alert" className="minimal-error">{error}</p>}</main> : <main className="question-stage"><section className="question-card" aria-label="Document questions">{(turns.length > 0 || busy) && <div className="conversation-thread" ref={thread} aria-live="polite">{turns.map(turn => <article key={turn.id}><h2>{turn.question}</h2><p>{turn.response.answer}</p><div className="source-buttons">{turn.response.citations.map((source, index) => <button key={source.chunkId} onClick={() => setCitation(source)}>Source {index + 1} · p{source.page}</button>)}</div></article>)}{busy && <p role="status">Reading the relevant passages…</p>}</div>}<form onSubmit={e => { e.preventDefault(); void ask(); }}><label htmlFor="question">what question would you like to ask</label><div className="composer"><textarea ref={textarea} id="question" value={question} onChange={e => setQuestion(e.target.value)} placeholder="Ask about your documents…" maxLength={2000} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        setDragging(true);
-    } }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null))
-        setDragging(false); }} onDrop={e => { e.preventDefault(); void handleDrop(e.dataTransfer); }}>
-    {!started && <section className="folder-landing" aria-labelledby="start-heading"><div className="landing-orbit" aria-hidden="true"><Orbit size={36}/></div><h1 id="start-heading">drop folder to get started</h1><p>Your documents become a connected mindmap.<br />Ask a question. Follow the answer back to its source.</p><div className="landing-actions"><button className="choose-folder" onClick={() => folderInput.current?.click()}><FolderOpen size={18}/> Choose folder <ArrowUpRight size={16}/></button><label className="choose-files">or select files<input aria-label="Select document files" type="file" multiple accept=".pdf,.md,.txt" onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/></label></div><small>PDF, Markdown and TXT · Nested folders supported</small>{error && <p role="alert" className="request-error">{error}</p>}<div className="landing-secondary"><button onClick={() => void run(demo)}>Try the sample</button>{graph.nodes.length > 0 && <button onClick={() => { setStarted(true); setTab('chat'); }}>Continue with {Object.keys(names).length} saved documents</button>}</div></section>}
-    <input className="folder-input" ref={folderInput} aria-label="Choose document folder" tabIndex={-1} type="file" multiple onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/>
-    {dragging && <div className="drop-curtain"><FolderOpen size={40}/><strong>Drop to connect your documents</strong></div>}
-
-
-    <header className="study-header"><div className="study-brand"><Orbit size={23}/><strong>Study space</strong><span>Knowledge canvas</span></div><div className="header-actions"><button onClick={() => folderInput.current?.click()} disabled={ingesting}><FolderOpen size={16}/> Add folder</button><button onClick={() => void run(demo)} disabled={busy}><BookOpen size={16}/> Sample graph</button><label className="upload-control"><Upload size={16}/> Add notes<input aria-label="Upload notes" type="file" accept=".pdf,.md,.txt" multiple disabled={ingesting} onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/></label></div></header>
-
-    <div className="study-layout"><aside className="concept-library"><h2>Documents <span>{Object.keys(names).length}</span></h2><p>Shared ideas connect your sources.</p><div className="document-list">{Object.entries(names).map(([id, name]) => <button key={id} onClick={() => void run(() => chooseDocument(id))}><Files size={14}/><span>{name}</span></button>)}</div>{queue.length > 0 && <details className="import-progress" open={ingesting || queue.some(job => !['ready', 'waiting', 'processing'].includes(job.state))}><summary>{queue.filter(j => j.state === 'ready').length}/{queue.length} documents ready</summary>{queue.map((job, i) => <p key={i}><span>{job.name}</span><small>{job.state}</small></p>)}{!ingesting && lastImport.current.some((_, i) => queue[i]?.state !== 'ready') && <button onClick={() => void importFiles(lastImport.current.filter((_, i) => queue[i]?.state !== 'ready'))}>Retry failed files</button>}</details>}<h2 className="concept-heading">Connected ideas <span>{graph.nodes.length}</span></h2><div className="concept-list">{graph.nodes.map(n => <button key={n.id} aria-current={selected?.id === n.id ? 'true' : undefined} className={selected?.id === n.id ? 'chosen' : ''} onClick={() => void run(() => choose(n))}><i className={n.masteryState}/><span>{n.label}</span>{n.docIds.length > 1 && <small>{n.docIds.length} sources</small>}</button>)}</div><div className="coverage"><strong>{progress?.masteredCount || 0} mastered</strong><span>{progress?.exploredCount || 0} of {progress?.totalNodes || 0} explored</span><progress aria-label="Concept coverage" max="100" value={progress?.coveragePercent || 0}/><small>{progress?.crossDocLinks || 0} cross-document connections</small></div></aside>
-
-    <main className="graph-space" ref={host}><div className="graph-caption"><span>Connections in your notes</span><small>Drag to orbit · Scroll to zoom · Click a concept</small></div>{graph.nodes.length ? <Suspense fallback={<p>Loading the 3D canvas · </p>}><ForceGraph3D ref={graphRef} onEngineStop={() => { if (fitted.current !== data.nodes.length) {
-        graphRef.current?.zoomToFit(reduced ? 0 : 900, 12);
-        fitted.current = data.nodes.length;
-    } }} width={size.width} height={size.height} graphData={data} backgroundColor="#0b1119" showNavInfo={false} nodeLabel="label" nodeResolution={20} nodeVal={n => String(n.id).startsWith('doc:') ? 18 : highlight.includes(String(n.id)) ? 14 + (reduced ? 0 : Math.sin(pulse) * 4) : 5} nodeColor={n => String(n.id).startsWith('doc:') ? '#b1c9d9' : n.masteryState === 'mastered' ? '#d9b66f' : highlight.includes(String(n.id)) ? '#e7fff9' : n.masteryState === 'learning' ? '#8ddbcf' : '#526c82'} nodeOpacity={.9} linkColor={() => '#3e6671'} linkWidth={.7} linkLabel="relationshipLabel" cooldownTicks={reduced ? 0 : 100} warmupTicks={reduced ? 100 : 0} linkDirectionalParticles={reduced ? 0 : 1} linkDirectionalParticleSpeed={.002} onNodeClick={n => void run(() => String(n.id).startsWith('doc:') ? chooseDocument(String(n.id).slice(4)) : choose(n as GraphNode))} enableNodeDrag/></Suspense> : <div className="graph-empty"><Orbit size={48}/><h1>{ingesting ? 'Connecting your documents…' : 'Your map is ready for notes.'}</h1><p>{ingesting ? `${queue.filter(job => job.state === 'ready').length} of ${queue.length} ready. Ideas appear as each document finishes.` : 'Add documents or try the sample graph.'}</p>{!ingesting && <button onClick={() => void run(demo)}>Open sample graph</button>}</div>}<div className="document-labels" aria-hidden="true">{documentLabels.map(label => <span key={label.id} style={{ left: label.x, top: label.y }}>{label.label}</span>)}</div><div className="graph-status" role="status">{busy ? 'Working · ' : ''}{status}<button aria-label="Refresh workspace" onClick={() => void run(refresh)}><RotateCcw size={15}/></button></div></main>
-
-    <aside className="study-panel"><nav>{(['chat', 'source', 'quiz'] as const).map(t => <button key={t} aria-pressed={tab === t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>{t === 'source' ? 'Source notes' : t === 'chat' ? 'Ask your documents' : 'Check understanding'}</button>)}</nav><div className="study-panel-body">{error && <p role="alert" className="request-error">{error}</p>}
-
-    {tab === 'source' && <>{quote ? <><h2>Cited passage</h2><blockquote>{quote}</blockquote><button onClick={() => { setQuote(''); setTab('chat'); }}>Back to answer</button></> : selected ? <><span className="state-label">{selected.masteryState}</span><h1>{selected.label}</h1><p>{selected.summary}</p><h3>Source passages</h3>{sourceLoading && <p role='status'>Loading source passages · </p>}{chunks.map(c => <article key={c.id}><small>{names[c.docId] || 'Document'} · Page {c.page}</small><blockquote>{c.text}</blockquote></article>)}<h3>Related concepts</h3>{graph.edges.filter(e => e.source === selected.id || e.target === selected.id).map(e => { const n = graph.nodes.find(n => n.id === (e.source === selected.id ? e.target : e.source)); return n && <button key={e.id} onClick={() => void run(() => choose(n))}>{n.label} →</button>; })}</> : <div className="panel-welcome"><BookOpen size={30}/><h2>Every idea has a source.</h2><p>Select a concept to read its passages, explore related ideas or check your understanding.</p><small>{mode === 'mock' ? 'Deterministic mock mode  ·  No API key needed' : `${mode} provider enabled`}</small></div>}</>}
-
-    {tab === 'chat' && <><MessageCircle size={26}/><h2>What would you like to know?</h2><p>{mode === 'mock' ? 'Mock mode shows retrieved source excerpts. Configure a provider for generated answers.' : 'Answers cite passages from your uploaded documents.'}</p><form onSubmit={e => { e.preventDefault(); void run(async () => { const result = await request<ChatResponse>('/chat', { question, docIds: scope ? [scope] : [] }); setAnswer(result); setHighlight(result.referencedNodeIds); await refresh(); }); }}><label htmlFor="document-scope">Search in</label><select id="document-scope" value={scope} onChange={e => { setScope(e.target.value); setAnswer(null); }}><option value="">All documents</option>{Object.entries(names).map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select><label htmlFor="question">Your question</label><textarea id="question" value={question} onChange={e => setQuestion(e.target.value)} required placeholder="How does retrieval practice help learning?"/><button disabled={busy || !question.trim()}>Ask question <ArrowUpRight size={15}/></button></form>{answer && <article><p className="answer-text">{answer.answer}</p>{answer.citations.map((c, i) => <button key={c.chunkId} onClick={() => { setQuote(`${names[c.docId] || 'Document'}  ·  Page ${c.page}\n\n${c.quote}`); setTab('source'); }}>Source {i + 1} · {names[c.docId] || 'Document'} · Page {c.page} ↗</button>)}</article>}</>}
-
-    {tab === 'quiz' && <><h2>Check understanding</h2><p>{selected ? `Three questions using ${selected.label} and its source context.` : 'Choose a concept on the canvas first.'}</p><button disabled={!selected || selected.id.startsWith('doc:') || busy} onClick={() => void run(async () => { setQuiz(await request<Quiz>('/quiz', { nodeId: selected!.id })); setAnswers([-1, -1, -1]); setGrade(null); })}>Start a quiz</button>{quiz && <form onSubmit={e => { e.preventDefault(); void run(async () => { setGrade(await request('/quiz/grade', { attemptId: quiz.attemptId, answers })); await refresh(); }); }}>{quiz.questions.map((q, i) => <fieldset key={i}><legend>{i + 1}. {q.question}</legend>{q.options.map((option, j) => <label key={j}><input type="radio" name={`q${i}`} checked={answers[i] === j} disabled={!!grade} onChange={() => setAnswers(old => old.map((v, k) => k === i ? j : v))}/>{option}</label>)}{grade && <small>Correct answer: {q.options[grade.correctAnswers[i]!]}</small>}</fieldset>)}<button disabled={busy || answers.includes(-1) || !!grade}>Submit answers</button></form>}{grade && <p role="status">{grade.score}/3 · {grade.passed ? 'Concept mastered.' : 'Keep learning and try a new quiz.'}</p>}</>}
-
-    </div></aside></div><footer className="study-footer">{mode === 'mock' ? 'Mock mode  ·  Notes stay on this computer.' : `${mode} mode  ·  Selected text is sent to your provider.`} <a href="https://github.com/stanbang/Grasp">View project ↗</a></footer></div>;
+        void ask();
+    } }}/><button aria-label="Ask question" disabled={busy || !question.trim() || (reading && readyCount === 0) || scopeEmpty}><ArrowUp size={19}/></button></div></form>{status && <p className="import-status" role="status">{status}</p>}{error && <p role="alert" className="minimal-error">{error}</p>}</section></main>}
+    {dragging && <div className="drop-indicator"><Paperclip size={32}/><span>Drop here to ask your documents</span></div>}<footer className="minimal-footer">{mode === 'mock' ? 'Offline mock · Responses show retrieved excerpts' : `${mode} · Answers use your selected sources`}</footer>
+    {selectedConcept && graph.nodes.some(node => node.id === selectedConcept) && <ConceptView node={graph.nodes.find(node => node.id === selectedConcept)!} graph={graph} onSelect={setSelectedConcept} onClose={() => setSelectedConcept(null)} onSource={source => {setSelectedConcept(null); setCitation(source); }}/>}{citation && <SourceView citation={citation} onClose={() => setCitation(null)}/>} {settings && <WorkspaceSettings onClose={() => setSettings(false)} onRefresh={refresh} onConversation={openConversation} onConversationRemoved={id => { if (id === conversation) {
+        generation.current++;
+        remember(null);
+        setTurns([]);
+    } }} onDocumentChanged={(oldId, newId) => { generation.current++; if (scope.includes(oldId)) {
+        const next = scope.filter(id => id !== oldId);
+        if (newId)
+            next.push(newId);
+        setScope(next);
+        setScopeEmpty(next.length === 0);
+        if (!next.length)
+            setError('The active source was removed. Add notes or start a new conversation to use the remaining workspace.');
+    } }}/>}
+    {locked && <div className="access-gate"><form onSubmit={e => { e.preventDefault(); setAccessToken(token); void refresh().then(async () => { if (conversation)
+        await openConversation(conversation); setLocked(false); setError(''); }).catch(failure); }}><h2>Open your workspace</h2><label htmlFor="access-token">Workspace access token</label><input id="access-token" type="password" value={token} onChange={e => setToken(e.target.value)} required/><button>Unlock</button>{error && <p role="alert">{error}</p>}</form></div>}
+    </div>;
 }

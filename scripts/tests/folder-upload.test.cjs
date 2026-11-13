@@ -28,3 +28,14 @@ test('only supported note extensions are selected',()=>{
 });
 
 test('one unreadable entry keeps readable siblings',async()=>{const result=await api.droppedFiles(transfer(directory([[entry('valid.pdf'),{isFile:true,file:(resolve,reject)=>reject(new Error('Denied')),name:'locked.pdf'}]])));assert.equal(result.files.length,1);assert.equal(result.errors.length,1);});
+
+test('file drops prevent native navigation and invoke the same-page importer once',()=>{
+ const target=new EventTarget();let imports=0;const cleanup=api.installFileDropHandlers(target,()=>imports++,()=>{});
+ const event=new Event('drop',{cancelable:true});Object.defineProperty(event,'dataTransfer',{value:{types:['Files']}});
+ target.dispatchEvent(event);assert.equal(event.defaultPrevented,true);assert.equal(imports,1);
+ cleanup();const next=new Event('drop',{cancelable:true});Object.defineProperty(next,'dataTransfer',{value:{types:['Files']}});target.dispatchEvent(next);assert.equal(imports,1);
+});
+test('text drops retain normal textarea behavior',()=>{
+ const target=new EventTarget();let imports=0;const cleanup=api.installFileDropHandlers(target,()=>imports++,()=>{});
+ const event=new Event('drop',{cancelable:true});Object.defineProperty(event,'dataTransfer',{value:{types:['text/plain']}});target.dispatchEvent(event);assert.equal(event.defaultPrevented,false);assert.equal(imports,0);cleanup();
+});
