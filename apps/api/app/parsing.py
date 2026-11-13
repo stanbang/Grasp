@@ -22,7 +22,7 @@ class SourcePage(BaseModel):
     text: str
 
 
-def read_pages(path: Path, doc_id: str) -> list[SourcePage]:
+def read_pages(path: Path, doc_id: str, ocr_enabled: bool = False, ocr_language: str = "eng") -> list[SourcePage]:
     if path.suffix.lower() == ".pdf":
         reader = PdfReader(path)
         if reader.is_encrypted:
@@ -31,6 +31,10 @@ def read_pages(path: Path, doc_id: str) -> list[SourcePage]:
             raise DocumentInputError(f"Use a PDF with at most {MAX_PAGES} pages.")
         loaded = PyPDFLoader(path, mode="page").load()
         pages = [SourcePage(docId=doc_id, page=item.metadata["page"] + 1, text=item.page_content) for item in loaded]
+        if ocr_enabled:
+            from .ocr import ocr_page
+            for page in pages:
+                if not page.text.strip():page.text=ocr_page(path,page.page,ocr_language)
     else:
         try:
             text = path.read_bytes().decode("utf-8-sig")

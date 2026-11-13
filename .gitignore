@@ -1,5 +1,6 @@
 # Local configuration and private study material
 .env
+api.env
 .env.*
 !.env.example
 data/

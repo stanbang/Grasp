@@ -69,7 +69,7 @@ def fill_missing_node_vectors(merger: GraphMerger, embedder: Embeddings) -> None
 
 def ingest_document(storage: Storage, doc_id: str, path: Path) -> None:
     update_status(storage, doc_id, "chunking", "Reading source pages and locating chunks.")
-    pages = read_pages(path, doc_id)
+    pages = read_pages(path, doc_id, storage.settings.ocr_enabled, storage.settings.ocr_language)
     chunks = chunk_pages(pages, storage.settings.chunk_size, storage.settings.chunk_overlap)
     if not chunks:
         raise DocumentInputError("No readable chunks were found in this document.")

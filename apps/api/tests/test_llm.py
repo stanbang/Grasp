@@ -6,9 +6,31 @@ from langchain_core.exceptions import OutputParserException
 from app.config import Settings
 from app.llm import DeterministicEmbeddings, FixtureChatModel, LLMClient, build_chat_model
 from app.schemas import Quiz
+from app.llm import gemini_schema
+from langchain_core.output_parsers import JsonOutputParser
+
+
+class GeminiFixture(FixtureChatModel):
+    @property
+    def _llm_type(self) -> str:
+        return 'chat-google-generative-ai'
+
+    def with_structured_output(self, schema, **kwargs):
+        assert isinstance(schema, dict)
+        return self | JsonOutputParser()
 
 
 class MockModelTests(unittest.TestCase):
+    def test_gemini_schema_keeps_property_names_and_local_validation(self):
+        schema={'properties':{'maxItems':{'type':'string','maxLength':10}},'maxItems':400}
+        self.assertEqual(gemini_schema(schema),{'properties':{'maxItems':{'type':'string'}}})
+        model=GeminiFixture(responses=[
+            '{"question":"Which?","options":["a","b"],"answerIndex":0}',
+            '{"question":"Which?","options":["a","b","c"],"answerIndex":1}',
+        ])
+        result=LLMClient(model).generate('Make a quiz.',Quiz)
+        self.assertEqual(result.answerIndex,1)
+
     def test_mock_response_uses_the_requested_schema(self) -> None:
         model = build_chat_model(Settings(), ['{"question":"Which?","options":["a","b","c"],"answerIndex":1}'])
         response = LLMClient(model).generate("Create a quiz.", Quiz)

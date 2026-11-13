@@ -12,6 +12,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 class Settings(BaseModel):
     model_config = ConfigDict(frozen=True)
     mock_llm: bool = True
+    access_token: str = Field(default="", repr=False)
+    requests_per_minute: int = Field(default=120, ge=1)
+    ocr_enabled: bool = False
+    ocr_language: str = "eng"
     llm_provider: Literal["openai", "gemini"] = "openai"
     llm_model: str = "gpt-4.1-mini"
     embedding_model: str = "text-embedding-3-small"
@@ -42,6 +46,10 @@ def get_settings() -> Settings:
         raise ValueError("MOCK_LLM must be 0 or 1.")
     return Settings(
         mock_llm=mock_value == "1",
+        access_token=os.getenv("ACCESS_TOKEN", ""),
+        requests_per_minute=os.getenv("REQUESTS_PER_MINUTE", "120"),
+        ocr_enabled=os.getenv("OCR_ENABLED", "0") == "1",
+        ocr_language=os.getenv("OCR_LANGUAGE", "eng"),
         llm_provider=os.getenv("LLM_PROVIDER", "openai"),
         llm_model=os.getenv("LLM_MODEL", "gpt-4.1-mini"),
         embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),

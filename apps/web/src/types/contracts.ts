@@ -69,7 +69,7 @@ export interface ProviderCheck {
 
 export interface HealthResponse {
   status: "ok" | "degraded";
-  phase: 5;
+  phase: 6;
   sqlite: "ok" | "unavailable";
   chroma: "ok" | "unavailable";
   llm: ProviderCheck;
@@ -124,8 +124,30 @@ export interface IngestionEvent {
   edgeCount?: number;
 }
 
+export interface Conversation {
+  id: string;
+  title: string;
+  createdAt: string;
+}
+
+export interface Conversations {
+  conversations: Array<Conversation>;
+}
+
+export interface Turn {
+  id: number;
+  question: string;
+  response: ChatResponse;
+  createdAt: string;
+}
+
+export interface Turns {
+  turns: Array<Turn>;
+}
+
 export interface ChatRequest {
   question: string;
+  conversationId?: string;
   topK?: number;
   docIds?: Array<string>;
 }

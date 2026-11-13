@@ -15,6 +15,10 @@ from .schemas import Chunk, ChunksResponse, Document, DocumentsResponse, PageRes
 from .storage import Storage
 from .ingestion import IngestionQueue
 from .parsing import ALLOWED_EXTENSIONS
+from .document_lifecycle import find_duplicate, remove_document, uploaded_path
+from .workspace_models import FileDigestRow
+import hashlib
+from fastapi.responses import FileResponse
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -37,23 +41,32 @@ async def upload_document(request: Request, file: Annotated[UploadFile, File()])
             raise HTTPException(status_code=413, detail=f"Upload a file no larger than {storage.settings.max_upload_bytes:,} bytes.")
     finally:
         await file.close()
-    doc_id = str(uuid4())
-    upload_dir = storage.settings.data_dir / "uploads"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    path = upload_dir / f"{doc_id}{extension}"
-    await run_in_threadpool(path.write_bytes, content)
-    document = DocumentRow(id=doc_id, name=name, status="queued", uploadedAt=datetime.now(timezone.utc))
-    try:
-        with Session(storage.engine) as session:
-            session.add(document)
-            append_event(session, document, "status", message="Queued for processing.")
-            response = Document.model_validate(document.model_dump())
-            session.commit()
-    except Exception:
-        path.unlink(missing_ok=True)
-        raise
-    queue.submit(doc_id, path)
-    return response
+    return await run_in_threadpool(create_upload, storage, queue, name, extension, content)
+
+
+def create_upload(storage: Storage, queue: IngestionQueue, name: str, extension: str, content: bytes, reuse_duplicates: bool = True) -> Document:
+    with storage.upload_lock:
+        digest=hashlib.sha256(content).hexdigest()
+        duplicate=find_duplicate(storage,digest) if reuse_duplicates else None
+        if duplicate: return Document.model_validate(duplicate.model_dump())
+        doc_id = str(uuid4())
+        upload_dir = storage.settings.data_dir / "uploads"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        path = upload_dir / f"{doc_id}{extension}"
+        path.write_bytes(content)
+        document = DocumentRow(id=doc_id, name=name, status="queued", uploadedAt=datetime.now(timezone.utc))
+        try:
+            with Session(storage.engine) as session:
+                session.add(document)
+                append_event(session, document, "status", message="Queued for processing.")
+                session.add(FileDigestRow(docId=doc_id,digest=digest))
+                response = Document.model_validate(document.model_dump())
+                session.commit()
+        except Exception:
+            path.unlink(missing_ok=True)
+            raise
+        queue.submit(doc_id, path)
+        return response
 
 
 def require_document(storage: Storage, doc_id: str) -> DocumentRow:
@@ -113,3 +126,52 @@ def document_events(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get('/{doc_id}/original')
+def original_document(request: Request, doc_id: UUID) -> FileResponse:
+    storage=request.app.state.storage
+    document=require_document(storage,str(doc_id))
+    path=uploaded_path(storage,document)
+    if not path.is_file():raise HTTPException(404,'The original file is unavailable; extracted source pages are still available.')
+    return FileResponse(path,filename=document.name,content_disposition_type='inline',headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
+
+
+@router.delete('/{doc_id}',response_model=dict[str,bool])
+def delete_document(request: Request,doc_id: UUID) -> dict[str,bool]:
+    storage=request.app.state.storage
+    document=require_document(storage,str(doc_id))
+    if document.status in {'queued','chunking','extracting'}:raise HTTPException(409,'Wait for processing before deleting.')
+    cleaned=request.app.state.ingestion.executor.submit(remove_document,storage,str(doc_id)).result()
+    return {'deleted':True,'cleanupPending':not cleaned}
+
+
+@router.post('/{doc_id}/reindex',response_model=Document)
+def reindex_document(request: Request,doc_id: UUID) -> Document:
+    storage=request.app.state.storage
+    document=require_document(storage,str(doc_id))
+    path=uploaded_path(storage,document)
+    if not path.is_file():raise HTTPException(409,'The original file is unavailable. Upload it again.')
+    content=path.read_bytes()
+    result=create_upload(storage,request.app.state.ingestion,document.name,FilePath(document.name).suffix.lower(),content,reuse_duplicates=False)
+    def finish() -> None:
+        with Session(storage.engine) as session:
+            replacement=session.get(DocumentRow,result.id)
+            if replacement and replacement.status=='done':remove_document(storage,str(doc_id))
+    request.app.state.ingestion.executor.submit(finish).result()
+    return Document.model_validate(require_document(storage,result.id).model_dump())
+
+
+@router.put('/{doc_id}',response_model=Document)
+async def replace_document(request: Request,doc_id: UUID,file: Annotated[UploadFile,File()]) -> Document:
+    storage=request.app.state.storage
+    original=require_document(storage,str(doc_id))
+    if original.status in {'queued','chunking','extracting'}:raise HTTPException(409,'Wait for processing before replacing.')
+    replacement=await upload_document(request,file)
+    if replacement.id==str(doc_id):return replacement
+    def finish() -> None:
+        with Session(storage.engine) as session:
+            row=session.get(DocumentRow,replacement.id)
+            if row and row.status=='done':remove_document(storage,str(doc_id))
+    await run_in_threadpool(lambda: request.app.state.ingestion.executor.submit(finish).result())
+    return Document.model_validate(require_document(storage,replacement.id).model_dump())

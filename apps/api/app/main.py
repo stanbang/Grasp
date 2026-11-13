@@ -5,9 +5,11 @@ from fastapi import FastAPI, Request
 from sqlmodel import Session
 
 from .config import PROJECT_ROOT, get_settings
+from .request_controls import RequestControls
 from .llm import provider_check
 from .document_routes import router as document_router
 from .study_routes import router as study_router
+from .conversations import router as conversation_router
 from .graph_repository import graph_snapshot
 from .ingestion import IngestionQueue
 from .models import ProgressRow
@@ -23,6 +25,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.storage = Storage(get_settings())
     app.state.ingestion = IngestionQueue(app.state.storage)
     app.state.ingestion.recover_interrupted()
+    from .document_lifecycle import backfill_digests, retry_pending_cleanup
+    backfill_digests(app.state.storage)
+    retry_pending_cleanup(app.state.storage)
     try:
         yield
     finally:
@@ -31,12 +36,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="Grasp API", version="0.5.0",
-    description="Phase 2: document ingestion, source provenance and graph extraction.",
+    title="Grasp API", version="0.6.0",
+    description="Local document questions, exact source citations and a 3D knowledge map.",
     lifespan=lifespan,
 )
+app.add_middleware(RequestControls)
 app.include_router(document_router)
 app.include_router(study_router)
+app.include_router(conversation_router)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -47,7 +54,7 @@ def health(request: Request) -> HealthResponse:
     chroma_ok = storage.check_chroma()
     return HealthResponse(
         status="ok" if sqlite_ok and chroma_ok and llm.configured else "degraded",
-        phase=5,
+        phase=6,
         sqlite="ok" if sqlite_ok else "unavailable",
         chroma="ok" if chroma_ok else "unavailable",
         llm=llm,

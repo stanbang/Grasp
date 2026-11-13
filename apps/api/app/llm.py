@@ -63,13 +63,13 @@ def build_chat_model(settings: Settings, responses: list[str] | None = None) -> 
 
         return ChatOpenAI(
             model=settings.llm_model, api_key=settings.openai_api_key,
-            max_retries=0, timeout=30,
+            max_retries=0, timeout=90,
         )
     from langchain_google_genai import ChatGoogleGenerativeAI
 
     return ChatGoogleGenerativeAI(
         model=settings.llm_model, api_key=settings.google_api_key,
-        max_retries=0, timeout=30,
+        max_retries=0, timeout=90,
     )
 
 
@@ -92,6 +92,22 @@ def build_embedder(settings: Settings) -> Embeddings:
     )
 
 
+def gemini_schema(value: Any) -> Any:
+    if isinstance(value, list):
+        return [gemini_schema(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    result = {}
+    for key, item in value.items():
+        if key in {"minItems", "maxItems", "minLength", "maxLength"}:
+            continue
+        if key in {"properties", "$defs"}:
+            result[key] = {name: gemini_schema(schema) for name, schema in item.items()}
+        else:
+            result[key] = gemini_schema(item)
+    return result
+
+
 class LLMClient:
     def __init__(self, model: BaseChatModel):
         self.model = model
@@ -100,7 +116,9 @@ class LLMClient:
         self, prompt: str, schema: type[ResponseModel],
         validate: Callable[[ResponseModel], None] | None = None,
     ) -> ResponseModel:
-        structured_model = self.model.with_structured_output(schema)
+        # Gemini rejects some nested cardinality constraints; enforce them locally.
+        provider_schema = gemini_schema(schema.model_json_schema()) if self.model._llm_type == "chat-google-generative-ai" else schema
+        structured_model = self.model.with_structured_output(provider_schema)
         current_prompt = prompt
         for attempt in range(2):
             try:

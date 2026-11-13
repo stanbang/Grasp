@@ -1,4 +1,5 @@
 import hashlib
+from threading import Lock
 from pathlib import Path
 
 import chromadb
@@ -38,6 +39,7 @@ def create_sqlite_engine(data_dir: Path) -> Engine:
 class Storage:
     def __init__(self, settings: Settings):
         self.settings = settings
+        self.upload_lock = Lock()
         self.engine = create_sqlite_engine(settings.data_dir)
         self.chroma = chromadb.PersistentClient(
             path=str(settings.data_dir / "chroma"),
