@@ -216,3 +216,18 @@
   border: 1px solid #263642;
   border-radius: 8px;
 }
+
+.inspector-first-page {
+  margin: 0;
+}
+.inspector-first-page img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+}
+.inspector-first-page figcaption {
+  font-size: 10px;
+  color: #a4b3bf;
+  margin-top: 8px;
+}

@@ -40,6 +40,7 @@ export function DocumentInspector({
     [page, setPage] = useState(citation?.page || 1),
     [text, setText] = useState(""),
     [url, setUrl] = useState(""),
+    [thumbnail, setThumbnail] = useState(""),
     [error, setError] = useState(""),
     [confirm, setConfirm] = useState(false);
   const [metadata, setMetadata] = useState({
@@ -58,6 +59,16 @@ export function DocumentInspector({
   useEffect(() => {
     let active = true;
     let blob = "";
+    let previewBlob = "";
+    setThumbnail("");
+    if (document.name.toLowerCase().endsWith(".pdf"))
+      void apiFetch(`/documents/${document.id}/thumbnail`)
+        .then(async (response) => {
+          previewBlob = URL.createObjectURL(await response.blob());
+          if (active) setThumbnail(previewBlob);
+          else URL.revokeObjectURL(previewBlob);
+        })
+        .catch(() => {});
     setChunks([]);
     setUrl("");
     setError("");
@@ -90,6 +101,7 @@ export function DocumentInspector({
     return () => {
       active = false;
       if (blob) URL.revokeObjectURL(blob);
+      if (previewBlob) URL.revokeObjectURL(previewBlob);
     };
   }, [document.id, citation?.page]);
   useEffect(() => {
@@ -157,12 +169,28 @@ export function DocumentInspector({
         </p>
       </div>
       {error && <p role="alert">{error}</p>}
+      {thumbnail && page === 1 && (
+        <figure className="inspector-first-page">
+          <img src={thumbnail} alt={`First page of ${document.name}`} />
+          <figcaption>First page preview</figcaption>
+        </figure>
+      )}
       {url && (
-        <iframe
-          title={`Original PDF page ${page}`}
-          className="source-pdf"
-          src={`${url}#page=${page}`}
-        />
+        <details>
+          <summary>Original PDF · page {page}</summary>
+          <p>
+            If this browser cannot display the PDF, use the download or read the
+            extracted page below.
+          </p>
+          <iframe
+            title={`Original PDF page ${page}`}
+            className="source-pdf"
+            src={`${url}#page=${page}`}
+          />
+          <a href={url} download={document.name}>
+            Download original PDF
+          </a>
+        </details>
       )}
       <div className="page-controls">
         <IconButton
