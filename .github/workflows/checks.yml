@@ -1,0 +1,62 @@
+name: Grasp checks and showcase
+
+on:
+  push:
+    branches: [main, showcase-overhaul]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Offline tests and build
+    runs-on: ubuntu-latest
+    env:
+      MOCK_LLM: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: apps/api/requirements.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: python scripts/dev.py --install-only
+      - run: python scripts/check.py
+      - run: npm run build
+      - name: Build the static demo for GitHub Pages
+        if: github.repository == 'stanbang/Grasp' && github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'showcase-overhaul')
+        run: |
+          npm --prefix apps/web run build -- --base /Grasp/
+          mkdir -p site
+          cp -R apps/web/dist/showcase apps/web/dist/assets site/
+          find site/assets -maxdepth 1 \( -name 'workspace-*' -o -name '*.map' \) -type f -delete
+          printf '%s\n' '<!doctype html><html lang="en"><meta charset="utf-8"><title>Grasp showcase</title><meta http-equiv="refresh" content="0;url=showcase/"><a href="showcase/">Open the Grasp showcase</a></html>' > site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        if: github.repository == 'stanbang/Grasp' && github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'showcase-overhaul')
+        with:
+          path: site
+
+  deploy:
+    name: Publish the static showcase
+    if: github.repository == 'stanbang/Grasp' && github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'showcase-overhaul')
+    needs: check
+    runs-on: ubuntu-latest
+    concurrency:
+      group: grasp-pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: publish
