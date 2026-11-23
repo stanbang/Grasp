@@ -13,9 +13,14 @@
 
 ## Next
 
-- The audit is ready for the phase review. After the owner's `go`, carry the verified retrieval evidence onto the showcase branch before starting the Figma designs.
+- The owner authorized continuing through all phases with self-review at each checkpoint.
 - Use Impeccable shape for the showcase before building UI. The project records its Impeccable setup in [the original checkpoint](phase-1.md).
 - Use checked-in notes for the first trace pass and record any provisional notes if the owner has not supplied final copy.
+
+## Retrieval evidence
+
+- Carried the earlier runner, fixtures, labels and recorded reports onto this branch. The runner stages its corpus with the archived line endings in a temporary directory. It leaves working notes, the study library and recorded reports alone.
+- The port reproduced every mock result except machine timings. See [the benchmark command](facts.md#reproduce-the-four-note-mock-report).
 
 ## Needs owner approval
 

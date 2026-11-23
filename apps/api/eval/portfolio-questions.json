@@ -1,0 +1,117 @@
+[
+  {
+    "question": "What holds information briefly while I use it?",
+    "quote": "Working memory holds information briefly",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "What should I do when too many unfamiliar ideas make an exercise hard?",
+    "quote": "Breaking a task into smaller steps",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "Where is knowledge kept beyond this assignment?",
+    "quote": "Long-term memory stores knowledge",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "What makes a useful idea easier to revisit?",
+    "quote": "a clear name, a short explanation and an example",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "What does retrieval practice mean?",
+    "quote": "Retrieval practice means trying to recall",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "How should I check whether my recalled answer missed details?",
+    "quote": "Checking the source afterward helps identify",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "Why study on different days instead of in one sitting?",
+    "quote": "Spaced practice separates study sessions",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "How can a later spaced session begin?",
+    "quote": "A later session can begin with retrieval practice",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "How does specific feedback tell me what to revise?",
+    "quote": "Specific feedback identifies what was correct",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "What are the vertices and links in a concept map?",
+    "quote": "A concept map represents ideas as nodes",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "Can a concept link to several sources?",
+    "quote": "One node can link to several passages",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "Does the mastery label prove I will remember it later?",
+    "quote": "The mastery state does not prove long-term retention",
+    "document": "memory-and-learning.md"
+  },
+  {
+    "question": "What is the first step in the review notes' recall exercise?",
+    "quote": "Close the notes and explain an idea",
+    "document": "retrieval-review.md"
+  },
+  {
+    "question": "How should I make a correction specific?",
+    "quote": "Use the source passage to make that correction specific",
+    "document": "retrieval-review.md",
+    "scope": [
+      "retrieval-review.md"
+    ]
+  },
+  {
+    "question": "How do the review notes define a worked example?",
+    "quote": "A worked example shows the steps used to solve a task",
+    "document": "retrieval-review.md",
+    "scope": [
+      "retrieval-review.md"
+    ]
+  },
+  {
+    "question": "What should I explain after reading a worked example?",
+    "quote": "try explaining why each step was chosen",
+    "document": "retrieval-review.md",
+    "scope": [
+      "retrieval-review.md"
+    ]
+  },
+  {
+    "question": "Is the end offset part of the cited text?",
+    "quote": "End offsets are exclusive.",
+    "document": "memory-and-learning.md",
+    "scope": [
+      "memory-and-learning.md"
+    ]
+  },
+  {
+    "question": "In Markdown, what page number represents the note?",
+    "quote": "the whole document is page 1",
+    "document": "memory-and-learning.md",
+    "scope": [
+      "memory-and-learning.md"
+    ]
+  },
+  {
+    "question": "How do I change embedding models without immediately switching traffic?",
+    "quote": "Build a parallel index before changing models.",
+    "document": "deployment-notes.md"
+  },
+  {
+    "question": "How can I check if memory allocation grows after requests?",
+    "quote": "A profiler can record objects still reachable",
+    "document": "lab-notebook.md"
+  }
+]

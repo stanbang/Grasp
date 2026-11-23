@@ -1,0 +1,1134 @@
+{
+  "mode": "deterministic fixture",
+  "questions": 20,
+  "topK": 3,
+  "candidateK": 8,
+  "corpus": {
+    "memory-and-learning.md": "7665d8df640d7aa256a4ad40f3131200dc82864c7e7b2ee84eb0c8543eea4bd7",
+    "retrieval-review.md": "73e1f0147ff2ff860d53941571743bc43ac2b4f048017ee03dd69c21b57132e9",
+    "deployment-notes.md": "d6790d2d2aec5e3bbb5595c18e9f6218fdfda700f2679023abda11c77f0e0e6c",
+    "lab-notebook.md": "acb085e91f49ea9bbd5100aaa5e2610774a33f3e4759197b620a87fc3cdf4725"
+  },
+  "runs": [
+    {
+      "id": "900-vector",
+      "ranking": "vector",
+      "embedding": "mock-sha256-256-v1",
+      "chunkSize": 900,
+      "overlap": 150,
+      "chunks": 8,
+      "hitAt1": 0.7,
+      "hitAt3": 1.0,
+      "mrrAt3": 0.8416666666666666,
+      "p50Ms": 10.29,
+      "p95Ms": 11.38,
+      "scopedCases": 5,
+      "outOfScope": 0,
+      "meanContextChars": 1653,
+      "cases": [
+        {
+          "question": "What holds information briefly while I use it?",
+          "quote": "Working memory holds information briefly",
+          "document": "memory-and-learning.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:728-1004",
+            "memory-and-learning.md:p1:0-874",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.33
+        },
+        {
+          "question": "What should I do when too many unfamiliar ideas make an exercise hard?",
+          "quote": "Breaking a task into smaller steps",
+          "document": "memory-and-learning.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:728-1004",
+            "memory-and-learning.md:p1:0-874",
+            "lab-notebook.md:p1:0-748"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.38
+        },
+        {
+          "question": "Where is knowledge kept beyond this assignment?",
+          "quote": "Long-term memory stores knowledge",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-874",
+            "memory-and-learning.md:p1:1534-2059"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.27
+        },
+        {
+          "question": "What makes a useful idea easier to revisit?",
+          "quote": "a clear name, a short explanation and an example",
+          "document": "memory-and-learning.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "memory-and-learning.md:p1:0-874",
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.88
+        },
+        {
+          "question": "What does retrieval practice mean?",
+          "quote": "Retrieval practice means trying to recall",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-874",
+            "memory-and-learning.md:p1:854-1561",
+            "deployment-notes.md:p1:0-798"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.18
+        },
+        {
+          "question": "How should I check whether my recalled answer missed details?",
+          "quote": "Checking the source afterward helps identify",
+          "document": "memory-and-learning.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632",
+            "memory-and-learning.md:p1:0-874",
+            "lab-notebook.md:p1:728-1004"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.27
+        },
+        {
+          "question": "Why study on different days instead of in one sitting?",
+          "quote": "Spaced practice separates study sessions",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "memory-and-learning.md:p1:1534-2059",
+            "deployment-notes.md:p1:0-798"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.44
+        },
+        {
+          "question": "How can a later spaced session begin?",
+          "quote": "A later session can begin with retrieval practice",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "memory-and-learning.md:p1:0-874"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.01
+        },
+        {
+          "question": "How does specific feedback tell me what to revise?",
+          "quote": "Specific feedback identifies what was correct",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "deployment-notes.md:p1:0-798",
+            "deployment-notes.md:p1:783-1017"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.58
+        },
+        {
+          "question": "What are the vertices and links in a concept map?",
+          "quote": "A concept map represents ideas as nodes",
+          "document": "memory-and-learning.md",
+          "rank": 3,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-2059",
+            "memory-and-learning.md:p1:0-874",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.33
+        },
+        {
+          "question": "Can a concept link to several sources?",
+          "quote": "One node can link to several passages",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "memory-and-learning.md:p1:0-874",
+            "deployment-notes.md:p1:0-798"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.45
+        },
+        {
+          "question": "Does the mastery label prove I will remember it later?",
+          "quote": "The mastery state does not prove long-term retention",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-2059",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.31
+        },
+        {
+          "question": "What is the first step in the review notes' recall exercise?",
+          "quote": "Close the notes and explain an idea",
+          "document": "retrieval-review.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632",
+            "deployment-notes.md:p1:0-798",
+            "memory-and-learning.md:p1:0-874"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.25
+        },
+        {
+          "question": "How should I make a correction specific?",
+          "quote": "Use the source passage to make that correction specific",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.2
+        },
+        {
+          "question": "How do the review notes define a worked example?",
+          "quote": "A worked example shows the steps used to solve a task",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 8.38
+        },
+        {
+          "question": "What should I explain after reading a worked example?",
+          "quote": "try explaining why each step was chosen",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.41
+        },
+        {
+          "question": "Is the end offset part of the cited text?",
+          "quote": "End offsets are exclusive.",
+          "document": "memory-and-learning.md",
+          "scope": [
+            "memory-and-learning.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-2059",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 8.76
+        },
+        {
+          "question": "In Markdown, what page number represents the note?",
+          "quote": "the whole document is page 1",
+          "document": "memory-and-learning.md",
+          "scope": [
+            "memory-and-learning.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-2059",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.08
+        },
+        {
+          "question": "How do I change embedding models without immediately switching traffic?",
+          "quote": "Build a parallel index before changing models.",
+          "document": "deployment-notes.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:0-748",
+            "deployment-notes.md:p1:0-798"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.72
+        },
+        {
+          "question": "How can I check if memory allocation grows after requests?",
+          "quote": "A profiler can record objects still reachable",
+          "document": "lab-notebook.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:0-748",
+            "memory-and-learning.md:p1:0-874",
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.97
+        }
+      ]
+    },
+    {
+      "id": "900-vector_then_terms",
+      "ranking": "vector_then_terms",
+      "embedding": "mock-sha256-256-v1",
+      "chunkSize": 900,
+      "overlap": 150,
+      "chunks": 8,
+      "hitAt1": 0.9,
+      "hitAt3": 1.0,
+      "mrrAt3": 0.95,
+      "p50Ms": 10.35,
+      "p95Ms": 11.47,
+      "scopedCases": 5,
+      "outOfScope": 0,
+      "meanContextChars": 1630,
+      "cases": [
+        {
+          "question": "What holds information briefly while I use it?",
+          "quote": "Working memory holds information briefly",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-874",
+            "lab-notebook.md:p1:728-1004",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.41
+        },
+        {
+          "question": "What should I do when too many unfamiliar ideas make an exercise hard?",
+          "quote": "Breaking a task into smaller steps",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-874",
+            "lab-notebook.md:p1:728-1004",
+            "lab-notebook.md:p1:0-748"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.47
+        },
+        {
+          "question": "Where is knowledge kept beyond this assignment?",
+          "quote": "Long-term memory stores knowledge",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-874",
+            "memory-and-learning.md:p1:1534-2059"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.42
+        },
+        {
+          "question": "What makes a useful idea easier to revisit?",
+          "quote": "a clear name, a short explanation and an example",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-874",
+            "memory-and-learning.md:p1:854-1561",
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.95
+        },
+        {
+          "question": "What does retrieval practice mean?",
+          "quote": "Retrieval practice means trying to recall",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-874",
+            "memory-and-learning.md:p1:854-1561",
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.29
+        },
+        {
+          "question": "How should I check whether my recalled answer missed details?",
+          "quote": "Checking the source afterward helps identify",
+          "document": "memory-and-learning.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632",
+            "memory-and-learning.md:p1:0-874",
+            "lab-notebook.md:p1:728-1004"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.35
+        },
+        {
+          "question": "Why study on different days instead of in one sitting?",
+          "quote": "Spaced practice separates study sessions",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "memory-and-learning.md:p1:1534-2059",
+            "deployment-notes.md:p1:0-798"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.54
+        },
+        {
+          "question": "How can a later spaced session begin?",
+          "quote": "A later session can begin with retrieval practice",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "memory-and-learning.md:p1:0-874"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.05
+        },
+        {
+          "question": "How does specific feedback tell me what to revise?",
+          "quote": "Specific feedback identifies what was correct",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "retrieval-review.md:p1:0-632",
+            "deployment-notes.md:p1:0-798"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.68
+        },
+        {
+          "question": "What are the vertices and links in a concept map?",
+          "quote": "A concept map represents ideas as nodes",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "memory-and-learning.md:p1:1534-2059",
+            "memory-and-learning.md:p1:0-874"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.41
+        },
+        {
+          "question": "Can a concept link to several sources?",
+          "quote": "One node can link to several passages",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1561",
+            "memory-and-learning.md:p1:0-874",
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.55
+        },
+        {
+          "question": "Does the mastery label prove I will remember it later?",
+          "quote": "The mastery state does not prove long-term retention",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-2059",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.35
+        },
+        {
+          "question": "What is the first step in the review notes' recall exercise?",
+          "quote": "Close the notes and explain an idea",
+          "document": "retrieval-review.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:728-1004",
+            "retrieval-review.md:p1:0-632",
+            "memory-and-learning.md:p1:0-874"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.35
+        },
+        {
+          "question": "How should I make a correction specific?",
+          "quote": "Use the source passage to make that correction specific",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.27
+        },
+        {
+          "question": "How do the review notes define a worked example?",
+          "quote": "A worked example shows the steps used to solve a task",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 8.41
+        },
+        {
+          "question": "What should I explain after reading a worked example?",
+          "quote": "try explaining why each step was chosen",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.44
+        },
+        {
+          "question": "Is the end offset part of the cited text?",
+          "quote": "End offsets are exclusive.",
+          "document": "memory-and-learning.md",
+          "scope": [
+            "memory-and-learning.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-2059",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 8.8
+        },
+        {
+          "question": "In Markdown, what page number represents the note?",
+          "quote": "the whole document is page 1",
+          "document": "memory-and-learning.md",
+          "scope": [
+            "memory-and-learning.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-2059",
+            "memory-and-learning.md:p1:854-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.12
+        },
+        {
+          "question": "How do I change embedding models without immediately switching traffic?",
+          "quote": "Build a parallel index before changing models.",
+          "document": "deployment-notes.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "deployment-notes.md:p1:0-798",
+            "lab-notebook.md:p1:0-748"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.77
+        },
+        {
+          "question": "How can I check if memory allocation grows after requests?",
+          "quote": "A profiler can record objects still reachable",
+          "document": "lab-notebook.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:0-748",
+            "retrieval-review.md:p1:0-632",
+            "memory-and-learning.md:p1:0-874"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.08
+        }
+      ]
+    },
+    {
+      "id": "360-vector",
+      "ranking": "vector",
+      "embedding": "mock-sha256-256-v1",
+      "chunkSize": 360,
+      "overlap": 60,
+      "chunks": 18,
+      "hitAt1": 0.9,
+      "hitAt3": 0.95,
+      "mrrAt3": 0.925,
+      "p50Ms": 9.9,
+      "p95Ms": 10.45,
+      "scopedCases": 5,
+      "outOfScope": 0,
+      "meanContextChars": 631,
+      "cases": [
+        {
+          "question": "What holds information briefly while I use it?",
+          "quote": "Working memory holds information briefly",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-345",
+            "memory-and-learning.md:p1:1070-1305",
+            "lab-notebook.md:p1:728-1004"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.23
+        },
+        {
+          "question": "What should I do when too many unfamiliar ideas make an exercise hard?",
+          "quote": "Breaking a task into smaller steps",
+          "document": "memory-and-learning.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:728-1004",
+            "memory-and-learning.md:p1:0-345",
+            "lab-notebook.md:p1:507-748"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.17
+        },
+        {
+          "question": "Where is knowledge kept beyond this assignment?",
+          "quote": "Long-term memory stores knowledge",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:345-615",
+            "memory-and-learning.md:p1:1781-2059"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.05
+        },
+        {
+          "question": "What makes a useful idea easier to revisit?",
+          "quote": "a clear name, a short explanation and an example",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:345-615",
+            "memory-and-learning.md:p1:1288-1561",
+            "memory-and-learning.md:p1:592-874"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.62
+        },
+        {
+          "question": "What does retrieval practice mean?",
+          "quote": "Retrieval practice means trying to recall",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:592-874",
+            "memory-and-learning.md:p1:854-1083",
+            "deployment-notes.md:p1:265-579"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.58
+        },
+        {
+          "question": "How should I check whether my recalled answer missed details?",
+          "quote": "Checking the source afterward helps identify",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:592-874",
+            "retrieval-review.md:p1:0-355",
+            "lab-notebook.md:p1:728-1004"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.11
+        },
+        {
+          "question": "Why study on different days instead of in one sitting?",
+          "quote": "Spaced practice separates study sessions",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1083",
+            "memory-and-learning.md:p1:1288-1561",
+            "memory-and-learning.md:p1:1070-1305"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.96
+        },
+        {
+          "question": "How can a later spaced session begin?",
+          "quote": "A later session can begin with retrieval practice",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1083"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.41
+        },
+        {
+          "question": "How does specific feedback tell me what to revise?",
+          "quote": "Specific feedback identifies what was correct",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1070-1305",
+            "retrieval-review.md:p1:355-632",
+            "deployment-notes.md:p1:783-1017"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.83
+        },
+        {
+          "question": "What are the vertices and links in a concept map?",
+          "quote": "A concept map represents ideas as nodes",
+          "document": "memory-and-learning.md",
+          "rank": null,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-1803",
+            "memory-and-learning.md:p1:1070-1305"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.25
+        },
+        {
+          "question": "Can a concept link to several sources?",
+          "quote": "One node can link to several passages",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1288-1561",
+            "memory-and-learning.md:p1:1070-1305",
+            "memory-and-learning.md:p1:1534-1803"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.82
+        },
+        {
+          "question": "Does the mastery label prove I will remember it later?",
+          "quote": "The mastery state does not prove long-term retention",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-1803"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.97
+        },
+        {
+          "question": "What is the first step in the review notes' recall exercise?",
+          "quote": "Close the notes and explain an idea",
+          "document": "retrieval-review.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-355",
+            "memory-and-learning.md:p1:592-874",
+            "lab-notebook.md:p1:270-537"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.41
+        },
+        {
+          "question": "How should I make a correction specific?",
+          "quote": "Use the source passage to make that correction specific",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:355-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.39
+        },
+        {
+          "question": "How do the review notes define a worked example?",
+          "quote": "A worked example shows the steps used to solve a task",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:355-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.06
+        },
+        {
+          "question": "What should I explain after reading a worked example?",
+          "quote": "try explaining why each step was chosen",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:355-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.63
+        },
+        {
+          "question": "Is the end offset part of the cited text?",
+          "quote": "End offsets are exclusive.",
+          "document": "memory-and-learning.md",
+          "scope": [
+            "memory-and-learning.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1781-2059",
+            "memory-and-learning.md:p1:1070-1305"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.64
+        },
+        {
+          "question": "In Markdown, what page number represents the note?",
+          "quote": "the whole document is page 1",
+          "document": "memory-and-learning.md",
+          "scope": [
+            "memory-and-learning.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1781-2059",
+            "memory-and-learning.md:p1:1288-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.45
+        },
+        {
+          "question": "How do I change embedding models without immediately switching traffic?",
+          "quote": "Build a parallel index before changing models.",
+          "document": "deployment-notes.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "deployment-notes.md:p1:543-798",
+            "lab-notebook.md:p1:0-298",
+            "lab-notebook.md:p1:270-537"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.41
+        },
+        {
+          "question": "How can I check if memory allocation grows after requests?",
+          "quote": "A profiler can record objects still reachable",
+          "document": "lab-notebook.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:0-298",
+            "memory-and-learning.md:p1:0-345",
+            "memory-and-learning.md:p1:345-615"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.84
+        }
+      ]
+    },
+    {
+      "id": "360-vector_then_terms",
+      "ranking": "vector_then_terms",
+      "embedding": "mock-sha256-256-v1",
+      "chunkSize": 360,
+      "overlap": 60,
+      "chunks": 18,
+      "hitAt1": 0.85,
+      "hitAt3": 0.95,
+      "mrrAt3": 0.9,
+      "p50Ms": 9.94,
+      "p95Ms": 10.47,
+      "scopedCases": 5,
+      "outOfScope": 0,
+      "meanContextChars": 629,
+      "cases": [
+        {
+          "question": "What holds information briefly while I use it?",
+          "quote": "Working memory holds information briefly",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:0-345",
+            "memory-and-learning.md:p1:1070-1305",
+            "lab-notebook.md:p1:728-1004"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.27
+        },
+        {
+          "question": "What should I do when too many unfamiliar ideas make an exercise hard?",
+          "quote": "Breaking a task into smaller steps",
+          "document": "memory-and-learning.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:728-1004",
+            "memory-and-learning.md:p1:0-345",
+            "lab-notebook.md:p1:507-748"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.22
+        },
+        {
+          "question": "Where is knowledge kept beyond this assignment?",
+          "quote": "Long-term memory stores knowledge",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:345-615",
+            "memory-and-learning.md:p1:1781-2059"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.08
+        },
+        {
+          "question": "What makes a useful idea easier to revisit?",
+          "quote": "a clear name, a short explanation and an example",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:345-615",
+            "memory-and-learning.md:p1:1288-1561",
+            "memory-and-learning.md:p1:592-874"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.65
+        },
+        {
+          "question": "What does retrieval practice mean?",
+          "quote": "Retrieval practice means trying to recall",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:592-874",
+            "memory-and-learning.md:p1:854-1083",
+            "memory-and-learning.md:p1:345-615"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.63
+        },
+        {
+          "question": "How should I check whether my recalled answer missed details?",
+          "quote": "Checking the source afterward helps identify",
+          "document": "memory-and-learning.md",
+          "rank": 2,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-355",
+            "memory-and-learning.md:p1:592-874",
+            "lab-notebook.md:p1:728-1004"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.14
+        },
+        {
+          "question": "Why study on different days instead of in one sitting?",
+          "quote": "Spaced practice separates study sessions",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1083",
+            "memory-and-learning.md:p1:1288-1561",
+            "memory-and-learning.md:p1:1070-1305"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.0
+        },
+        {
+          "question": "How can a later spaced session begin?",
+          "quote": "A later session can begin with retrieval practice",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:854-1083"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.42
+        },
+        {
+          "question": "How does specific feedback tell me what to revise?",
+          "quote": "Specific feedback identifies what was correct",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1070-1305",
+            "retrieval-review.md:p1:355-632",
+            "deployment-notes.md:p1:783-1017"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 11.88
+        },
+        {
+          "question": "What are the vertices and links in a concept map?",
+          "quote": "A concept map represents ideas as nodes",
+          "document": "memory-and-learning.md",
+          "rank": null,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-1803",
+            "memory-and-learning.md:p1:1070-1305"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.27
+        },
+        {
+          "question": "Can a concept link to several sources?",
+          "quote": "One node can link to several passages",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1288-1561",
+            "memory-and-learning.md:p1:1070-1305",
+            "memory-and-learning.md:p1:1534-1803"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.85
+        },
+        {
+          "question": "Does the mastery label prove I will remember it later?",
+          "quote": "The mastery state does not prove long-term retention",
+          "document": "memory-and-learning.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1534-1803"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.98
+        },
+        {
+          "question": "What is the first step in the review notes' recall exercise?",
+          "quote": "Close the notes and explain an idea",
+          "document": "retrieval-review.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:0-355",
+            "memory-and-learning.md:p1:592-874",
+            "lab-notebook.md:p1:270-537"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.46
+        },
+        {
+          "question": "How should I make a correction specific?",
+          "quote": "Use the source passage to make that correction specific",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:355-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.4
+        },
+        {
+          "question": "How do the review notes define a worked example?",
+          "quote": "A worked example shows the steps used to solve a task",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:355-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.08
+        },
+        {
+          "question": "What should I explain after reading a worked example?",
+          "quote": "try explaining why each step was chosen",
+          "document": "retrieval-review.md",
+          "scope": [
+            "retrieval-review.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "retrieval-review.md:p1:355-632"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.64
+        },
+        {
+          "question": "Is the end offset part of the cited text?",
+          "quote": "End offsets are exclusive.",
+          "document": "memory-and-learning.md",
+          "scope": [
+            "memory-and-learning.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1781-2059",
+            "memory-and-learning.md:p1:1070-1305"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.66
+        },
+        {
+          "question": "In Markdown, what page number represents the note?",
+          "quote": "the whole document is page 1",
+          "document": "memory-and-learning.md",
+          "scope": [
+            "memory-and-learning.md"
+          ],
+          "rank": 1,
+          "retrievedChunkIds": [
+            "memory-and-learning.md:p1:1781-2059",
+            "memory-and-learning.md:p1:1288-1561"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 10.47
+        },
+        {
+          "question": "How do I change embedding models without immediately switching traffic?",
+          "quote": "Build a parallel index before changing models.",
+          "document": "deployment-notes.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "deployment-notes.md:p1:543-798",
+            "lab-notebook.md:p1:0-298",
+            "lab-notebook.md:p1:270-537"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.44
+        },
+        {
+          "question": "How can I check if memory allocation grows after requests?",
+          "quote": "A profiler can record objects still reachable",
+          "document": "lab-notebook.md",
+          "rank": 1,
+          "retrievedChunkIds": [
+            "lab-notebook.md:p1:0-298",
+            "memory-and-learning.md:p1:0-345",
+            "memory-and-learning.md:p1:345-615"
+          ],
+          "outOfScope": 0,
+          "retrievalMs": 9.89
+        }
+      ]
+    }
+  ]
+}
