@@ -6,13 +6,14 @@
 - Read the product, design and surface guidance and checked the workspace, evaluation runners, reports and test coverage. [Facts and evidence](facts.md) records claims, verification commands, stale copy and measurement gaps.
 - Found earlier interview work on `origin/feature/rag-interview-showcase`. Reconstructed chunks from the archived note bytes and verified gold matches, context counts and scopes. Recomputed archived Hit@1, Hit@3 and MRR@3. The two existing notes match the recorded hashes as Git blobs. The two portfolio-specific fixtures match with CRLF line endings.
 - Reproduced the original offline retrieval result. `python scripts/check.py` and `npm run build` passed. The built workspace and mock API passed a loopback smoke check. The build warned about the size of the existing lazy-loaded 3D bundle and stale Browserslist data. Python warned that the current PDF loader's package is deprecated.
+- Reran the earlier four-note benchmark in mock mode with the exact archived input bytes. The report matched the archived mock report after removing timing fields. [Reproduction steps](facts.md#reproduce-the-four-note-mock-report) document the line endings needed to recover the stored chunk IDs.
 - Keep the default branch's study workspace as the integration baseline. Reuse the earlier evaluation artifacts where compatible. The older `/about` walkthrough and the proposed `/showcase` replay serve different purposes.
 - Treat the author's description of student needs as a design goal. There is no user research result to cite.
 - Reviewed the audit and progress prose against the Humanizer skill linked from the repository's original checkpoint.
 
 ## Next
 
-- The audit is ready for the phase review. After the owner's `go`, carry forward and rerun the free retrieval evidence before starting the Figma designs.
+- The audit is ready for the phase review. After the owner's `go`, carry the verified retrieval evidence onto the showcase branch before starting the Figma designs.
 - Use Impeccable shape for the showcase before building UI. The project records its Impeccable setup in [the original checkpoint](phase-1.md).
 - Use checked-in notes for the first trace pass and record any provisional notes if the owner has not supplied final copy.
 

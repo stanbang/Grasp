@@ -52,6 +52,20 @@ Each row is a recorded retrieval experiment with its own embedding mode. Hit@1 a
 
 Sources and reproduction are the two `git show 31ffab9:apps/web/public/about/results-*.json` commands in the table above, with `*` replaced by `live` or `mock`. The reports record zero out-of-scope results on the five scoped cases per configuration. This tests retrieval filtering on those cases. The authored questions were used to inspect the configurations and have no held-out split. A single network run cannot establish a latency advantage. The stored corpus hashes match the two sample note blobs as committed and the two extra fixture blobs with CRLF line endings. Preserve the recorded bytes when reproducing earlier offsets, or report a new run against a newly hashed corpus.
 
+### Reproduce the four-note mock report
+
+During the audit, running the original benchmark in mock mode reproduced every stored retrieved chunk ID, rank, scope count and context count. The report matched after removing wall-clock timing fields. To recreate the inputs, open a separate checkout of the recorded experiment with LF line endings.
+
+```sh
+git -c core.autocrlf=false worktree add --detach ../Grasp-eval-audit 31ffab9
+cd ../Grasp-eval-audit
+python -c "from pathlib import Path; path = Path('apps/api/eval/portfolio-fixtures/deployment-notes.md'); path.write_bytes(path.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))"
+python -c "from pathlib import Path; path = Path('apps/api/eval/portfolio-fixtures/lab-notebook.md'); path.write_bytes(path.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))"
+python apps/api/eval/portfolio.py --output work/portfolio-mock.json
+```
+
+Use Python with the locked API dependencies. Compare `work/portfolio-mock.json` with `apps/web/public/about/results-mock.json` in that checkout. The corpus hashes, per-case ranks and summary quality metrics should match. Timing fields vary by run.
+
 ## Mismatches and stale copy
 
 | Seed or existing copy | What the evidence supports |
