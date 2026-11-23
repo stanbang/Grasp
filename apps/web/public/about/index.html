@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grasp · From notes to evidence</title>
+    <meta
+      name="description"
+      content="An interactive case study of a student RAG workspace and its retrieval evaluation."
+    />
+    <link rel="stylesheet" href="./about.css" />
+    <script src="./about.js" type="module"></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="#top"><i aria-hidden="true"></i>Grasp</a>
+      <nav aria-label="Case study">
+        <a href="#pipeline">Pipeline</a><a href="#evaluation">Evaluation</a
+        ><a href="#prototype">Prototype</a
+        ><a href="https://github.com/stanbang/Grasp">GitHub ↗</a>
+      </nav>
+    </header>
+    <main id="top">
+      <section class="hero">
+        <div>
+          <h1>From lecture notes to <em>verifiable answers.</em></h1>
+          <p>
+            Grasp is a study workspace for questions about your own PDFs and
+            notes. Retrieval-augmented generation (RAG) finds relevant passages
+            in your materials before a language model answers, so you can check
+            its claims against the source.
+          </p>
+          <div class="actions">
+            <a class="primary" href="#evaluation">Explore the evaluation</a
+            ><a href="#prototype">Try the prototype ↓</a>
+          </div>
+        </div>
+        <div class="orbit">
+          <article class="paper">
+            <small>MEMORY &amp; LEARNING</small>
+            <h3>Retrieval practice</h3>
+            <blockquote>
+              “Retrieval practice means trying to recall an idea before looking
+              at the answer.”
+            </blockquote>
+            <small>EXACT PASSAGE · PAGE 1</small>
+          </article>
+        </div>
+      </section>
+      <section id="pipeline">
+        <h2>Follow a question through Grasp</h2>
+        <p>
+          Select a stage to see its input, output and the decision behind it.
+        </p>
+        <div class="flow" aria-label="Interactive architecture diagram">
+          <div class="lane">
+            <span>Index on import</span>
+            <div id="index-steps" class="steps"></div>
+          </div>
+          <div class="lane">
+            <span>Retrieve on demand</span>
+            <div id="query-steps" class="steps"></div>
+          </div>
+        </div>
+        <article id="stage" class="panel" aria-live="polite"></article>
+        <p class="loop">
+          <strong>Adaptation loop</strong> → Define a student task → Label
+          evidence → Measure a baseline → Change one component → Retest quality,
+          latency and access → Keep or roll back.
+        </p>
+      </section>
+      <section id="evaluation">
+        <h2>Measure retrieval before changing it</h2>
+        <p>
+          Each question names a gold document and an exact passage. A hit
+          requires that passage in a returned chunk from that document. The
+          reranking comparison uses the same eight candidates and query
+          embedding.
+        </p>
+        <div id="report" class="panel" aria-live="polite">
+          Loading recorded results…
+        </div>
+        <div class="pair">
+          <article>
+            <h3>What the benchmark measures</h3>
+            <p>
+              Hit@3 means the required passage appeared within the first three
+              chunks. MRR@3 rewards earlier matches. Scope checks count chunks
+              outside the selected document. Context characters are a rough
+              prompt-size proxy.
+            </p>
+          </article>
+          <article>
+            <h3>What I’d measure next</h3>
+            <p>
+              Use held-out lecture weeks and noisy scans. Grade answer
+              correctness, claim support, citation coverage and abstention
+              separately. Track retrieval and generation p50/p95, input/output
+              tokens, retries and cost per supported answer.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section id="prototype">
+        <h2>Try the student workflow</h2>
+        <p>
+          Walk through a fixed example based on the repository’s sample notes.
+          This prototype sends no data to a model.
+        </p>
+        <div class="panel">
+          <div
+            class="steps"
+            id="demo-controls"
+            aria-label="Prototype stages"
+          ></div>
+          <article id="demo-view" aria-live="polite"></article>
+        </div>
+        <div class="actions">
+          <a href="#design">Follow the Figma design process ↓</a
+          ><a
+            href="https://github.com/stanbang/Grasp/blob/main/docs/rag-case-study.md"
+            >Read the interview case study ↗</a
+          >
+        </div>
+      </section>
+      <section id="design">
+        <h2>Designing for students who check the source</h2>
+        <p>
+          Follow the design from the first upload to an answer a student can
+          verify. Each link opens an editable Figma frame.
+        </p>
+        <ol class="design-flow">
+          <li>
+            <a
+              href="https://www.figma.com/design/LJok1ZuyYyd9wdEIP6AAqT?node-id=3-177"
+              >Empty workspace ↗</a
+            >
+            <p>
+              Use one prominent drop target to make it clear where lecture notes
+              go.
+            </p>
+          </li>
+          <li>
+            <a
+              href="https://www.figma.com/design/LJok1ZuyYyd9wdEIP6AAqT?node-id=3-272"
+              >Processing ↗</a
+            >
+            <p>
+              Show the stages of ingestion so students can tell when a file is
+              ready to ask about.
+            </p>
+          </li>
+          <li>
+            <a
+              href="https://www.figma.com/design/LJok1ZuyYyd9wdEIP6AAqT?node-id=3-348"
+              >Document orbit ↗</a
+            >
+            <p>
+              Keep notes visible while a student asks questions. Make answer
+              scope an explicit choice.
+            </p>
+          </li>
+          <li>
+            <a
+              href="https://www.figma.com/design/LJok1ZuyYyd9wdEIP6AAqT?node-id=3-489"
+              >Cited chat ↗</a
+            >
+            <p>
+              Keep the answer and its evidence together so a citation is easy to
+              follow.
+            </p>
+          </li>
+          <li>
+            <a
+              href="https://www.figma.com/design/LJok1ZuyYyd9wdEIP6AAqT?node-id=3-635"
+              >Source inspector ↗</a
+            >
+            <p>
+              Open the exact quote and page beside the conversation so students
+              can compare them without losing their place.
+            </p>
+          </li>
+        </ol>
+      </section>
+      <section id="decisions">
+        <h2>Why use RAG for study notes?</h2>
+        <p>
+          A plain LLM is useful for general explanations. Pasting a passage may
+          also be quicker for a one-off question. Grasp helps when students
+          return to several files, need a specific lecture’s wording, or want to
+          check a quote and page before trusting an answer.
+        </p>
+        <details open>
+          <summary>Cost, speed and quality</summary>
+          <p>
+            Index the corpus on import and retrieve a small set per question.
+            Persistent Chroma searches by similarity and SQLite resolves the
+            canonical text and offsets. A wider pool or stronger reranker may
+            help difficult questions and adds processing. Mock mode supports
+            development without provider calls. Live mode sends text to the
+            configured provider during indexing and Q&amp;A.
+          </p>
+        </details>
+        <details>
+          <summary>What I’d change if the baseline fails</summary>
+          <p>
+            Try BM25 or reciprocal rank fusion for exact course terms that
+            semantic retrieval misses. Try a cross-encoder when good candidates
+            rank too low. Try a bounded query rewrite for ambiguous follow-ups.
+            Agentic tools add steps and failure modes. Fine-tuning can help
+            output behavior, while new lecture content belongs in the index.
+            Compare changes on held-out cases before promoting them.
+          </p>
+        </details>
+        <details>
+          <summary>What makes the system production-minded?</summary>
+          <p>
+            The application checks citations against retrieved evidence, places
+            limits on requests and has an optional owner token. Exact quote
+            checks cannot judge every generated claim. Multi-user deployments
+            also need document-level authorization, data isolation and redacted
+            monitoring.
+          </p>
+        </details>
+      </section>
+    </main>
+    <footer>
+      <span>Grasp · Student RAG case study</span>
+      <div>
+        <a
+          href="https://www.coursera.org/learn/retrieval-augmented-generation-rag"
+          >Course reference</a
+        >
+        ·
+        <a href="https://raziqqx.github.io/projects/research-rag-platform/"
+          >Reference project</a
+        >
+      </div>
+    </footer>
+  </body>
+</html>

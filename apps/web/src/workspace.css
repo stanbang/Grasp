@@ -231,3 +231,5 @@
   color: #a4b3bf;
   margin-top: 8px;
 }
+
+.workspace-about { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 8px; white-space: nowrap; font-size: 12px; }

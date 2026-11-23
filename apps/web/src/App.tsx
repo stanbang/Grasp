@@ -395,6 +395,7 @@ export function App() {
             </button>
           </div>
           <div className="workspace-utilities">
+            <a className="workspace-about" href="./about/index.html" target="_blank" rel="noopener">About Grasp</a>
             <IconButton
               icon={Plus}
               label="Start new conversation"
