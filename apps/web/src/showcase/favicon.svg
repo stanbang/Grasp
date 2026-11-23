@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="brand-title">
+  <title id="brand-title">Grasp constellation mark</title>
+  <rect width="48" height="48" rx="10" fill="#0b1119"/>
+  <path d="M36 13 27 8 14 12 7 24l7 12 13 4 11-9v-7H25" fill="none" stroke="#8ddbcf" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m14 12 10 12-10 12" fill="none" stroke="#8ddbcf" stroke-width="1.4" opacity=".55"/>
+  <g fill="#8ddbcf">
+    <circle cx="27" cy="8" r="2.6"/><circle cx="7" cy="24" r="2.6"/><circle cx="27" cy="40" r="2.6"/><circle cx="25" cy="24" r="2.7"/><circle cx="38" cy="31" r="2.2"/>
+  </g>
+</svg>

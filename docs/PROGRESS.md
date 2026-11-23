@@ -34,6 +34,13 @@
 - The trace uses a narrower chunk target than the workspace default so each sample shows a real overlap. It ships only projected coordinates. The replay timing can differ from the recorded wall time.
 - Added schema and provenance tests. Contract drift and the targeted trace suite passed.
 
+## Replay and chat
+
+- Built `/showcase` as a static entry alongside the local workspace. It replays sample pages, text, overlapping passages, projected points and links. The controls support timed and manual playback. Session history, source dialogs and the keyboard concept list run in the browser.
+- Attached the file-drop safety test to the page's actual event listener. It rejects an external file even when the transfer also advertises the sample MIME type. Attempts to read file data, items or names would fail the test.
+- Self-reviewed desktop and 390-pixel browser layouts. Exercised keyboard sample selection, reduced-motion steps, pause, speed, restart, skip, 3D and 2D star clicks, a cited answer, Escape and question history. The physical touch gesture and mid-range laptop frame rate remain unmeasured.
+- Checked the build and full suite in mock mode. Impeccable source detection reported no regex-matched findings. Its source scan does not check rendered contrast or layout.
+
 ## Needs owner approval
 
 - License choice. The default branch has no tracked license and the goal leaves that decision to the owner.
