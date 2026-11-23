@@ -39,7 +39,12 @@
 - Built `/showcase` as a static entry alongside the local workspace. It replays sample pages, text, overlapping passages, projected points and links. The controls support timed and manual playback. Session history, source dialogs and the keyboard concept list run in the browser.
 - Attached the file-drop safety test to the page's actual event listener. It rejects an external file even when the transfer also advertises the sample MIME type. Attempts to read file data, items or names would fail the test.
 - Self-reviewed desktop and 390-pixel browser layouts. Exercised keyboard sample selection, reduced-motion steps, pause, speed, restart, skip, 3D and 2D star clicks, a cited answer, Escape and question history. The physical touch gesture and mid-range laptop frame rate remain unmeasured.
-- Checked the build and full suite in mock mode. Impeccable source detection reported no regex-matched findings. Its source scan does not check rendered contrast or layout.
+- Checked the build and full suite in mock mode. Impeccable source detection reported no regex-matched findings. Rendered scans identified small format labels and a mobile line wrap. Fixed both and reran desktop and mobile scans. [Self-review](showcase-review.md)
+
+## Case study
+
+- Drafted the five interview answers, diagrams, evaluation, component tradeoffs and decision records. The README links to the archived reports and the runnable mock reproduction.
+- Recorded a short GIF from the local showcase and wrote the staged walkthrough, portfolio snippet and interview talk track.
 
 ## Needs owner approval
 
