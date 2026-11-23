@@ -4,7 +4,7 @@
 
 Ask questions about your notes, see how concepts connect and open the exact passage behind an answer.
 
-[Run the recorded showcase](#run-grasp) · [Evaluation](#4-how-did-i-evaluate-it-and-choose-components) · [Evidence and reproduction](docs/facts.md)
+[Run the recorded showcase](#run-grasp) · [Interactive walkthrough](#walk-through-rag) · [Evaluation](#4-how-did-i-evaluate-it-and-choose-components)
 
 ![The Grasp showcase opens a sample note, traces it into a constellation and reveals a cited answer.](docs/assets/showcase.gif)
 
@@ -100,6 +100,12 @@ I keep parsing, splitting, embeddings, retrieval, generation and citation valida
 
 The knowledge base combines SQLite page and chunk records with the Chroma vector index. The retriever returns committed chunks. The LangChain adapter asks the chosen model for a structured answer. With a new embedding model, build an isolated index and keep the questions, labels and chunk policy fixed. The experiments below show the same discipline with the chunking and order choices. [Module map and swap example](docs/rag-design.md#change-one-component)
 
+### Architecture at a glance
+
+<img src="docs/assets/grasp-architecture.png" width="520" alt="Grasp accepts PDF, Markdown and UTF-8 text. Parsing, optional OCR and chunking produce page-aware spans. Chroma indexes embeddings. Concept extraction stores nodes, relationships and source links in SQLite. Scoped vector search feeds a model prompt. React shows the answer, checked citations and the 3D concept map.">
+
+The diagram comes from the [shared Grasp course review](https://chatgpt.com/share/6b04afc4-939c-83ec-99ab-1b58f98d5dba). Question answering searches text chunks in Chroma and loads their stored source spans. The concept graph helps readers browse those sources. It stays outside the retrieval path. [Retriever](apps/api/app/retrieval.py) · [Chat route](apps/api/app/study_routes.py)
+
 ![Pipeline stages and the decision loop for making a retrieval change.](docs/assets/framework.svg)
 
 <details>
@@ -168,7 +174,7 @@ The public demo is a static replay of bundled samples. Its drop listener never r
 
 ## Course-topic map
 
-The topics follow [DeepLearning.AI’s Retrieval Augmented Generation course on Coursera](https://www.coursera.org/learn/retrieval-augmented-generation-rag/).
+The topics follow the public [DeepLearning.AI RAG course syllabus](https://www.coursera.org/learn/retrieval-augmented-generation-rag/). The [original course-to-code comparison](docs/course-walkthrough.md) shows how those topics turn into exercises using this repository.
 
 | Course module | Grasp |
 | --- | --- |
@@ -193,9 +199,13 @@ python scripts/check.py
 npm run build
 ```
 
+### Walk through RAG
+
+Start the web app, then select **How Grasp works** on the showcase or [open the walkthrough directly](http://127.0.0.1:5173/showcase/?view=guide). Follow one networking question through the source pipeline. Change the recorded retrieval settings, test whether a quote supports a claim, and open the example answer on the star map.
+
 ## Demo script
 
-1. **First minute** · Open `/showcase/` and select or drag **Computer networks**. Read the recorded-run label so the audience knows what is playing.
+1. **First minute** · Open `/showcase/` and select **How Grasp works**. Show how notes enter the index and how a question reaches its source. Return to the replay and select or drag **Computer networks**.
 2. **Second minute** · Pause on **Find passage boundaries**. Show the offsets and overlap, then resume through indexing and the links.
 3. **Third minute** · Orbit or zoom the map. Select a star or open **Concepts** and follow a connection.
 4. **Fourth minute** · Ask **What does a router do?** Watch the linked stars and open **Page 1** to check the exact quote.
