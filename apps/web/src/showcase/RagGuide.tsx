@@ -38,6 +38,23 @@ function TraceQuote({ trace }: { trace: TraceState }) {
 }
 
 const lanes = [{ id: "prepare", label: "Prepare the notes" }, { id: "question", label: "Answer a question" }] as const;
+const promptInputs = [{ id: "alone", label: "Question alone" }, { id: "grounded", label: "Question + retrieved passage" }] as const;
+
+function PromptExample({ trace }: { trace: TraceState }) {
+  const [input, setInput] = useState<typeof promptInputs[number]["id"]>("grounded");
+  return <div className="guide-worked-example">
+    <h4>Compare what the model sees</h4>
+    <Choices label="Example model input" options={promptInputs} active={input} choose={setInput} />
+    <div className="guide-prompt" aria-live="polite">
+      <p className="guide-question"><strong>Question</strong> {routerQuestion}</p>
+      {input === "grounded" ? <>
+        <TraceQuote trace={trace} />
+        <p><strong>Instruction</strong> Use the source passages, cite exact quotes and IDs, and say when evidence is missing.</p>
+      </> : <p>The model receives the question. It has no passage from the student’s notes to cite.</p>}
+    </div>
+    <p className="guide-note">This example shows the inputs. Switching views sends no request to a model.</p>
+  </div>;
+}
 
 function Pipeline({ trace }: { trace: TraceState }) {
   const [lane, setLane] = useState<keyof typeof guideStages>("prepare");
@@ -52,15 +69,16 @@ function Pipeline({ trace }: { trace: TraceState }) {
         <button type="button" aria-pressed={selected === index} onClick={() => setSelected(index)}>{step.title}</button>
       </li>)}
     </ol>
-    <div className="guide-detail" aria-live="polite">
-      <h3>{stage.title}</h3>
-      <p className="guide-tools">{stage.tools}</p>
-      <p>{stage.description}</p>
-      {lane === "question" && <div className="guide-worked-example">
+    <div className="guide-detail">
+      <div className="guide-stage" aria-live="polite">
+        <h3>{stage.title}</h3>
+        <p className="guide-tools">{stage.tools}</p>
+        <p>{stage.description}</p>
+      </div>
+      {lane === "question" && (selected === 1 ? <PromptExample trace={trace} /> : <div className="guide-worked-example">
         <p className="guide-question"><strong>Question</strong> {routerQuestion}</p>
-        {selected === 1 && <p className="guide-prompt">Answer the question using the supplied passage. If the passage is insufficient, say what is missing.</p>}
         <TraceQuote trace={trace}/>
-      </div>}
+      </div>)}
       <CodeLink path={stage.file}>Inspect the implementation</CodeLink>
     </div>
   </>;
@@ -127,7 +145,7 @@ function Evaluation({ trace }: { trace: TraceState }) {
   const claim = claims[selected] ?? claims[0];
   const report = recorded[mode];
   return <>
-    <p>Retrieval evaluation asks whether the expected passage was found. Answer evaluation asks whether the response answers the question and whether the cited text supports its claims.</p>
+    <p>Check search first. Did it find the labelled passage? Then read the response. Does it answer the question, and does the evidence support what it says?</p>
     <Choices label="Recorded evaluation mode" options={evaluationModes} active={mode} choose={setMode}/>
     <div className="guide-table">
       <table>

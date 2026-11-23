@@ -174,7 +174,7 @@ The public demo is a static replay of bundled samples. Its drop listener never r
 
 ## Course-topic map
 
-The topics follow the public [DeepLearning.AI RAG course syllabus](https://www.coursera.org/learn/retrieval-augmented-generation-rag/). The [original course-to-code comparison](docs/course-walkthrough.md) shows how those topics turn into exercises using this repository.
+The topics follow the DeepLearning.AI RAG syllabus. The walkthrough applies selected lessons on retrieval, prompt building, evaluation and production to examples from Grasp. [Course syllabus](https://www.coursera.org/learn/retrieval-augmented-generation-rag/) · [Lesson sources and exercises](docs/course-walkthrough.md)
 
 | Course module | Grasp |
 | --- | --- |
@@ -201,7 +201,7 @@ npm run build
 
 ### Walk through RAG
 
-Start the web app, then select **How Grasp works** on the showcase or [open the walkthrough directly](http://127.0.0.1:5173/showcase/?view=guide). Follow one networking question through the source pipeline. Change the recorded retrieval settings, test whether a quote supports a claim, and open the example answer on the star map.
+Start the web app, then select **How Grasp works** on the showcase. Follow one networking question through the source pipeline. Compare what the model sees with and without retrieved notes, change the recorded retrieval settings, and test whether a quote supports a claim. Open the example to inspect its source on the star map. [Open the local walkthrough](http://127.0.0.1:5173/showcase/?view=guide)
 
 ## Demo script
 

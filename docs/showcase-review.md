@@ -12,6 +12,6 @@ To reproduce the scans, run the local app, then run `npx impeccable detect apps/
 
 ## Interactive course walkthrough
 
-The walkthrough keeps the replay separate and groups the interview topics in the reading rail. I verified keyboard entry, both pipeline lanes, the effect of chunk size and ranking on the archived numbers, an embedding replacement, both evaluation modes, claim feedback and the local production mode. The router example opened the original cited passage after returning to the map.
+The walkthrough keeps the replay separate and groups the interview topics in the reading rail. I verified keyboard entry, both pipeline lanes, the effect of chunk size and ranking on the archived numbers, an embedding replacement, both evaluation modes, claim feedback and the local production mode. The router example opened the original cited passage after returning to the map. The prompt comparison kept the question fixed and showed or hid both the retrieved quote and grounding instruction as expected.
 
 The first keyboard pass scrolled the back control out of reach. The guide now keeps its back and example controls visible in a sticky header. Phone-width testing confirmed that the topic controls and evidence table fit. The rendered Impeccable scans reported no findings at the same desktop and phone viewports. Run the commands above with `/showcase/?view=guide` to repeat the check.

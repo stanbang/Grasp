@@ -45,7 +45,7 @@
 
 - Drafted the five interview answers, diagrams, evaluation, component tradeoffs and decision records. The README links to the archived reports and the runnable mock reproduction.
 - Recorded a short GIF from the local showcase and wrote the staged walkthrough, portfolio snippet and interview talk track.
-- Added the owner's architecture image and used the shared course review to shape a first-party interactive guide. The DeepLearning.AI lesson prompts for login, so the guide relies on the public syllabus and evidence from Grasp's source and recorded runs.
+- Added the owner's architecture image and used the shared review to shape an interactive guide. Read selected official transcripts across the five course modules using the existing account. Added a prompt comparison to show what the model receives before and after retrieval. The guide uses original diagrams and examples from the Grasp repository. [Lessons reviewed](course-walkthrough.md)
 - Verified the five walkthrough topics, both retrieval settings, claim feedback and the router citation handoff in a browser. Local checks, production build and Impeccable scans passed. [Walkthrough review](showcase-review.md#interactive-course-walkthrough)
 
 ## GitHub

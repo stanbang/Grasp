@@ -42,11 +42,14 @@
 .guide-detail > .guide-link, .guide-lesson > .guide-link, .guide-detail > .guide-plain { justify-self: start; }
 .guide-lesson .guide-tools { color: var(--accent); font-size: 0.86rem; }
 .guide-link { color: var(--accent); font-size: 0.86rem; }
+.guide-stage { display: grid; gap: 8px; }
 .guide-worked-example { display: grid; gap: 8px; padding-block-start: 11px; border-block-start: 1px solid var(--rule); }
+.guide-worked-example h4 { margin: 0; font-size: 0.95rem; font-weight: 600; }
 .guide-question strong { margin-inline-end: 6px; color: var(--text); font-weight: 600; }
 .guide-quote { margin: 0; padding: 11px 13px; border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--paper); color: var(--text); line-height: 1.55; }
 .guide-quote cite { display: block; margin-block-start: 6px; color: var(--quiet); font-size: 0.82rem; font-style: normal; }
-.guide-prompt { padding-inline-start: 13px; font-size: 0.9rem; }
+.guide-prompt { display: grid; gap: 8px; font-size: 0.9rem; }
+.guide-prompt strong { margin-inline-end: 6px; color: var(--text); font-weight: 600; }
 .guide-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 4px 0 6px; }
 .guide-metrics > div { display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding-block-end: 8px; border-block-end: 1px solid var(--rule); }
 .guide-metrics dt { font-size: 0.83rem; color: var(--muted); }
