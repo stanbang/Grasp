@@ -1,6 +1,8 @@
 import type { ChatResponse, Chunk, Citation } from "../types/contracts";
 import type { ShowcaseTrace } from "./trace-types";
 
+export const routerQuestion = "What does a router do?";
+
 const stopWords = new Set("about all and are can could does explain for from have how into more note notes please should tell that the their them there this what when where which who why will with would".split(" "));
 
 function terms(text: string): Set<string> {

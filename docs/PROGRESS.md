@@ -25,7 +25,7 @@
 ## Design
 
 - Impeccable shape recorded the [showcase direction](../.impeccable/surfaces/showcase.md) in the existing Grasp visual system. The reference chat was opened in the browser to inspect its composer, starter prompts and history.
-- Created the [Figma draft](https://www.figma.com/design/3rtdi0qiFA8f6ct5MlOp76) in the owner's personal workspace. Figma's Starter-plan quota blocked library lookup, design reads and the first write. The draft's six pages and verified Figma exports remain outstanding. Continue with local design assets and the working replay.
+- Created the [Figma draft](https://www.figma.com/design/3rtdi0qiFA8f6ct5MlOp76) in the owner's personal workspace. Figma's official capture tool added all six designs. Direct editing and asset export still face the Starter-plan quota. The Prototype page contains the captured sequence. The browser showcase contains the working transitions.
 - Authored and visually checked both diagrams and the social preview. The [local assets](assets/README.md) include SVG and PNG diagrams, logo variants and the favicon.
 
 ## Traces
@@ -45,8 +45,15 @@
 
 - Drafted the five interview answers, diagrams, evaluation, component tradeoffs and decision records. The README links to the archived reports and the runnable mock reproduction.
 - Recorded a short GIF from the local showcase and wrote the staged walkthrough, portfolio snippet and interview talk track.
+- Added the owner's architecture image and used the shared course review to shape a first-party interactive guide. The DeepLearning.AI lesson prompts for login, so the guide relies on the public syllabus and evidence from Grasp's source and recorded runs.
+- Verified the five walkthrough topics, both retrieval settings, claim feedback and the router citation handoff in a browser. Local checks, production build and Impeccable scans passed. [Walkthrough review](showcase-review.md#interactive-course-walkthrough)
+
+## GitHub
+
+- Pushed `showcase-overhaul` and verified the corrected repository description and topics. GitHub Actions passed the offline tests, build and Pages artifact step on the published branch. The deployment job hit the Pages branch restriction.
 
 ## Needs owner approval
 
 - License choice. The default branch has no tracked license and the goal leaves that decision to the owner.
+- Public Pages deployment. The existing environment allows `main`. Automatic approval review rejected adding `showcase-overhaul` without explicit approval for that publishing rule.
 - A held-out live embedding experiment has a proposed USD 0.015 cap. A live answer comparison and answer-support review has a proposed USD 0.115 provider cap. The inputs and rate sources are in [Proposed measurements and cost](facts.md#proposed-measurements-and-cost).

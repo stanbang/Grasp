@@ -17,3 +17,9 @@ Mode: Experience. An interviewer can replay the work that turns a note into a ma
 **Finish.** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
 Keep `/` available for real local study. The public route accepts only bundled samples and never reads dropped files. Use the mock pipeline to record real stages and cite exact passages. Playback includes pause, skip, speed and restart. Reduced motion uses manual steps, and keyboard and touch users can open samples, concepts and citations. Provide a 2D graph when WebGL is unavailable or the visitor selects it.
+
+## Teaching walkthrough
+
+The reader can open the walkthrough from the landing page or return to it after loading a sample. Begin with one question from the networks note. Show the note-preparation lane and the question-answering lane as separate sequences. The same quote should appear in the worked example, claim check and source dialog.
+
+Give the five interview questions their own topics. Use controls where a reader can see the consequence of a choice, such as changing an archived retrieval setting or checking a claim against a quote. Keep the replay available behind the walkthrough and pause its clock while the reader is away. At phone widths put topic selection above the reading panel.

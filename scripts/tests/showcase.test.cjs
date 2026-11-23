@@ -17,8 +17,30 @@ function load(module) {
 
 const replay = load('replay');
 const { installShowcaseDropHandlers, sampleTransferType } = load('drop');
-const { answerFromTrace } = load('evidence');
+const { answerFromTrace, routerQuestion } = load('evidence');
+const { guideTopics, guideStages } = load('guide-data');
 const trace = JSON.parse(fs.readFileSync(path.join(root, 'traces/computer-networks.json'), 'utf8'));
+
+test('the walkthrough draws its comparison numbers from the archived reports', () => {
+  const displayed = JSON.parse(fs.readFileSync(path.join(root, 'guide-results.json'), 'utf8'));
+  for (const mode of ['live', 'mock']) {
+    const reportPath = path.join(__dirname, `../../docs/evaluation-portfolio-${mode}.json`);
+    const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+    const runs = report.runs.map(({ id, chunkSize, overlap, ranking, chunks, meanContextChars, cases }) => ({
+      id, chunkSize, overlap, ranking, chunks, meanContextChars, hits: cases.filter(row => row.rank !== null).length,
+    }));
+    assert.deepEqual(displayed[mode], { documents: Object.keys(report.corpus).length, questions: report.questions, topK: report.topK, runs });
+  }
+});
+
+test('the walkthrough example opens the original recorded answer and source', () => {
+  const prompt = trace.prompts.find(entry => entry.question === routerQuestion);
+  assert.ok(prompt);
+  assert.deepEqual(answerFromTrace(trace, routerQuestion), prompt.answer);
+  assert.ok(prompt.answer.citations.every(citation => trace.chunks.some(chunk => chunk.id === citation.chunkId && chunk.text.includes(citation.quote))));
+  assert.deepEqual(guideTopics.map(topic => topic.id), ['pipeline', 'tradeoffs', 'adapt', 'evaluation', 'production']);
+  assert.ok([...guideStages.prepare, ...guideStages.question].every(stage => fs.existsSync(path.join(__dirname, '../..', stage.file))));
+});
 
 function drag(target, type, dataTransfer) {
   const event = new Event(type, { cancelable: true });

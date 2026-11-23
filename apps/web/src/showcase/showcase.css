@@ -101,6 +101,11 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, select:focus-visi
 .intro-emblem { display: grid; place-items: center; inline-size: 55px; block-size: 55px; margin: 0 auto 23px; border: 1px solid var(--rule); border-radius: 17px; background: var(--paper); }
 .intro h1 { margin: 0; font-size: clamp(1.9rem, 4.2vw, 3.4rem); font-weight: 500; letter-spacing: -0.033em; text-wrap: balance; }
 .intro p { margin: 12px 0 0; color: var(--muted); line-height: 1.6; text-wrap: balance; }
+.guide-entry { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-block-size: 44px; padding: 0 12px; border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--surface); color: var(--accent); font-size: 0.84rem; pointer-events: auto; }
+.intro .guide-entry { margin-block-start: 17px; }
+.header-actions .guide-entry { color: var(--accent); }
+.header-actions .guide-entry-arrow { display: none; }
+.guide-loading { margin: 2rem; color: var(--muted); }
 .loading-note { position: absolute; inset: auto 0 -42px; margin: 0; text-align: center; color: var(--accent); }
 .showcase-ready .showcase-center { align-self: start; padding-block-start: 24px; }
 .replay { display: grid; gap: 14px; justify-items: center; pointer-events: auto; text-align: center; }
@@ -226,6 +231,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, select:focus-visi
   .header-actions a { max-inline-size: 86px; font-size: 0.73rem; line-height: 1.2; }
   .header-actions button { font-size: 0.72rem; padding-inline: 6px; }
   .header-actions button svg { display: none; }
+  .header-actions .guide-entry span { display: none; }
+  .header-actions .guide-entry svg:first-child { display: block; }
   .showcase-center { inline-size: calc(100% - 26px); }
   .showcase-ready .showcase-center { padding-block-start: 9px; }
   .showcase-ready .replay-copy { max-inline-size: 230px; }

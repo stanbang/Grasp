@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties, type DragEvent, type FormEvent, type PointerEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useReducer, useRef, useState, type CSSProperties, type DragEvent, type FormEvent, type PointerEvent } from "react";
 import { ArrowRight, ArrowUp, AudioLines, BookOpen, CircleHelp, FileText, PanelLeft, X } from "lucide-react";
 import type { ChatResponse, Citation, GraphNode } from "../types/contracts";
 import { installShowcaseDropHandlers, sampleTransferType } from "./drop";
-import { answerFromTrace, quoteCitation } from "./evidence";
+import { answerFromTrace, quoteCitation, routerQuestion } from "./evidence";
 import logo from "./favicon.svg";
 import { finalStep, playbackDelay, playbackState, reducePlayback } from "./replay";
 import { ReplayPanel } from "./ReplayPanel";
@@ -15,6 +15,11 @@ type Turn = { id: number; question: string; response: ChatResponse };
 type TouchDrag = { id: SampleId; x: number; y: number };
 const motionQuery = "(prefers-reduced-motion: reduce)";
 const emptyHighlights: string[] = [];
+const RagGuide = lazy(() => import("./RagGuide"));
+
+function guideRequested() {
+  return new URLSearchParams(window.location.search).get("view") === "guide";
+}
 
 function Answer({ answer, animate, onCitation }: { answer: ChatResponse; animate: boolean; onCitation: (citation: Citation) => void }) {
   const [displayed, setDisplayed] = useState(animate ? "" : answer.answer);
@@ -65,6 +70,7 @@ function ConceptCard({ trace, concept, onConcept, onCitation, onClose }: {
 }
 
 export function Showcase() {
+  const [guideOpen, setGuideOpen] = useState(guideRequested);
   const [trace, setTrace] = useState<ShowcaseTrace | null>(null);
   const [loading, setLoading] = useState<SampleId | null>(null);
   const [sample, setSample] = useState<SampleId | null>(null);
@@ -82,6 +88,8 @@ export function Showcase() {
   const touch = useRef<TouchDrag | null>(null);
   const suppressClick = useRef(false);
   const newestTurn = useRef<HTMLDivElement>(null);
+  const guideButton = useRef<HTMLButtonElement>(null);
+  const returning = useRef(false);
   const stage = trace?.stages[playback.step];
   const ready = !!trace && playback.step === finalStep;
   const turns = sample ? turnsBySample[sample] ?? [] : [];
@@ -95,7 +103,24 @@ export function Showcase() {
   }, []);
 
   useEffect(() => {
-    if (!stage) return;
+    const syncGuide = () => {
+      const open = guideRequested();
+      returning.current = !open;
+      setDrop(null);
+      setGuideOpen(open);
+    };
+    window.addEventListener("popstate", syncGuide);
+    return () => window.removeEventListener("popstate", syncGuide);
+  }, []);
+
+  useEffect(() => {
+    if (guideOpen || !returning.current) return;
+    guideButton.current?.focus();
+    returning.current = false;
+  }, [guideOpen]);
+
+  useEffect(() => {
+    if (!stage || guideOpen) return;
     if (clock.current.step !== playback.step || clock.current.run !== playback.run) {
       clock.current = { step: playback.step, run: playback.run, elapsed: 0 };
     }
@@ -107,13 +132,20 @@ export function Showcase() {
       window.clearTimeout(timer);
       clock.current.elapsed += (performance.now() - started) * playback.speed;
     };
-  }, [stage, playback]);
+  }, [stage, playback, guideOpen]);
 
   useEffect(() => {
     if (last) newestTurn.current?.scrollIntoView({ block: "nearest", behavior: "instant" });
   }, [last]);
 
-  const startSample = useCallback(async (id: SampleId) => {
+  const addTurn = useCallback((id: SampleId, recording: ShowcaseTrace, value: string) => {
+    const turn = { id: ++turnId.current, question: value, response: answerFromTrace(recording, value) };
+    setTurnsBySample(previous => ({ ...previous, [id]: [...(previous[id] ?? []), turn] }));
+    setQuestion("");
+    setSelected(null);
+  }, []);
+
+  const startSample = useCallback(async (id: SampleId, example?: string) => {
     const request = ++sequence.current;
     setLoading(id);
     setDrop(null);
@@ -126,19 +158,20 @@ export function Showcase() {
       setSelected(null);
       setCitation(null);
       setQuestion("");
-      dispatch({ type: "restart" });
+      dispatch({ type: example ? "skip" : "restart" });
+      if (example) addTurn(id, loaded, example);
     } catch {
       if (request === sequence.current) setNotice("The sample didn’t load. Select it again to retry.");
     } finally {
       if (request === sequence.current) setLoading(null);
     }
-  }, []);
+  }, [addTurn]);
 
   useEffect(() => installShowcaseDropHandlers(window, sampleIds, {
     onDrag: setDrop,
-    onSample: id => { void startSample(id); },
+    onSample: id => { if (!guideOpen) void startSample(id); },
     onRejectedFile: () => setNotice("This demo only opens the bundled samples. Choose one below to replay it."),
-  }), [startSample]);
+  }), [guideOpen, startSample]);
 
   function beginDrag(event: DragEvent<HTMLButtonElement>, id: SampleId) {
     event.dataTransfer.effectAllowed = "copy";
@@ -170,16 +203,41 @@ export function Showcase() {
     if (!sample || !trace || !ready || loading) return;
     const text = value.trim();
     if (!text) return;
-    const turn = { id: ++turnId.current, question: text, response: answerFromTrace(trace, text) };
-    setTurnsBySample(previous => ({ ...previous, [sample]: [...(previous[sample] ?? []), turn] }));
-    setQuestion("");
-    setSelected(null);
+    addTurn(sample, trace, text);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     ask(question);
   }
+
+  function showGuide(open: boolean) {
+    const url = new URL(window.location.href);
+    if (open) {
+      url.searchParams.set("view", "guide");
+      window.history.pushState({ graspGuide: true }, "", url);
+    } else if (window.history.state?.graspGuide) {
+      window.history.back();
+      return;
+    } else {
+      url.searchParams.delete("view");
+      window.history.replaceState(null, "", url);
+    }
+    returning.current = !open;
+    setDrop(null);
+    setGuideOpen(open);
+  }
+
+  if (guideOpen) return <Suspense fallback={<p className="guide-loading" role="status">Opening the walkthrough…</p>}>
+    <RagGuide onBack={() => showGuide(false)} onTry={() => {
+      showGuide(false);
+      void startSample("computer-networks", routerQuestion);
+    }}/>
+  </Suspense>;
+
+  const guideEntry = <button type="button" className="guide-entry" ref={guideButton} aria-label="How Grasp works" onClick={() => showGuide(true)}>
+    <BookOpen size={17}/><span>How Grasp works</span><ArrowRight size={15} className="guide-entry-arrow"/>
+  </button>;
 
   const highlighted = ready ? last?.response.referencedNodeIds ?? emptyHighlights : emptyHighlights;
   const concept = trace?.graph.nodes.find(node => node.id === selected);
@@ -194,6 +252,7 @@ export function Showcase() {
         <span className="showcase-wordmark">Grasp</span>
       </div>
       <div className="header-actions">
+        {trace && guideEntry}
         <button type="button" aria-pressed={playback.reduced} onClick={() => dispatch({ type: "setMotion", reduced: !playback.reduced })}><AudioLines size={16}/><span>Reduced motion</span></button>
         {import.meta.env.BASE_URL === "/" ? <a href="../">Open local workspace<ArrowRight size={15}/></a> : <a href={repository}>Project on GitHub<ArrowRight size={15}/></a>}
       </div>
@@ -212,6 +271,7 @@ export function Showcase() {
         <div className="intro-emblem" aria-hidden="true"><img src={logo} alt="" width="35" height="35" /></div>
         <h1>drop folder to get started</h1>
         <p>Replay a sample note as it becomes a map of concepts.</p>
+        {guideEntry}
       </section>}
       {trace && <h1 className="visually-hidden">Grasp showcase</h1>}
 
