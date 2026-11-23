@@ -78,6 +78,8 @@ Compare `work/portfolio-mock.json` with `docs/evaluation-portfolio-mock.json`. T
 
 The run instructions and remaining seeds about supported files, local OCR, exact quote/page provenance, bounded retrieval, quiz grading, offline operation and the container match the sources above. Chunk overlap and retrieval limits describe engineering choices. Their effect on the quality or price of a generated answer is not measured yet.
 
+The showcase social preview is 1280 × 640. Its dimensions come from [the SVG source](assets/social-preview.svg). Check with `python -c "import struct; from pathlib import Path; print(struct.unpack('>II', Path('docs/assets/social-preview.png').read_bytes()[16:24]))"`.
+
 ## Interview questions and missing evidence
 
 | Question | Evidence on hand | Gap |

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="450" viewBox="0 0 1280 450" role="img" aria-labelledby="title description" font-family="Segoe UI, system-ui, sans-serif">
+  <title id="title">Grasp thought process</title>
+  <desc id="description">Five columns follow student need, preparing notes, answer grounding, engineering decisions and a retrieval evaluation result.</desc>
+  <rect x="0" y="0" width="1280" height="450" rx="0" fill="#0b1119" stroke="#0b1119"/>
+  <text x="40" y="65" fill="#e7edf1" font-size="35" font-weight="650">From a student's question to the exact passage</text>
+  <text x="40" y="101" fill="#a4b3bf" font-size="17" font-weight="400">Search a collection of notes, then open the source to check the answer.</text>
+  <rect x="40" y="145" width="224" height="215" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="55" y="179" fill="#8ddbcf" font-size="17" font-weight="650">Student need</text>
+  <path d="M55 198L249 198" stroke="#263642" fill="none"/>
+  <text x="55" y="229" fill="#e7edf1" font-size="17" font-weight="650">Ask across lectures</text>
+  <text x="55" y="269" fill="#a4b3bf" font-size="15" font-weight="400">Use the student’s own notes.</text>
+  <text x="55" y="292" fill="#a4b3bf" font-size="15" font-weight="400">Open the original passage</text>
+  <text x="55" y="315" fill="#a4b3bf" font-size="15" font-weight="400">to check the answer.</text>
+  <path d="M268 252L280 252" stroke="#8ddbcf" fill="none"/>
+  <path d="M275 248l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="284" y="145" width="224" height="215" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="299" y="179" fill="#8ddbcf" font-size="17" font-weight="650">Prepare the notes</text>
+  <path d="M299 198L493 198" stroke="#263642" fill="none"/>
+  <text x="299" y="229" fill="#e7edf1" font-size="17" font-weight="650">Read, split, index</text>
+  <text x="299" y="269" fill="#a4b3bf" font-size="15" font-weight="400">Extract text by page.</text>
+  <text x="299" y="292" fill="#a4b3bf" font-size="15" font-weight="400">Keep offsets as passages</text>
+  <text x="299" y="315" fill="#a4b3bf" font-size="15" font-weight="400">are indexed in Chroma.</text>
+  <path d="M512 252L524 252" stroke="#8ddbcf" fill="none"/>
+  <path d="M519 248l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="528" y="145" width="224" height="215" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="543" y="179" fill="#8ddbcf" font-size="17" font-weight="650">Answer a question</text>
+  <path d="M543 198L737 198" stroke="#263642" fill="none"/>
+  <text x="543" y="229" fill="#e7edf1" font-size="17" font-weight="650">Retrieve, answer, cite</text>
+  <text x="543" y="269" fill="#a4b3bf" font-size="15" font-weight="400">Scope search by source.</text>
+  <text x="543" y="292" fill="#a4b3bf" font-size="15" font-weight="400">Validate quote text, page</text>
+  <text x="543" y="315" fill="#a4b3bf" font-size="15" font-weight="400">and chunk against evidence.</text>
+  <path d="M756 252L768 252" stroke="#8ddbcf" fill="none"/>
+  <path d="M763 248l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="772" y="145" width="224" height="215" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="787" y="179" fill="#8ddbcf" font-size="17" font-weight="650">Engineering decisions</text>
+  <path d="M787 198L981 198" stroke="#263642" fill="none"/>
+  <text x="787" y="229" fill="#e7edf1" font-size="17" font-weight="650">Bound the context</text>
+  <text x="787" y="269" fill="#a4b3bf" font-size="15" font-weight="400">Compare chunk size and</text>
+  <text x="787" y="292" fill="#a4b3bf" font-size="15" font-weight="400">candidate ordering.</text>
+  <text x="787" y="315" fill="#a4b3bf" font-size="15" font-weight="400">Keep the shipped defaults.</text>
+  <path d="M1000 252L1012 252" stroke="#8ddbcf" fill="none"/>
+  <path d="M1007 248l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="1016" y="145" width="224" height="215" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="1031" y="179" fill="#8ddbcf" font-size="17" font-weight="650">Evidence and lessons</text>
+  <path d="M1031 198L1225 198" stroke="#263642" fill="none"/>
+  <text x="1031" y="229" fill="#e7edf1" font-size="17" font-weight="650">Test retrieval on its own</text>
+  <text x="1031" y="269" fill="#a4b3bf" font-size="15" font-weight="400">Either change recovered</text>
+  <text x="1031" y="292" fill="#a4b3bf" font-size="15" font-weight="400">one miss in the same small</text>
+  <text x="1031" y="315" fill="#a4b3bf" font-size="15" font-weight="400">archived Gemini study.</text>
+  <text x="40" y="413" fill="#a4b3bf" font-size="14" font-weight="400">Evidence and reproduction commands are in docs/facts.md.</text>
+</svg>

@@ -22,6 +22,12 @@
 - Carried the earlier runner, fixtures, labels and recorded reports onto this branch. The runner stages its corpus with the archived line endings in a temporary directory. It leaves working notes, the study library and recorded reports alone.
 - The port reproduced every mock result except machine timings. See [the benchmark command](facts.md#reproduce-the-four-note-mock-report).
 
+## Design
+
+- Impeccable shape recorded the [showcase direction](../.impeccable/surfaces/showcase.md) in the existing Grasp visual system. The reference chat was opened in the browser to inspect its composer, starter prompts and history.
+- Created the [Figma draft](https://www.figma.com/design/3rtdi0qiFA8f6ct5MlOp76) in the owner's personal workspace. Figma's Starter-plan quota blocked library lookup, design reads and the first write. The draft's six pages and verified Figma exports remain outstanding. Continue with local design assets and the working replay.
+- Authored and visually checked both diagrams and the social preview. The [local assets](assets/README.md) include SVG and PNG diagrams, logo variants and the favicon.
+
 ## Needs owner approval
 
 - License choice. The default branch has no tracked license and the goal leaves that decision to the owner.
