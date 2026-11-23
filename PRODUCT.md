@@ -38,7 +38,7 @@ Dark, calm, scientific star-chart feel. One cool accent for selected content and
 
 ## Evidence on Hand
 
-The user's supplied specification establishes the behavior and schemas. Two original notes demonstrate cross-document merging. Automated tests verify provenance, conversations, lifecycle and mastery. The 20-question retrieval check uses only three sample chunks, so it measures pipeline behavior rather than broad semantic quality. There are no user-study results to claim.
+The specification establishes the behavior and schemas. Two original notes demonstrate cross-document merging. Automated tests verify provenance, conversations, lifecycle and mastery. The one-note retrieval check is a wiring test. The separate four-note experiment compares chunking and ordering on authored questions. User and learning outcomes are not measured yet. [Evidence](docs/facts.md)
 
 ## Product Principles
 
