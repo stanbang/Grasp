@@ -28,6 +28,12 @@
 - Created the [Figma draft](https://www.figma.com/design/3rtdi0qiFA8f6ct5MlOp76) in the owner's personal workspace. Figma's Starter-plan quota blocked library lookup, design reads and the first write. The draft's six pages and verified Figma exports remain outstanding. Continue with local design assets and the working replay.
 - Authored and visually checked both diagrams and the social preview. The [local assets](assets/README.md) include SVG and PNG diagrams, logo variants and the favicon.
 
+## Traces
+
+- Recorded the actual mock ingestion function with isolated stores on three bundled notes. The network sample uses provisional original text until the owner supplies final copy. The exporter creates its public PDF fixture in a temporary directory.
+- The trace uses a narrower chunk target than the workspace default so each sample shows a real overlap. It ships only projected coordinates. The replay timing can differ from the recorded wall time.
+- Added schema and provenance tests. Contract drift and the targeted trace suite passed.
+
 ## Needs owner approval
 
 - License choice. The default branch has no tracked license and the goal leaves that decision to the owner.

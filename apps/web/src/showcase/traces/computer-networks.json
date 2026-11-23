@@ -1,0 +1,377 @@
+{
+  "version": 1,
+  "mode": "mock",
+  "id": "computer-networks",
+  "title": "Computer networks",
+  "fileName": "computer-networks.pdf",
+  "sourcePath": "samples/showcase/computer-networks.md",
+  "sourceSha256": "8f5cc54b00b99d30160707f3ec31cc159ea197e25090588e5cc5ac2889bca204",
+  "embeddingIdentity": "mock-sha256-256-v1",
+  "chunkSize": 520,
+  "chunkOverlap": 130,
+  "pages": [
+    {
+      "docId": "computer-networks",
+      "page": 1,
+      "text": "# Computer networks\n \nA packet is a small unit of data sent across a network. It carries part of a message and\nenough addressing information for the network to forward it. A long message can travel as\nmany packets, which the receiving application ultimately reads as a complete exchange.\n \n## Local networks\n \nA switch forwards Ethernet frames within a local network. It learns which devices are\nreachable through its ports by observing their hardware addresses. A wireless access point\nconnects devices over radio and can bridge them to the wired local network.\n \n## Routing\n \nA router forwards packets between networks. It reads the destination IP address and uses a\nrouting table to choose a next hop. The next hop may be the receiving device on a directly\nconnected network or another router farther along the path."
+    },
+    {
+      "docId": "computer-networks",
+      "page": 2,
+      "text": "## DNS and addresses\n \nDNS resolves names to records, such as an IP address for a host. An application can ask a\nresolver for an address before it connects. Resolvers can cache answers until the record’s\ntime to live expires. DNS lookup and packet forwarding are separate operations.\n \n## TCP and UDP\n \nTCP provides a reliable, ordered byte stream. It tracks delivery and can send missing data\nagain. UDP sends datagrams without built-in delivery or ordering guarantees. An application\nthat needs those properties over UDP has to implement them itself or use a protocol that\nprovides them.\n \n## Latency and bandwidth\n \nLatency is how long an operation takes to complete. Bandwidth is how much data a connection\ncan carry per unit of time. A connection can carry a lot of data while still taking a long\ntime to deliver a request and its first response."
+    }
+  ],
+  "chunks": [
+    {
+      "id": "computer-networks:p1:0-486",
+      "docId": "computer-networks",
+      "page": 1,
+      "text": "# Computer networks\n \nA packet is a small unit of data sent across a network. It carries part of a message and\nenough addressing information for the network to forward it. A long message can travel as\nmany packets, which the receiving application ultimately reads as a complete exchange.\n \n## Local networks\n \nA switch forwards Ethernet frames within a local network. It learns which devices are\nreachable through its ports by observing their hardware addresses. A wireless access point",
+      "charStart": 0,
+      "charEnd": 486
+    },
+    {
+      "id": "computer-networks:p1:395-819",
+      "docId": "computer-networks",
+      "page": 1,
+      "text": "\nreachable through its ports by observing their hardware addresses. A wireless access point\nconnects devices over radio and can bridge them to the wired local network.\n \n## Routing\n \nA router forwards packets between networks. It reads the destination IP address and uses a\nrouting table to choose a next hop. The next hop may be the receiving device on a directly\nconnected network or another router farther along the path.",
+      "charStart": 395,
+      "charEnd": 819
+    },
+    {
+      "id": "computer-networks:p2:0-485",
+      "docId": "computer-networks",
+      "page": 2,
+      "text": "## DNS and addresses\n \nDNS resolves names to records, such as an IP address for a host. An application can ask a\nresolver for an address before it connects. Resolvers can cache answers until the record’s\ntime to live expires. DNS lookup and packet forwarding are separate operations.\n \n## TCP and UDP\n \nTCP provides a reliable, ordered byte stream. It tracks delivery and can send missing data\nagain. UDP sends datagrams without built-in delivery or ordering guarantees. An application",
+      "charStart": 0,
+      "charEnd": 485
+    },
+    {
+      "id": "computer-networks:p2:393-851",
+      "docId": "computer-networks",
+      "page": 2,
+      "text": "\nagain. UDP sends datagrams without built-in delivery or ordering guarantees. An application\nthat needs those properties over UDP has to implement them itself or use a protocol that\nprovides them.\n \n## Latency and bandwidth\n \nLatency is how long an operation takes to complete. Bandwidth is how much data a connection\ncan carry per unit of time. A connection can carry a lot of data while still taking a long\ntime to deliver a request and its first response.",
+      "charStart": 393,
+      "charEnd": 851
+    }
+  ],
+  "chunkPositions": [
+    {
+      "id": "computer-networks:p1:0-486",
+      "xyz": [
+        -1.0,
+        -1.0,
+        1.0
+      ]
+    },
+    {
+      "id": "computer-networks:p1:395-819",
+      "xyz": [
+        1.0,
+        -0.76108,
+        0.32622
+      ]
+    },
+    {
+      "id": "computer-networks:p2:0-485",
+      "xyz": [
+        -0.13711,
+        0.42788,
+        -0.08374
+      ]
+    },
+    {
+      "id": "computer-networks:p2:393-851",
+      "xyz": [
+        -0.97151,
+        1.0,
+        -1.0
+      ]
+    }
+  ],
+  "conceptPositions": [
+    {
+      "id": "135f3c84-86c9-5fbc-bd3b-f9df2d36e33a",
+      "xyz": [
+        -0.66881,
+        1.0,
+        -0.0192
+      ]
+    },
+    {
+      "id": "2ae25d40-b635-51fa-b6ad-df74211d16f0",
+      "xyz": [
+        1.0,
+        -1.0,
+        0.43957
+      ]
+    },
+    {
+      "id": "50b00650-c03f-5340-b077-0f8ff132b0e9",
+      "xyz": [
+        -0.38209,
+        -0.3903,
+        1.0
+      ]
+    },
+    {
+      "id": "7b8e4aaa-8084-5d86-802c-c6b6dc98c329",
+      "xyz": [
+        -1.0,
+        -0.43343,
+        0.64326
+      ]
+    },
+    {
+      "id": "9bcd3852-d6db-542c-8f06-36a5dd68d9a5",
+      "xyz": [
+        -0.56542,
+        -0.25517,
+        -1.0
+      ]
+    },
+    {
+      "id": "de4ea2f3-4cf7-5b63-b79f-2b49b4b760b5",
+      "xyz": [
+        -0.12832,
+        0.70044,
+        0.3402
+      ]
+    }
+  ],
+  "graph": {
+    "nodes": [
+      {
+        "id": "135f3c84-86c9-5fbc-bd3b-f9df2d36e33a",
+        "label": "Latency and bandwidth",
+        "summary": "Latency is how long an operation takes to complete. Bandwidth is how much data a connection\ncan carry per unit of time. A connection can carry a lot of data while still taking a long\ntime to deliver a request and its first response.",
+        "docIds": [
+          "computer-networks"
+        ],
+        "sourceChunkIds": [
+          "computer-networks:p2:393-851"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "2ae25d40-b635-51fa-b6ad-df74211d16f0",
+        "label": "Routing",
+        "summary": "A router forwards packets between networks. It reads the destination IP address and uses a\nrouting table to choose a next hop. The next hop may be the receiving device on a directly\nconnected network or another router farther along the path.",
+        "docIds": [
+          "computer-networks"
+        ],
+        "sourceChunkIds": [
+          "computer-networks:p1:395-819"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "50b00650-c03f-5340-b077-0f8ff132b0e9",
+        "label": "Computer networks",
+        "summary": "A packet is a small unit of data sent across a network. It carries part of a message and\nenough addressing information for the network to forward it. A long message can travel as\nmany packets, which the receiving application ultimately reads as a complete exchange.\n \n## Local networks\n \nA switch forwards Ethernet frames within a local network. It learns which devices are\nreachable through its port",
+        "docIds": [
+          "computer-networks"
+        ],
+        "sourceChunkIds": [
+          "computer-networks:p1:0-486"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "7b8e4aaa-8084-5d86-802c-c6b6dc98c329",
+        "label": "Local networks",
+        "summary": "A switch forwards Ethernet frames within a local network. It learns which devices are\nreachable through its ports by observing their hardware addresses. A wireless access point",
+        "docIds": [
+          "computer-networks"
+        ],
+        "sourceChunkIds": [
+          "computer-networks:p1:0-486"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "9bcd3852-d6db-542c-8f06-36a5dd68d9a5",
+        "label": "TCP and UDP",
+        "summary": "TCP provides a reliable, ordered byte stream. It tracks delivery and can send missing data\nagain. UDP sends datagrams without built-in delivery or ordering guarantees. An application",
+        "docIds": [
+          "computer-networks"
+        ],
+        "sourceChunkIds": [
+          "computer-networks:p2:0-485"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "de4ea2f3-4cf7-5b63-b79f-2b49b4b760b5",
+        "label": "DNS and addresses",
+        "summary": "DNS resolves names to records, such as an IP address for a host. An application can ask a\nresolver for an address before it connects. Resolvers can cache answers until the record’s\ntime to live expires. DNS lookup and packet forwarding are separate operations.\n \n## TCP and UDP\n \nTCP provides a reliable, ordered byte stream. It tracks delivery and can send missing data\nagain. UDP sends datagrams wi",
+        "docIds": [
+          "computer-networks"
+        ],
+        "sourceChunkIds": [
+          "computer-networks:p2:0-485"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "06eef267-b8b5-52fc-ab32-dd990abf74c5",
+        "source": "7b8e4aaa-8084-5d86-802c-c6b6dc98c329",
+        "target": "2ae25d40-b635-51fa-b6ad-df74211d16f0",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "computer-networks"
+        ]
+      },
+      {
+        "id": "31220c7e-a12e-5a0a-aede-19852aac88fd",
+        "source": "50b00650-c03f-5340-b077-0f8ff132b0e9",
+        "target": "7b8e4aaa-8084-5d86-802c-c6b6dc98c329",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "computer-networks"
+        ]
+      },
+      {
+        "id": "3c2c774d-6fd9-5b92-99f0-eb2a6c9da576",
+        "source": "2ae25d40-b635-51fa-b6ad-df74211d16f0",
+        "target": "de4ea2f3-4cf7-5b63-b79f-2b49b4b760b5",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "computer-networks"
+        ]
+      },
+      {
+        "id": "61e65155-93df-5473-b24e-22f4bca41ca3",
+        "source": "9bcd3852-d6db-542c-8f06-36a5dd68d9a5",
+        "target": "135f3c84-86c9-5fbc-bd3b-f9df2d36e33a",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "computer-networks"
+        ]
+      },
+      {
+        "id": "e78547d5-6c2e-5c01-af87-e437ce04bee4",
+        "source": "de4ea2f3-4cf7-5b63-b79f-2b49b4b760b5",
+        "target": "9bcd3852-d6db-542c-8f06-36a5dd68d9a5",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "computer-networks"
+        ]
+      }
+    ]
+  },
+  "stages": [
+    {
+      "kind": "pages",
+      "lines": [
+        "Reading source pages and locating chunks."
+      ],
+      "durationMs": 29.486
+    },
+    {
+      "kind": "text",
+      "lines": [
+        "Show the extracted text from the recorded pages."
+      ],
+      "durationMs": null
+    },
+    {
+      "kind": "chunks",
+      "lines": [
+        "Located 4 passages with page-local offsets."
+      ],
+      "durationMs": 0.151
+    },
+    {
+      "kind": "embeddings",
+      "lines": [
+        "Indexed 4 passages with deterministic mock embeddings."
+      ],
+      "durationMs": 60.481
+    },
+    {
+      "kind": "concepts",
+      "lines": [
+        "Extracted a source batch."
+      ],
+      "durationMs": 7.505
+    },
+    {
+      "kind": "links",
+      "lines": [
+        "Committed 6 concepts and 5 links."
+      ],
+      "durationMs": 18.314
+    },
+    {
+      "kind": "ready",
+      "lines": [
+        "Document is ready."
+      ],
+      "durationMs": null
+    }
+  ],
+  "prompts": [
+    {
+      "question": "What does a router do?",
+      "answer": {
+        "answer": "A router forwards packets between networks.",
+        "citations": [
+          {
+            "chunkId": "computer-networks:p1:395-819",
+            "docId": "computer-networks",
+            "page": 1,
+            "quote": "A router forwards packets between networks."
+          }
+        ],
+        "referencedNodeIds": [
+          "2ae25d40-b635-51fa-b6ad-df74211d16f0"
+        ]
+      }
+    },
+    {
+      "question": "What does DNS resolve?",
+      "answer": {
+        "answer": "DNS resolves names to records, such as an IP address for a host.",
+        "citations": [
+          {
+            "chunkId": "computer-networks:p2:0-485",
+            "docId": "computer-networks",
+            "page": 2,
+            "quote": "DNS resolves names to records, such as an IP address for a host."
+          }
+        ],
+        "referencedNodeIds": [
+          "9bcd3852-d6db-542c-8f06-36a5dd68d9a5",
+          "de4ea2f3-4cf7-5b63-b79f-2b49b4b760b5"
+        ]
+      }
+    },
+    {
+      "question": "What does TCP provide?",
+      "answer": {
+        "answer": "TCP provides a reliable, ordered byte stream.",
+        "citations": [
+          {
+            "chunkId": "computer-networks:p2:0-485",
+            "docId": "computer-networks",
+            "page": 2,
+            "quote": "TCP provides a reliable, ordered byte stream."
+          }
+        ],
+        "referencedNodeIds": [
+          "9bcd3852-d6db-542c-8f06-36a5dd68d9a5",
+          "de4ea2f3-4cf7-5b63-b79f-2b49b4b760b5"
+        ]
+      }
+    }
+  ]
+}

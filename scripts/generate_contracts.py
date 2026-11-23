@@ -7,9 +7,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 
-from app.schemas import PUBLIC_MODELS
+from app.schemas import PUBLIC_MODELS, Schema
 from app.conversations import Conversation, Conversations, Turn, Turns
 from app.study_routes import ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse
+from app.showcase_models import SHOWCASE_MODELS
 PUBLIC_MODELS = (*PUBLIC_MODELS, Conversation, Conversations, Turn, Turns, ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse)
 
 
@@ -37,9 +38,11 @@ def typescript_type(schema: dict[str, Any], *, optional: bool = False) -> str:
     return {"integer": "number", "number": "number", "string": "string", "boolean": "boolean", "null": "null"}.get(kind, "unknown")
 
 
-def generate_types() -> str:
+def generate_types(models: tuple[type[Schema], ...] = PUBLIC_MODELS, imports: str = "") -> str:
     lines = ["// Generated from Pydantic by scripts/generate_contracts.py; change the source schema.", ""]
-    for model in PUBLIC_MODELS:
+    if imports:
+        lines.extend([imports, ""])
+    for model in models:
         schema = model.model_json_schema()
         required = set(schema.get("required", []))
         lines.append(f"export interface {model.__name__} {{")
@@ -80,6 +83,9 @@ def main() -> None:
     args = parser.parse_args()
     outputs = {
         ROOT / "apps/web/src/types/contracts.ts": generate_types(),
+        ROOT / "apps/web/src/showcase/trace-types.ts": generate_types(
+            SHOWCASE_MODELS, 'import type { ChatResponse, Chunk, GraphResponse, PageResponse } from "../types/contracts";',
+        ),
         ROOT / "docs/schemas.md": generate_docs(),
     }
     stale = []
