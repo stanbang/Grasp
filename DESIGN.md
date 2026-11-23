@@ -117,6 +117,8 @@ components:
 
 # Design System: Grasp
 
+The recorded showcase inherits this visual system. Its [surface brief](.impeccable/surfaces/showcase.md) describes the replay, centered composer and source reader. Replay motion is tied to the stage clock. Reduced motion uses manual stages and a flat chart.
+
 ## Overview
 
 **Creative North Star: "The Quiet Star Chart"**
