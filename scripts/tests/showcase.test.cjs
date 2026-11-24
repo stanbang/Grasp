@@ -16,7 +16,7 @@ function load(module) {
 }
 
 const replay = load('replay');
-const { installShowcaseDropHandlers, sampleTransferType } = load('drop');
+const { installShowcaseDropHandlers, sampleTouchHandlers, sampleTransferType } = load('drop');
 const { answerFromTrace, routerQuestion } = load('evidence');
 const { guideTopics, guideStages } = load('guide-data');
 const trace = JSON.parse(fs.readFileSync(path.join(root, 'traces/computer-networks.json'), 'utf8'));
@@ -89,6 +89,70 @@ test('sample drops accept only bundled IDs and leave text drops alone', () => {
   assert.equal(text.defaultPrevented, false);
   assert.deepEqual(opened, ['computer-networks']);
   cleanup();
+});
+
+function touchSample() {
+  const opened = [];
+  const overlay = [];
+  const captured = [];
+  const handlers = sampleTouchHandlers(dragging => overlay.push(dragging), id => opened.push(id));
+  function pointer(overrides = {}) {
+    return { pointerId: 1, pointerType: 'touch', button: 0, isPrimary: true, clientX: 20, clientY: 40,
+      currentTarget: { setPointerCapture: id => captured.push(id) }, ...overrides };
+  }
+  return { handlers, opened, overlay, captured, pointer };
+}
+
+test('touch taps, desktop clicks and keyboard activation open a sample', () => {
+  const { handlers, opened, overlay, captured, pointer } = touchSample();
+  handlers.pointerDown(pointer(), 'computer-networks');
+  handlers.pointerMove(pointer({ clientX: 28 }));
+  handlers.pointerUp(pointer());
+  assert.deepEqual(opened, []);
+  handlers.click({ detail: 1 }, 'computer-networks');
+  handlers.pointerDown(pointer({ pointerType: 'mouse' }), 'retrieval-review');
+  assert.equal(handlers.isActive(), false);
+  handlers.click({ detail: 1 }, 'retrieval-review');
+  handlers.click({ detail: 0 }, 'memory-and-learning');
+  assert.deepEqual(opened, ['computer-networks', 'retrieval-review', 'memory-and-learning']);
+  assert.deepEqual(captured, [1]);
+  assert.ok(!overlay.includes(true));
+});
+
+test('only the owning pointer can finish a sample drag and its click does not replay twice', () => {
+  const { handlers, opened, overlay, captured, pointer } = touchSample();
+  handlers.pointerDown(pointer(), 'computer-networks');
+  const second = pointer({ pointerId: 2, isPrimary: false, clientX: 80 });
+  handlers.pointerDown(second, 'retrieval-review');
+  handlers.pointerMove(second);
+  assert.deepEqual(overlay, []);
+  handlers.pointerMove(pointer({ clientX: 45 }));
+  handlers.pointerMove(pointer({ clientX: 60 }));
+  handlers.pointerCancel(second);
+  handlers.pointerUp(second);
+  assert.equal(handlers.isActive(), true);
+  assert.deepEqual(opened, []);
+  handlers.pointerUp(pointer());
+  handlers.click({ detail: 1 }, 'computer-networks');
+  assert.deepEqual(opened, ['computer-networks']);
+  assert.deepEqual(overlay, [true, false]);
+  assert.deepEqual(captured, [1]);
+});
+
+test('cancelling a drag clears the overlay and suppresses any late pointer click', () => {
+  const { handlers, opened, overlay, pointer } = touchSample();
+  handlers.pointerDown(pointer(), 'computer-networks');
+  handlers.pointerMove(pointer({ clientX: 60 }));
+  handlers.pointerCancel(pointer());
+  handlers.pointerUp(pointer());
+  handlers.click({ detail: 1 }, 'computer-networks');
+  assert.equal(handlers.isActive(), false);
+  assert.deepEqual(opened, []);
+  assert.deepEqual(overlay, [true, false]);
+  handlers.pointerDown(pointer(), 'retrieval-review');
+  handlers.pointerUp(pointer());
+  handlers.click({ detail: 1 }, 'retrieval-review');
+  assert.deepEqual(opened, ['retrieval-review']);
 });
 
 test('playback retains elapsed time through pause and speed and supports skip and restart', () => {

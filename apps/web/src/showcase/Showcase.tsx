@@ -1,7 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useReducer, useRef, useState, type CSSProperties, type DragEvent, type FormEvent, type PointerEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
 import { ArrowRight, ArrowUp, AudioLines, BookOpen, CircleHelp, FileText, PanelLeft, X } from "lucide-react";
 import type { ChatResponse, Citation, GraphNode } from "../types/contracts";
-import { installShowcaseDropHandlers, sampleTransferType } from "./drop";
+import { installShowcaseDropHandlers, sampleTouchHandlers, sampleTransferType } from "./drop";
 import { answerFromTrace, quoteCitation, routerQuestion } from "./evidence";
 import logo from "./favicon.svg";
 import { finalStep, playbackDelay, playbackState, reducePlayback } from "./replay";
@@ -12,7 +12,6 @@ import { StarChart } from "./StarChart";
 import type { ShowcaseTrace } from "./trace-types";
 
 type Turn = { id: number; question: string; response: ChatResponse };
-type TouchDrag = { sampleId: SampleId; pointerId: number; x: number; y: number; dragged: boolean };
 const motionQuery = "(prefers-reduced-motion: reduce)";
 const emptyHighlights: string[] = [];
 const RagGuide = lazy(() => import("./RagGuide"));
@@ -85,8 +84,6 @@ export function Showcase() {
   const sequence = useRef(0);
   const turnId = useRef(0);
   const clock = useRef({ step: 0, run: 0, elapsed: 0 });
-  const touch = useRef<TouchDrag | null>(null);
-  const suppressClick = useRef(false);
   const newestTurn = useRef<HTMLDivElement>(null);
   const guideButton = useRef<HTMLButtonElement>(null);
   const returning = useRef(false);
@@ -100,18 +97,6 @@ export function Showcase() {
     const changed = (event: MediaQueryListEvent) => dispatch({ type: "setMotion", reduced: event.matches });
     preference.addEventListener("change", changed);
     return () => preference.removeEventListener("change", changed);
-  }, []);
-
-  useEffect(() => {
-    const syncGuide = () => {
-      const open = guideRequested();
-      returning.current = !open;
-      touch.current = null;
-      setDrop(null);
-      setGuideOpen(open);
-    };
-    window.addEventListener("popstate", syncGuide);
-    return () => window.removeEventListener("popstate", syncGuide);
   }, []);
 
   useEffect(() => {
@@ -168,6 +153,23 @@ export function Showcase() {
     }
   }, [addTurn]);
 
+  const touch = useMemo(() => sampleTouchHandlers<SampleId>(
+    dragging => setDrop(dragging ? "sample" : null),
+    id => { void startSample(id); },
+  ), [startSample]);
+
+  useEffect(() => {
+    function syncGuide() {
+      const open = guideRequested();
+      returning.current = !open;
+      touch.reset();
+      setDrop(null);
+      setGuideOpen(open);
+    }
+    window.addEventListener("popstate", syncGuide);
+    return () => window.removeEventListener("popstate", syncGuide);
+  }, [touch]);
+
   useEffect(() => installShowcaseDropHandlers(window, sampleIds, {
     onDrag: setDrop,
     onSample: id => { if (!guideOpen) void startSample(id); },
@@ -175,45 +177,13 @@ export function Showcase() {
   }), [guideOpen, startSample]);
 
   function beginDrag(event: DragEvent<HTMLButtonElement>, id: SampleId) {
-    if (touch.current) {
+    if (touch.isActive()) {
       event.preventDefault();
       return;
     }
     event.dataTransfer.effectAllowed = "copy";
     event.dataTransfer.setData(sampleTransferType, id);
     setDrop("sample");
-  }
-
-  function beginTouch(event: PointerEvent<HTMLButtonElement>, id: SampleId) {
-    if (!event.isPrimary || event.button !== 0 || touch.current) return;
-    suppressClick.current = false;
-    if (event.pointerType === "mouse") return;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    touch.current = { sampleId: id, pointerId: event.pointerId, x: event.clientX, y: event.clientY, dragged: false };
-  }
-
-  function moveTouch(event: PointerEvent<HTMLButtonElement>) {
-    const gesture = touch.current;
-    if (!gesture || gesture.pointerId !== event.pointerId || gesture.dragged) return;
-    if (Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) <= 18) return;
-    gesture.dragged = true;
-    setDrop("sample");
-  }
-
-  function endTouch(event: PointerEvent<HTMLButtonElement>) {
-    const gesture = touch.current;
-    if (!gesture || gesture.pointerId !== event.pointerId) return;
-    cancelTouch(event);
-    if (gesture.dragged) {
-      suppressClick.current = true;
-      void startSample(gesture.sampleId);
-    }
-  }
-
-  function cancelTouch(event: PointerEvent<HTMLButtonElement>) {
-    if (touch.current?.pointerId !== event.pointerId) return;
-    touch.current = null;
-    setDrop(null);
   }
 
   function ask(value: string) {
@@ -241,7 +211,7 @@ export function Showcase() {
       window.history.replaceState(null, "", url);
     }
     returning.current = !open;
-    touch.current = null;
+    touch.reset();
     setDrop(null);
     setGuideOpen(open);
   }
@@ -321,12 +291,9 @@ export function Showcase() {
       <div className="sample-strip" aria-label="Bundled notes">
         {sampleIds.map(id => <button type="button" key={id} aria-pressed={sample === id} draggable
           onDragStart={event => beginDrag(event, id)} onDragEnd={() => setDrop(null)}
-          onPointerDown={event => beginTouch(event, id)} onPointerMove={moveTouch}
-          onPointerUp={endTouch} onPointerCancel={cancelTouch} onLostPointerCapture={cancelTouch}
-          onClick={event => {
-            if (suppressClick.current && event.detail > 0) { suppressClick.current = false; return; }
-            void startSample(id);
-          }}><FileText size={17}/><span>{showcaseSamples[id].title}<small>{showcaseSamples[id].format}</small></span></button>)}
+          onPointerDown={event => touch.pointerDown(event, id)} onPointerMove={touch.pointerMove}
+          onPointerUp={touch.pointerUp} onPointerCancel={touch.pointerCancel} onLostPointerCapture={touch.pointerCancel}
+          onClick={event => touch.click(event, id)}><FileText size={17}/><span>{showcaseSamples[id].title}<small>{showcaseSamples[id].format}</small></span></button>)}
       </div>
       <form className="showcase-composer" onSubmit={submit}>
         <label className="visually-hidden" htmlFor="showcase-question">Ask about the sample</label>

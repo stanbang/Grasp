@@ -11,11 +11,11 @@
 - Treat the author's description of student needs as a design goal. There is no user research result to cite.
 - Reviewed the audit and progress prose against the Humanizer skill linked from the repository's original checkpoint.
 
-## Next
+## Working assumptions
 
 - The owner authorized continuing through all phases with self-review at each checkpoint.
-- Use Impeccable shape for the showcase before building UI. The project records its Impeccable setup in [the original checkpoint](phase-1.md).
-- Use checked-in notes for the first trace pass and record any provisional notes if the owner has not supplied final copy.
+- The original project [checkpoint](phase-1.md) records the Impeccable setup. The showcase follows the existing visual system and uses bundled notes for the trace.
+- The networking fixture remains provisional until the owner supplies the final note text.
 
 ## Retrieval evidence
 
@@ -40,6 +40,7 @@
 - Attached the file-drop safety test to the page's actual event listener. It rejects an external file even when the transfer also advertises the sample MIME type. Attempts to read file data, items or names would fail the test.
 - Self-reviewed desktop and 390-pixel browser layouts. Exercised keyboard sample selection, reduced-motion steps, pause, speed, restart, skip, 3D and 2D star clicks, a cited answer, Escape and question history.
 - Fixed touch drag cancellation and made the active pointer retain ownership through release. The offline check and build passed. Chrome opened the router citation after the fix. A physical touch check is pending.
+- Added regression coverage for sample taps, pointer ownership, drag cancellation and duplicate clicks. The tests call the same handlers used by the sample buttons. The built app opened notes from a desktop drag, a click and the keyboard. Run `node --test scripts/tests/showcase.test.cjs`.
 - Recorded browser frame intervals on the available Lenovo laptop and wrote the steps for reproducing the test. The mid-range hardware target still needs verification. [Browser sample and probe commands](showcase-review.md#browser-frame-sample)
 - Checked the build and full suite in mock mode. Impeccable source detection reported no regex-matched findings. Rendered scans identified small format labels and a mobile line wrap. Fixed both and reran desktop and mobile scans. [Self-review](showcase-review.md)
 

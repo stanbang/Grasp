@@ -48,3 +48,56 @@ export function installShowcaseDropHandlers<Id extends string>(target: EventTarg
     target.removeEventListener("dragleave", leave);
   };
 }
+
+type SamplePointer = Pick<PointerEvent, "pointerId" | "clientX" | "clientY">;
+type SamplePointerDown = SamplePointer & Pick<PointerEvent, "isPrimary" | "button" | "pointerType"> & {
+  currentTarget: Pick<HTMLElement, "setPointerCapture">;
+};
+
+export function sampleTouchHandlers<Id extends string>(onDrag: (dragging: boolean) => void, onSample: (id: Id) => void) {
+  let gesture: { sampleId: Id; start: SamplePointer; dragged: boolean } | null = null;
+  let suppressClick = false;
+
+  function reset() {
+    if (!gesture) return;
+    if (gesture.dragged) suppressClick = true;
+    gesture = null;
+    onDrag(false);
+  }
+
+  return {
+    isActive: () => gesture !== null,
+    reset,
+    pointerDown(event: SamplePointerDown, sampleId: Id) {
+      if (!event.isPrimary || event.button !== 0 || gesture) return;
+      suppressClick = false;
+      if (event.pointerType === "mouse") return;
+      const { pointerId, clientX, clientY } = event;
+      event.currentTarget.setPointerCapture(pointerId);
+      gesture = { sampleId, start: { pointerId, clientX, clientY }, dragged: false };
+    },
+    pointerMove(event: SamplePointer) {
+      if (!gesture || gesture.start.pointerId !== event.pointerId || gesture.dragged) return;
+      const { clientX, clientY } = gesture.start;
+      if (Math.hypot(event.clientX - clientX, event.clientY - clientY) <= 18) return;
+      gesture.dragged = true;
+      onDrag(true);
+    },
+    pointerUp(event: Pick<PointerEvent, "pointerId">) {
+      if (!gesture || gesture.start.pointerId !== event.pointerId) return;
+      const { dragged, sampleId } = gesture;
+      reset();
+      if (dragged) onSample(sampleId);
+    },
+    pointerCancel(event: Pick<PointerEvent, "pointerId">) {
+      if (gesture?.start.pointerId === event.pointerId) reset();
+    },
+    click(event: Pick<MouseEvent, "detail">, sampleId: Id) {
+      if (suppressClick && event.detail > 0) {
+        suppressClick = false;
+        return;
+      }
+      onSample(sampleId);
+    },
+  };
+}
