@@ -57,6 +57,15 @@
 - Pushed `showcase-overhaul` and the annotated tag `v0.6.0-showcase.1`. Verified the corrected repository description and topics. GitHub Actions passed the offline tests, build and Pages artifact step on the published branch. The deployment job hit the Pages branch restriction.
 - Downloaded the Pages artifact from Actions and tested its actual `/Grasp/` path. The root redirect, direct walkthrough link, recorded ranking comparison, 3D map and exact citation worked on the static server. Added the favicon to the redirect entry after the first package logged a missing icon request. [Artifact check and commands](showcase-review.md#github-pages-artifact)
 
+## Completion audit
+
+| Requirement | Evidence on hand | Remaining |
+| --- | --- | --- |
+| Evidence, README and course walkthrough | The README answers the five questions and links to the sources, recorded results, diagrams and decision records. The original walkthrough uses selected DeepLearning.AI lessons across the five modules. [Facts](facts.md) · [Course sources](course-walkthrough.md) | Add a public demo link after a deployment succeeds. |
+| Figma and brand assets | The Figma capture tool added the design drafts. The repository has original SVG and PNG diagrams, Mermaid versions and the brand assets. [Figma draft](https://www.figma.com/design/3rtdi0qiFA8f6ct5MlOp76) · [Asset provenance](assets/README.md) | The connected account still has a View seat. Native prototype transitions and Figma-sourced diagram exports remain pending. |
+| Browser prototype | The local and packaged builds opened and replayed bundled notes, showed citations and loaded the 3D map. Browser checks exercised playback, mouse drag and keyboard controls. The drop tests cover external files and touch-handler events. [Browser review](showcase-review.md) · [Tests](../scripts/tests/showcase.test.cjs) | The available laptop exposed no touchscreen in the Windows device list. Confirm the gesture on a touch device and the frame-rate target on representative hardware. |
+| GitHub and interview material | The repository description and topics, release tag, About copy, demo script and talk track are in place. GitHub Actions passed the offline checks, built the static package and uploaded its artifact. [About copy](about-snippet.md) · [Talk track](interview-talk-track.md) · [Actions run](https://github.com/stanbang/Grasp/actions/runs/45344457592) | Pages still allows `main` only. GitHub reports no custom social preview. Both changes require owner approval. |
+
 ## Needs owner approval
 
 - License choice. The default branch has no tracked license and the goal leaves that decision to the owner.

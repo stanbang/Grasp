@@ -85,6 +85,8 @@ I kept the workspace on bounded vector retrieval and measured chunk size and reo
 | Structured Gemini or OpenAI generation, one validation retry | Implemented | Retry can add a request. Token use and cost are not measured yet | Require source citations and allow a decline |
 | Agentic retrieval or fine-tuning | Considered | Extra model calls or training. Cost is not measured yet | Defer until there is a measured failure a simpler component change cannot address |
 
+Updating the index lets Grasp answer from new notes and point to the passage it used. Fine-tuning might help with answer format, which Grasp now checks with structured-output validation. Test agentic retrieval if held-out questions show that some answers need several search decisions. [Generation tradeoffs](docs/tradeoffs.md)
+
 ### Verify
 
 | Technique | Status | Cost and speed | Quality and decision |
@@ -170,7 +172,7 @@ Grasp has a single-owner deployment with loopback defaults, an optional owner to
 | Security | Local storage, non-root container, owner token, body limits and mutation rate limits | HTTPS at the host, backups, tenant isolation for a shared service and a deliberate security review |
 | Data disclosure | Local OCR and keyless mock mode. Live providers receive text for embeddings and extraction, and passages and context for generation | Review retention and account policies before using private notes |
 
-The public demo is a static replay of bundled samples. Its drop listener never reads real file names or contents. It uses recorded starter answers and finds matching excerpts for typed questions on the device. [Deployment](docs/deployment.md) · [Drop test](scripts/tests/showcase.test.cjs)
+The showcase replays bundled samples in a browser. Its drop listener never reads real file names or contents. It uses recorded starter answers and finds matching excerpts for typed questions on the device. The showcase runs locally while GitHub Pages publication is pending. [Deployment](docs/deployment.md) · [Drop test](scripts/tests/showcase.test.cjs)
 
 ## Course-topic map
 
