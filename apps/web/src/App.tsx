@@ -1,221 +1,410 @@
-import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, FolderOpen, Orbit, Paperclip, Plus, Settings } from 'lucide-react';
-import { Mindmap } from './Mindmap';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowUp, Box, FilePlus2, FolderOpen, Layers3, MessageSquare, Moon, Settings, Sun, Workflow, X } from 'lucide-react';
+import { CanvasBoard } from './canvas/CanvasBoard';
+import { CanvasInspector } from './canvas/CanvasInspector';
+import { ExplorerBoundary } from './canvas/ExplorerBoundary';
+import { conceptObjectId, knowledgeScene, type BoardKind, type Card } from './canvas/board';
+import { engineeringScene } from './canvas/engineering-board';
+import { useBoard } from './canvas/use-board';
 import { ConceptView, SourceView, WorkspaceSettings } from './WorkspaceDialogs';
 import { api, apiFetch, ApiError, documentEvents, setAccessToken } from './client';
 import { droppedFiles, isSupportedNote, installFileDropHandlers } from './folder-upload';
 import { useStudyGraph } from './study-store';
-import type { ChatResponse, Citation, GraphResponse } from './types/contracts';
-type Turn = {
-    id: number;
-    question: string;
-    response: ChatResponse;
-    createdAt: string;
-};
-type Conversation = {
-    id: string;
-    title: string;
-};
-function savedConversation(): string | null { try {
-    return localStorage.getItem('grasp-conversation');
+import { updateUpload, type UploadState } from './upload-state';
+import type { ChatResponse, Citation, Conversation, Document, DocumentsResponse, GraphResponse, HealthResponse, Turn, Turns } from './types/contracts';
+
+const Mindmap = lazy(() => import('./Mindmap').then(module => ({ default: module.Mindmap })));
+
+function savedConversation(): string | null {
+  try { return localStorage.getItem('grasp-conversation'); }
+  catch { return null; }
 }
-catch {
-    return null;
-} }
+
 export function App() {
-    const { graph, setGraph } = useStudyGraph();
-    const [started, setStarted] = useState(false);
-    const [question, setQuestion] = useState('');
-    const [turns, setTurns] = useState<Turn[]>([]);
-    const [conversation, setConversation] = useState<string | null>(savedConversation);
-    const [busy, setBusy] = useState(false);
-    const [reading, setReading] = useState(false);
-    const [status, setStatus] = useState('');
-    const [error, setError] = useState('');
-    const [dragging, setDragging] = useState(false);
-    const [mode, setMode] = useState('mock');
-    const [highlight, setHighlight] = useState<string[]>([]);
-    const [scope, setScope] = useState<string[]>([]);
-    const [citation, setCitation] = useState<Citation | null>(null);
-    const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
-    const [settings, setSettings] = useState(false);
-    const [locked, setLocked] = useState(false);
-    const [token, setToken] = useState('');
-    const [readyCount, setReadyCount] = useState(0);
-    const generation = useRef(0);
-    const [scopeEmpty, setScopeEmpty] = useState(false);
-    const textarea = useRef<HTMLTextAreaElement>(null);
-    const fileInput = useRef<HTMLInputElement>(null);
-    const folderInput = useRef<HTMLInputElement>(null);
-    const importLock = useRef(false);
-    const controllers = useRef(new Set<AbortController>());
-    const latestDrop = useRef<(transfer: DataTransfer) => Promise<void>>(async () => { });
-    const thread = useRef<HTMLDivElement>(null);
-    function remember(id: string | null) { setConversation(id); try {
-        if (id)
-            localStorage.setItem('grasp-conversation', id);
-        else
-            localStorage.removeItem('grasp-conversation');
+  const { graph, documents, setLibrary, upsertDocument } = useStudyGraph();
+  const knowledge = useBoard('knowledge');
+  const engineering = useBoard('engineering');
+  const [workspace, setWorkspace] = useState<BoardKind>('knowledge');
+  const [render3D, setRender3D] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [question, setQuestion] = useState('');
+  const [turns, setTurns] = useState<Turn[]>([]);
+  const [conversation, setConversation] = useState<string | null>(savedConversation);
+  const [questionOpen, setQuestionOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [loadingSample, setLoadingSample] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [uploads, setUploads] = useState<UploadState[]>([]);
+  const [error, setError] = useState('');
+  const [dragging, setDragging] = useState(false);
+  const [provider, setProvider] = useState<HealthResponse['llm']['provider']>();
+  const [highlight, setHighlight] = useState<string[]>([]);
+  const [scope, setScope] = useState<string[]>([]);
+  const [scopeEmpty, setScopeEmpty] = useState(false);
+  const [citation, setCitation] = useState<Citation | null>(null);
+  const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
+  const [settings, setSettings] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [token, setToken] = useState('');
+  const [readyCount, setReadyCount] = useState(0);
+  const generation = useRef(0);
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const questionButton = useRef<HTMLButtonElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const folderInput = useRef<HTMLInputElement>(null);
+  const importLock = useRef(false);
+  const controllers = useRef(new Set<AbortController>());
+  const latestDrop = useRef<(transfer: DataTransfer) => Promise<void>>(async () => {});
+  const thread = useRef<HTMLDivElement>(null);
+  const latestTurn = useRef<HTMLElement>(null);
+  const activeBoard = workspace === 'knowledge' ? knowledge : engineering;
+  const knowledgeSeed = useMemo(() => knowledgeScene(graph, documents), [graph, documents]);
+
+  function remember(id: string | null) {
+    setConversation(id);
+    try {
+      if (id) localStorage.setItem('grasp-conversation', id);
+      else localStorage.removeItem('grasp-conversation');
+    } catch {
+      // The server conversation still works when browser storage is unavailable.
     }
-    catch { /* Private browsing can deny storage; the server conversation still works. */ } }
-    function failure(value: unknown) { if (value instanceof ApiError && value.status === 401)
-        setLocked(true); setError(value instanceof Error ? value.message : String(value)); }
-    async function refresh() { const [data, health] = await Promise.all([api<GraphResponse>('/graph'), api<{
-            llm: {
-                provider: string;
-            };
-        }>('/health')]); setGraph(data); setMode(health.llm.provider); }
-    async function openConversation(id: string) { generation.current++; setScopeEmpty(false); const result = await api<{
-        turns: Turn[];
-    }>(`/conversations/${id}`); remember(id); setTurns(result.turns); setStarted(true); setScope([]); }
-    useEffect(() => { folderInput.current?.setAttribute('webkitdirectory', ''); void refresh().then(async () => { const saved = savedConversation(); if (saved) {
+  }
+
+  function failure(value: unknown) {
+    if (value instanceof ApiError && value.status === 401) setLocked(true);
+    setError(value instanceof Error ? value.message : String(value));
+  }
+
+  async function refresh() {
+    const [data, health, library] = await Promise.all([
+      api<GraphResponse>('/graph'), api<HealthResponse>('/health'), api<DocumentsResponse>('/documents'),
+    ]);
+    setLibrary(data, library.documents);
+    setProvider(health.llm.provider);
+  }
+
+  async function openConversation(id: string) {
+    generation.current++;
+    const result = await api<Turns>(`/conversations/${id}`);
+    remember(id);
+    setTurns(result.turns);
+    setScope([]);
+    setScopeEmpty(false);
+    setWorkspace('knowledge');
+    setQuestionOpen(true);
+  }
+
+  useEffect(() => {
+    folderInput.current?.setAttribute('webkitdirectory', '');
+    void refresh().then(async () => {
+      const saved = savedConversation();
+      if (!saved) return;
+      try { await openConversation(saved); }
+      catch (issue) {
+        if (issue instanceof ApiError && issue.status === 404) remember(null);
+        else throw issue;
+      }
+    }).catch(failure);
+    return () => controllers.current.forEach(controller => controller.abort());
+  }, []);
+
+  useEffect(() => {
+    if (workspace === 'knowledge' && questionOpen) textarea.current?.focus();
+  }, [workspace, questionOpen]);
+
+  useEffect(() => {
+    const top = latestTurn.current?.offsetTop ?? 0;
+    thread.current?.scrollTo({ top: Math.max(0, top - 16), behavior: 'instant' });
+  }, [turns, workspace, questionOpen]);
+
+  useEffect(() => installFileDropHandlers(window, transfer => { void latestDrop.current(transfer); }, setDragging), []);
+
+  function changeUpload(index: number, update: (upload: UploadState) => UploadState) {
+    setUploads(items => items.map((item, itemIndex) => itemIndex === index ? update(item) : item));
+  }
+
+  async function importFiles(files: File[], readErrors: string[] = []) {
+    if (busy || loadingSample || importLock.current) {
+      setError('Wait for the current workspace operation to finish.');
+      return;
+    }
+    const notes = files.filter(isSupportedNote);
+    if (!notes.length) {
+      setError(readErrors.join(' ') || 'Add a PDF, Markdown or TXT document.');
+      return;
+    }
+
+    generation.current++;
+    setWorkspace('knowledge');
+    setRender3D(false);
+    importLock.current = true;
+    setReading(true);
+    setError('');
+    setTurns([]);
+    remember(null);
+    setScope([]);
+    setScopeEmpty(false);
+    setReadyCount(0);
+    setUploads(notes.map(file => ({ name: file.name, status: 'uploading', cursor: 0, message: 'Waiting to upload' })));
+
+    let failures = readErrors.length;
+    const imported: string[] = [];
+    try {
+      for (const [index, file] of notes.entries()) {
+        const controller = new AbortController();
+        controllers.current.add(controller);
+        changeUpload(index, state => ({ ...state, message: 'Uploading' }));
         try {
-            await openConversation(saved);
+          const form = new FormData();
+          form.append('file', file);
+          const response = await apiFetch('/documents', { method: 'POST', body: form, signal: controller.signal });
+          const document = await response.json() as Document;
+          upsertDocument(document);
+          changeUpload(index, state => ({ ...state, docId: document.id, status: 'queued', message: 'Queued' }));
+          await documentEvents(document.id, event => {
+            changeUpload(index, state => updateUpload(state, event));
+            if (event.document) upsertDocument(event.document);
+          }, controller.signal);
+          imported.push(document.id);
+          setScope([...new Set(imported)]);
+          setReadyCount(imported.length);
+          await refresh();
+        } catch (issue) {
+          failures++;
+          changeUpload(index, state => state.status === 'failed' ? state : {
+            ...state, status: 'failed', message: issue instanceof Error ? issue.message : 'Upload failed.',
+          });
+          if (issue instanceof ApiError && issue.status === 401) failure(issue);
+        } finally {
+          controllers.current.delete(controller);
         }
-        catch (e) {
-            if (e instanceof ApiError && e.status === 404)
-                remember(null);
-            else
-                throw e;
+      }
+      setScopeEmpty(imported.length === 0);
+      if (failures) setError(`${failures} files or folder entries could not be read. Add them again to retry.`);
+    } finally {
+      importLock.current = false;
+      setReading(false);
+    }
+  }
+
+  latestDrop.current = async transfer => {
+    try {
+      const result = await droppedFiles(transfer);
+      await importFiles(result.files, result.errors);
+    } catch (issue) {
+      failure(issue);
+    }
+  };
+
+  async function ask() {
+    const value = question.trim();
+    if (busy || !value || (reading && readyCount === 0) || scopeEmpty) return;
+    const requestGeneration = generation.current;
+    const draft = question;
+    setBusy(true);
+    setError('');
+    try {
+      let id = conversation;
+      if (!id) {
+        const created = await api<Conversation>('/conversations', {});
+        id = created.id;
+        remember(id);
+      }
+      const response = await api<ChatResponse>('/chat', { question: value, conversationId: id, docIds: scope });
+      if (requestGeneration !== generation.current) return;
+      setTurns(previous => [...previous, { id: Date.now(), question: value, response, createdAt: new Date().toISOString() }]);
+      setQuestion(current => current === draft ? '' : current);
+      setHighlight(response.referencedNodeIds);
+      await refresh();
+    } catch (issue) {
+      failure(issue);
+    } finally {
+      setBusy(false);
+      textarea.current?.focus();
+    }
+  }
+
+  function startConversation() {
+    generation.current++;
+    remember(null);
+    setTurns([]);
+    setQuestion('');
+    setScope([]);
+    setScopeEmpty(false);
+    setHighlight([]);
+    setError('');
+    textarea.current?.focus();
+  }
+
+  function askAbout(card: Card) {
+    setScope(card.concept?.docIds ?? (card.document ? [card.document.id] : []));
+    setScopeEmpty(false);
+    if (card.concept) setQuestion(current => current || `Explain ${card.title}.`);
+    setQuestionOpen(true);
+    requestAnimationFrame(() => textarea.current?.focus());
+  }
+
+  async function demo() {
+    setLoadingSample(true);
+    setError('');
+    try {
+      await api('/demo', {});
+      await refresh();
+      startConversation();
+    } catch (issue) {
+      failure(issue);
+    } finally {
+      setLoadingSample(false);
+    }
+  }
+
+  function changeWorkspace(value: BoardKind) {
+    setWorkspace(value);
+    setRender3D(false);
+  }
+
+  function explore(id: string) {
+    void api('/nodes/explore', { nodeId: id }).then(refresh).catch(failure);
+  }
+
+  const working = reading || busy || loadingSample;
+  const chosenConcept = graph.nodes.find(node => node.id === selectedConcept);
+  const scopeNames = scope.map(id => documents.find(document => document.id === id)?.name ?? 'Selected source');
+  const emphasized = [...highlight, ...knowledge.selected.filter(id => id.startsWith('concept:')).map(id => id.slice(8))];
+  const visibleKnowledge = useMemo(() => {
+    if (!uploads.length) return knowledgeSeed;
+    const uploadByDocument = new Map(uploads.filter(upload => upload.docId).map(upload => [upload.docId, upload]));
+    return {
+      ...knowledgeSeed,
+      cards: knowledgeSeed.cards.map(card => {
+        const upload = card.document && uploadByDocument.get(card.document.id);
+        return upload && upload.status !== 'done' ? { ...card, message: upload.message } : card;
+      }),
+    };
+  }, [knowledgeSeed, uploads]);
+
+  return <div className="canvas-workspace" data-theme={theme}>
+    <header className="canvas-header">
+      <div className="canvas-brand"><Layers3 size={21} aria-hidden /><span>Grasp</span></div>
+      <nav className="canvas-workspaces" aria-label="Workspaces">
+        <button type="button" aria-pressed={workspace === 'knowledge'} onClick={() => changeWorkspace('knowledge')}><Box size={16} /><span>Knowledge</span></button>
+        <button type="button" aria-pressed={workspace === 'engineering'} onClick={() => changeWorkspace('engineering')}><Workflow size={16} /><span>Engineering</span></button>
+      </nav>
+      <div className="canvas-header-actions">
+        {workspace === 'knowledge' && <>
+          <button type="button" ref={questionButton} className="canvas-text-button" aria-label="Questions" aria-expanded={questionOpen} title="Questions" onClick={() => setQuestionOpen(!questionOpen)}><MessageSquare size={17} /><span>Questions</span></button>
+          <button type="button" className="canvas-text-button" aria-label={render3D ? 'Return to 2D canvas' : 'Explore in 3D'} title={render3D ? 'Return to 2D canvas' : 'Explore in 3D'} disabled={!graph.nodes.length} onClick={() => setRender3D(!render3D)}><Box size={17} /><span>{render3D ? '2D' : '3D'}</span></button>
+          <button type="button" className="board-icon" aria-label="Choose folder" title="Choose folder" disabled={working} onClick={() => folderInput.current?.click()}><FolderOpen size={18} /></button>
+          {(visibleKnowledge.cards.length > 0 || knowledge.document.authoredCards.length > 0) &&
+            <button type="button" className="canvas-add-files" aria-label="Add documents" title="Add documents" disabled={working} onClick={() => fileInput.current?.click()}><FilePlus2 size={17} /><span>Add documents</span></button>}
+        </>}
+        <button type="button" className="board-icon" aria-label={theme === 'dark' ? 'Use light theme' : 'Use dark theme'} title={theme === 'dark' ? 'Use light theme' : 'Use dark theme'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
+        <button type="button" className="board-icon" aria-label="Workspace options" title="Workspace options" disabled={working} onClick={() => setSettings(true)}><Settings size={17} /></button>
+      </div>
+    </header>
+    <input ref={fileInput} className="hidden-file" tabIndex={-1} aria-label="Select files" type="file" multiple accept=".pdf,.md,.txt" onChange={event => {
+      void importFiles(Array.from(event.target.files ?? []));
+      event.target.value = '';
+    }} />
+    <input ref={folderInput} className="hidden-file" tabIndex={-1} aria-label="Select folder" type="file" multiple onChange={event => {
+      void importFiles(Array.from(event.target.files ?? []));
+      event.target.value = '';
+    }} />
+
+    <main className={`canvas-main${workspace === 'knowledge' && questionOpen ? ' canvas-main--asking' : ''}`}>
+      <div className="canvas-content">
+        {render3D && workspace === 'knowledge' ? <div className="canvas-three">
+          <ExplorerBoundary onReturn={() => setRender3D(false)}>
+            <Suspense fallback={<p className="canvas-loading" role="status">Loading 3D explorer…</p>}>
+              <Mindmap graph={graph} highlight={emphasized} onSelect={id => {
+                knowledge.select([conceptObjectId(id)]);
+                knowledge.selectLinks([]);
+                setSelectedConcept(id);
+                explore(id);
+              }} />
+            </Suspense>
+          </ExplorerBoundary>
+        </div> : <CanvasBoard key={workspace} seed={workspace === 'knowledge' ? visibleKnowledge : engineeringScene}
+          session={activeBoard} highlight={workspace === 'knowledge' ? highlight : []} theme={theme}
+          importing={workspace === 'knowledge' && (reading || loadingSample)}
+          empty={workspace === 'knowledge' && <div className="board-empty">
+            <div className="board-empty-symbol"><Layers3 size={28} strokeWidth={1.5} /></div>
+            <h1>Knowledge canvas</h1>
+            <p>Add documents to see how their ideas connect.</p>
+            <div>
+              <button type="button" className="canvas-add-files" disabled={working} onClick={() => fileInput.current?.click()}><FilePlus2 size={17} /> Add documents</button>
+              {provider === 'mock' && <button type="button" disabled={working} onClick={() => void demo()}>{loadingSample ? 'Opening sample…' : 'Open sample'}</button>}
+            </div>
+          </div>}
+          inspect={(card, link, close) => <CanvasInspector key={card?.id ?? link?.id}
+            card={card} link={card ? undefined : link} session={activeBoard} documents={documents} onClose={close}
+            onSource={setCitation} onAsk={item => { close(); askAbout(item); }} onExplore={explore} />} />}
+
+        {workspace === 'knowledge' && uploads.length > 0 && <section className="canvas-uploads" aria-label="File uploads">
+          <header><h2>{reading ? 'Importing documents' : 'Import results'}</h2>{!reading && <button type="button" className="board-icon" aria-label="Dismiss import results" onClick={() => setUploads([])}><X size={14} /></button>}</header>
+          <ul aria-live="polite">{uploads.map((upload, index) => <li key={index} data-status={upload.status}>
+            <strong>{upload.name}</strong><span>{upload.status === 'done' ? 'Ready' : upload.message}</span>
+          </li>)}</ul>
+        </section>}
+        {workspace === 'knowledge' && provider && <span className="canvas-provider">{provider === 'mock' ? 'Offline mock' : `Live · ${provider}`}</span>}
+        {error && !locked && <div className="canvas-error" role="alert"><span>{error}</span><button type="button" className="board-icon" aria-label="Dismiss message" onClick={() => setError('')}><X size={15} /></button></div>}
+      </div>
+      {workspace === 'knowledge' && questionOpen && <section className="canvas-questions" aria-label="Document questions" onKeyDown={event => {
+        if (event.key === 'Escape') {
+          setQuestionOpen(false);
+          questionButton.current?.focus();
         }
-    } }).catch(failure); return () => controllers.current.forEach(c => c.abort()); }, []);
-    useEffect(() => { if (started)
-        textarea.current?.focus(); }, [started]);
-    useEffect(() => { thread.current?.scrollTo({ top: thread.current.scrollHeight, behavior: 'instant' }); }, [turns, busy]);
-    useEffect(() => installFileDropHandlers(window, transfer => { void latestDrop.current(transfer); }, setDragging), []);
-    async function importFiles(files: File[], readErrors: string[] = []) {
-        if (busy) {
-            setError('Wait for the current answer before adding files.');
-            return;
-        }
-        if (importLock.current) {
-            setError('Wait for the current files to finish.');
-            return;
-        }
-        const notes = files.filter(isSupportedNote);
-        if (!notes.length) {
-            setError(readErrors.join(' ') || 'Drop a PDF, Markdown or TXT document.');
-            return;
-        }
+      }}>
+        <header><h2>Questions</h2><button type="button" disabled={working} onClick={startConversation}>New</button>
+          <button type="button" className="board-icon" aria-label="Close questions" onClick={() => { setQuestionOpen(false); questionButton.current?.focus(); }}><X size={17} /></button></header>
+        <div className="question-scope">
+          <span>{scopeEmpty ? 'No ready sources in this scope' : scope.length ? scopeNames.join(', ') : 'All ready sources'}</span>
+          {scope.length > 0 && <button type="button" disabled={working} onClick={() => { setScope([]); setScopeEmpty(false); }}>Use all</button>}
+        </div>
+        <div className="conversation-thread" ref={thread} aria-live="polite">
+          {turns.map((turn, index) => <article key={turn.id} ref={index === turns.length - 1 ? latestTurn : undefined}><h3>{turn.question}</h3><p>{turn.response.answer}</p><div className="source-buttons">
+            {turn.response.citations.map((source, index) => <button key={`${source.chunkId}:${index}`} onClick={() => setCitation(source)}>Source {index + 1} · p{source.page}</button>)}
+          </div></article>)}
+          {busy && <p role="status">Reading the relevant passages…</p>}
+        </div>
+        <form onSubmit={event => { event.preventDefault(); void ask(); }}>
+          <div className="composer">
+            <textarea ref={textarea} aria-label="Your question" value={question} onChange={event => setQuestion(event.target.value)}
+              placeholder="Ask about your documents…" maxLength={2000} onKeyDown={event => {
+                if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void ask(); }
+              }} />
+            <button aria-label="Ask question" disabled={busy || !question.trim() || (reading && readyCount === 0) || scopeEmpty}><ArrowUp size={19} /></button>
+          </div>
+        </form>
+      </section>}
+    </main>
+
+    {dragging && <div className="drop-indicator"><FilePlus2 size={32} /><span>Drop to add documents</span></div>}
+    {chosenConcept && <ConceptView node={chosenConcept} graph={graph} onSelect={id => { setSelectedConcept(id); explore(id); }}
+      onClose={() => setSelectedConcept(null)} onSource={source => { setSelectedConcept(null); setCitation(source); }} />}
+    {citation && <SourceView citation={citation} onClose={() => setCitation(null)} />}
+    {settings && <WorkspaceSettings onClose={() => setSettings(false)} onRefresh={refresh} onConversation={openConversation}
+      onConversationRemoved={id => {
+        if (id === conversation) startConversation();
+      }}
+      onDocumentChanged={(oldId, newId) => {
         generation.current++;
-        setScopeEmpty(false);
-        importLock.current = true;
-        setReading(true);
-        setStarted(true);
-        setError('');
-        setTurns([]);
-        remember(null);
-        setScope([]);
-        setReadyCount(0);
-        let failures = readErrors.length;
-        const imported: string[] = [];
-        try {
-            for (const [index, file] of notes.entries()) {
-                setStatus(`Reading files ${index + 1} of ${notes.length}`);
-                const controller = new AbortController();
-                controllers.current.add(controller);
-                try {
-                    const form = new FormData();
-                    form.append('file', file);
-                    const response = await apiFetch('/documents', { method: 'POST', body: form, signal: controller.signal });
-                    const document = await response.json() as {
-                        id: string;
-                    };
-                    await documentEvents(document.id, event => { if (event.type === 'node' && event.node) {
-                        const node = event.node;
-                        setGraph(old => ({ ...old, nodes: [...old.nodes.filter(n => n.id !== node.id), node] }));
-                    } if (event.type === 'edge' && event.edge) {
-                        const edge = event.edge;
-                        setGraph(old => ({ ...old, edges: [...old.edges.filter(e => e.id !== edge.id), edge] }));
-                    } }, controller.signal);
-                    imported.push(document.id);
-                    setScope([...imported]);
-                    setReadyCount(imported.length);
-                    await refresh();
-                }
-                catch (e) {
-                    failures++;
-                    failure(e);
-                }
-                finally {
-                    controllers.current.delete(controller);
-                }
-            }
-            setStatus(`${imported.length} of ${notes.length} files ready`);
-            setScopeEmpty(imported.length === 0);
-            if (failures)
-                setError(`${failures} files or folder entries could not be read. ${imported.length ? 'Ready sources are available; drop the failed files again to retry.' : 'No sources were imported. Drop a readable document to retry.'}`);
-        }
-        finally {
-            importLock.current = false;
-            setReading(false);
-        }
-    }
-    latestDrop.current = async (transfer) => { try {
-        const result = await droppedFiles(transfer);
-        await importFiles(result.files, result.errors);
-    }
-    catch (e) {
-        failure(e);
-    } };
-    async function ask() { if (busy || !question.trim() || (reading && readyCount === 0) || scopeEmpty)
-        return; const requestGeneration = generation.current; const draft = question; setBusy(true); setError(''); const value = question.trim(); try {
-        let id = conversation;
-        if (!id) {
-            const created = await api<Conversation>('/conversations', {});
-            id = created.id;
-            remember(id);
-        }
-        const response = await api<ChatResponse>('/chat', { question: value, conversationId: id, docIds: scope });
-        if (requestGeneration !== generation.current)
-            return;
-        setTurns(old => [...old, { id: Date.now(), question: value, response, createdAt: new Date().toISOString() }]);
-        setQuestion(current => current === draft ? '' : current);
-        setHighlight(response.referencedNodeIds);
-        await refresh();
-    }
-    catch (e) {
-        failure(e);
-    }
-    finally {
-        setBusy(false);
-        textarea.current?.focus();
-    } }
-    async function demo() { setBusy(true); try {
-        await api('/demo', {});
-        await refresh();
-        setStarted(true);
-        remember(null);
-        setTurns([]);
-        setScope([]);
-    }
-    catch (e) {
-        failure(e);
-    }
-    finally {
-        setBusy(false);
-    } }
-    return <div className={`minimal-workspace ${started ? 'question-open' : 'entry-open'}`}><Mindmap graph={graph} highlight={highlight} onSelect={id => { setSelectedConcept(id); void api('/nodes/explore', {nodeId: id}).then(refresh).catch(failure); }}/><header className="minimal-header"><span><Orbit size={23}/> Study space</span><div><button aria-label="Add files" onClick={() => fileInput.current?.click()} disabled={reading || busy}><Paperclip size={18}/></button><button aria-label="Choose folder" onClick={() => folderInput.current?.click()} disabled={reading || busy}><FolderOpen size={18}/></button>{started && <button aria-label="New conversation" disabled={busy || reading} onClick={() => { generation.current++; setScopeEmpty(false); remember(null); setTurns([]); setQuestion(''); setScope([]); textarea.current?.focus(); }}><Plus size={18}/></button>}<button aria-label="Workspace options" disabled={busy || reading} onClick={() => setSettings(true)}><Settings size={18}/></button></div></header>
-    <input ref={fileInput} className="hidden-file" tabIndex={-1} aria-label="Select files" type="file" multiple accept=".pdf,.md,.txt" onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/><input ref={folderInput} className="hidden-file" tabIndex={-1} aria-label="Select folder" type="file" multiple onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }}/>
-    {!started ? <main className="minimal-entry"><Orbit size={34}/><h1>drop folder to get started</h1><p>Drop a file or folder here.<br />Your mindmap and questions stay on this page.</p><button onClick={() => fileInput.current?.click()}>Choose a file</button><small>PDF · Markdown · TXT</small><div><button disabled={busy} onClick={() => void demo()}>Try the sample</button>{graph.nodes.length > 0 && <button onClick={() => setStarted(true)}>Continue with saved notes</button>}</div>{error && <p role="alert" className="minimal-error">{error}</p>}</main> : <main className="question-stage"><section className="question-card" aria-label="Document questions">{(turns.length > 0 || busy) && <div className="conversation-thread" ref={thread} aria-live="polite">{turns.map(turn => <article key={turn.id}><h2>{turn.question}</h2><p>{turn.response.answer}</p><div className="source-buttons">{turn.response.citations.map((source, index) => <button key={source.chunkId} onClick={() => setCitation(source)}>Source {index + 1} · p{source.page}</button>)}</div></article>)}{busy && <p role="status">Reading the relevant passages…</p>}</div>}<form onSubmit={e => { e.preventDefault(); void ask(); }}><label htmlFor="question">what question would you like to ask</label><div className="composer"><textarea ref={textarea} id="question" value={question} onChange={e => setQuestion(e.target.value)} placeholder="Ask about your documents…" maxLength={2000} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        void ask();
-    } }}/><button aria-label="Ask question" disabled={busy || !question.trim() || (reading && readyCount === 0) || scopeEmpty}><ArrowUp size={19}/></button></div></form>{status && <p className="import-status" role="status">{status}</p>}{error && <p role="alert" className="minimal-error">{error}</p>}</section></main>}
-    {dragging && <div className="drop-indicator"><Paperclip size={32}/><span>Drop here to ask your documents</span></div>}<footer className="minimal-footer">{mode === 'mock' ? 'Offline mock · Responses show retrieved excerpts' : `${mode} · Answers use your selected sources`}</footer>
-    {selectedConcept && graph.nodes.some(node => node.id === selectedConcept) && <ConceptView node={graph.nodes.find(node => node.id === selectedConcept)!} graph={graph} onSelect={setSelectedConcept} onClose={() => setSelectedConcept(null)} onSource={source => {setSelectedConcept(null); setCitation(source); }}/>}{citation && <SourceView citation={citation} onClose={() => setCitation(null)}/>} {settings && <WorkspaceSettings onClose={() => setSettings(false)} onRefresh={refresh} onConversation={openConversation} onConversationRemoved={id => { if (id === conversation) {
-        generation.current++;
-        remember(null);
-        setTurns([]);
-    } }} onDocumentChanged={(oldId, newId) => { generation.current++; if (scope.includes(oldId)) {
-        const next = scope.filter(id => id !== oldId);
-        if (newId)
-            next.push(newId);
+        if (!scope.includes(oldId)) return;
+        const next = [...new Set(scope.flatMap(id => id === oldId ? (newId ? [newId] : []) : [id]))];
         setScope(next);
         setScopeEmpty(next.length === 0);
-        if (!next.length)
-            setError('The active source was removed. Add notes or start a new conversation to use the remaining workspace.');
-    } }}/>}
-    {locked && <div className="access-gate"><form onSubmit={e => { e.preventDefault(); setAccessToken(token); void refresh().then(async () => { if (conversation)
-        await openConversation(conversation); setLocked(false); setError(''); }).catch(failure); }}><h2>Open your workspace</h2><label htmlFor="access-token">Workspace access token</label><input id="access-token" type="password" value={token} onChange={e => setToken(e.target.value)} required/><button>Unlock</button>{error && <p role="alert">{error}</p>}</form></div>}
-    </div>;
+        if (!next.length) setError('The active source was removed. Add notes or start a new conversation.');
+      }} />}
+    {locked && <div className="access-gate"><form onSubmit={event => {
+      event.preventDefault();
+      setAccessToken(token);
+      void refresh().then(async () => {
+        if (conversation) await openConversation(conversation);
+        setLocked(false);
+        setError('');
+      }).catch(failure);
+    }}><h2>Open your workspace</h2><label htmlFor="access-token">Workspace access token</label>
+      <input id="access-token" type="password" value={token} onChange={event => setToken(event.target.value)} required />
+      <button>Unlock</button>{error && <p role="alert">{error}</p>}</form></div>}
+  </div>;
 }
