@@ -54,6 +54,7 @@
 ## GitHub
 
 - Pushed `showcase-overhaul` and the annotated tag `v0.6.0-showcase.1`. Verified the corrected repository description and topics. GitHub Actions passed the offline tests, build and Pages artifact step on the published branch. The deployment job hit the Pages branch restriction.
+- Downloaded the Pages artifact from Actions and tested its actual `/Grasp/` path. The root redirect, direct walkthrough link, recorded ranking comparison, 3D map and exact citation worked on the static server. Added the favicon to the redirect entry after the first package logged a missing icon request. [Artifact check and commands](showcase-review.md#github-pages-artifact)
 
 ## Needs owner approval
 

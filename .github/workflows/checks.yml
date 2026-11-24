@@ -37,7 +37,8 @@ jobs:
           mkdir -p site
           cp -R apps/web/dist/showcase apps/web/dist/assets site/
           find site/assets -maxdepth 1 \( -name 'workspace-*' -o -name '*.map' \) -type f -delete
-          printf '%s\n' '<!doctype html><html lang="en"><meta charset="utf-8"><title>Grasp showcase</title><meta http-equiv="refresh" content="0;url=showcase/"><a href="showcase/">Open the Grasp showcase</a></html>' > site/index.html
+          cp apps/web/src/showcase/favicon.svg site/favicon.svg
+          printf '%s\n' '<!doctype html><html lang="en"><meta charset="utf-8"><title>Grasp showcase</title><link rel="icon" href="favicon.svg" type="image/svg+xml"><meta http-equiv="refresh" content="0;url=showcase/"><a href="showcase/">Open the Grasp showcase</a></html>' > site/index.html
       - uses: actions/upload-pages-artifact@v3
         if: github.repository == 'stanbang/Grasp' && github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'showcase-overhaul')
         with:

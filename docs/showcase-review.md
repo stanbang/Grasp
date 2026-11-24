@@ -37,3 +37,22 @@ python -m http.server 15179 --bind 127.0.0.1 --directory work/showcase-frame-pro
 ```
 
 Open `http://127.0.0.1:15179/showcase/frame-probe.html` in Chrome. Use **Measure five seconds** for the landing sample. For replay, reload the page, select **Measure until 3D opens**, then select **Computer networks**. Once the map is ready, start a five-second sample, rotate and zoom, then ask the suggested router question. Copy the resulting JSON and record which actions were included. The probe lives in the ignored `work/` copy of the built site.
+
+## GitHub Pages artifact
+
+I downloaded the `github-pages` artifact built from `66a58c4` and served it on loopback under `/Grasp/`, the path used by GitHub Pages. The archive contained the showcase and its assets. It excluded the workspace entry, workspace bundles and source maps. [Actions build](https://github.com/stanbang/Grasp/actions/runs/45342302454)
+
+The homepage redirected to `/Grasp/showcase/`. The walkthrough loaded and survived a reload at `/Grasp/showcase/?view=guide`. The prompt comparison showed the router passage only when retrieval was enabled. The ranking control changed the displayed archived result from 19 of 20 questions to 20 of 20. The router example opened page 1 and highlighted the exact quote. The 3D engine was absent from the landing page and loaded when the map opened. The browser loaded the assets for these steps from the same prefix and reported no console errors. [Archived evaluation](evaluation.md#portfolio-method)
+
+The first package logged a missing favicon request during the root redirect. I added the repository favicon to the redirect page and checked the revised entry on loopback. The browser received the SVG and followed the redirect. [Pages packaging recipe](../.github/workflows/checks.yml)
+
+To repeat the check in PowerShell, download and unpack the artifact, then serve the parent of `Grasp`. If the archive has expired, use the run ID of a newer build that uploaded the `github-pages` artifact.
+
+```powershell
+gh run download 45342302454 --repo stanbang/Grasp --name github-pages --dir work/pages-artifact-45342302454
+New-Item -ItemType Directory -Force -Path work/pages-smoke-45342302454/Grasp | Out-Null
+tar -xf work/pages-artifact-45342302454/artifact.tar -C work/pages-smoke-45342302454/Grasp
+python -m http.server 15182 --bind 127.0.0.1 --directory work/pages-smoke-45342302454
+```
+
+Open `http://127.0.0.1:15182/Grasp/`. The published URL still requires a successful deployment. The Pages environment currently permits `main`.
