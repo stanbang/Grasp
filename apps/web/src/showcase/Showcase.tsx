@@ -12,7 +12,7 @@ import { StarChart } from "./StarChart";
 import type { ShowcaseTrace } from "./trace-types";
 
 type Turn = { id: number; question: string; response: ChatResponse };
-type TouchDrag = { id: SampleId; x: number; y: number };
+type TouchDrag = { sampleId: SampleId; pointerId: number; x: number; y: number; dragged: boolean };
 const motionQuery = "(prefers-reduced-motion: reduce)";
 const emptyHighlights: string[] = [];
 const RagGuide = lazy(() => import("./RagGuide"));
@@ -106,6 +106,7 @@ export function Showcase() {
     const syncGuide = () => {
       const open = guideRequested();
       returning.current = !open;
+      touch.current = null;
       setDrop(null);
       setGuideOpen(open);
     };
@@ -174,27 +175,43 @@ export function Showcase() {
   }), [guideOpen, startSample]);
 
   function beginDrag(event: DragEvent<HTMLButtonElement>, id: SampleId) {
+    if (touch.current) {
+      event.preventDefault();
+      return;
+    }
     event.dataTransfer.effectAllowed = "copy";
     event.dataTransfer.setData(sampleTransferType, id);
     setDrop("sample");
   }
 
   function beginTouch(event: PointerEvent<HTMLButtonElement>, id: SampleId) {
+    if (!event.isPrimary || event.button !== 0 || touch.current) return;
     suppressClick.current = false;
     if (event.pointerType === "mouse") return;
-    touch.current = { id, x: event.clientX, y: event.clientY };
     event.currentTarget.setPointerCapture(event.pointerId);
+    touch.current = { sampleId: id, pointerId: event.pointerId, x: event.clientX, y: event.clientY, dragged: false };
   }
 
-  function draggedTouch(event: PointerEvent<HTMLButtonElement>): boolean {
-    return !!touch.current && Math.hypot(event.clientX - touch.current.x, event.clientY - touch.current.y) > 18;
+  function moveTouch(event: PointerEvent<HTMLButtonElement>) {
+    const gesture = touch.current;
+    if (!gesture || gesture.pointerId !== event.pointerId || gesture.dragged) return;
+    if (Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) <= 18) return;
+    gesture.dragged = true;
+    setDrop("sample");
   }
 
   function endTouch(event: PointerEvent<HTMLButtonElement>) {
-    if (touch.current && draggedTouch(event)) {
+    const gesture = touch.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    cancelTouch(event);
+    if (gesture.dragged) {
       suppressClick.current = true;
-      void startSample(touch.current.id);
+      void startSample(gesture.sampleId);
     }
+  }
+
+  function cancelTouch(event: PointerEvent<HTMLButtonElement>) {
+    if (touch.current?.pointerId !== event.pointerId) return;
     touch.current = null;
     setDrop(null);
   }
@@ -224,6 +241,7 @@ export function Showcase() {
       window.history.replaceState(null, "", url);
     }
     returning.current = !open;
+    touch.current = null;
     setDrop(null);
     setGuideOpen(open);
   }
@@ -303,8 +321,8 @@ export function Showcase() {
       <div className="sample-strip" aria-label="Bundled notes">
         {sampleIds.map(id => <button type="button" key={id} aria-pressed={sample === id} draggable
           onDragStart={event => beginDrag(event, id)} onDragEnd={() => setDrop(null)}
-          onPointerDown={event => beginTouch(event, id)} onPointerMove={event => { if (draggedTouch(event)) setDrop("sample"); }}
-          onPointerUp={endTouch} onPointerCancel={() => { touch.current = null; setDrop(null); }}
+          onPointerDown={event => beginTouch(event, id)} onPointerMove={moveTouch}
+          onPointerUp={endTouch} onPointerCancel={cancelTouch} onLostPointerCapture={cancelTouch}
           onClick={event => {
             if (suppressClick.current && event.detail > 0) { suppressClick.current = false; return; }
             void startSample(id);
