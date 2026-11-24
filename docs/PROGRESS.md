@@ -38,7 +38,9 @@
 
 - Built `/showcase` as a static entry alongside the local workspace. It replays sample pages, text, overlapping passages, projected points and links. The controls support timed and manual playback. Session history, source dialogs and the keyboard concept list run in the browser.
 - Attached the file-drop safety test to the page's actual event listener. It rejects an external file even when the transfer also advertises the sample MIME type. Attempts to read file data, items or names would fail the test.
-- Self-reviewed desktop and 390-pixel browser layouts. Exercised keyboard sample selection, reduced-motion steps, pause, speed, restart, skip, 3D and 2D star clicks, a cited answer, Escape and question history. The physical touch gesture and mid-range laptop frame rate remain unmeasured.
+- Self-reviewed desktop and 390-pixel browser layouts. Exercised keyboard sample selection, reduced-motion steps, pause, speed, restart, skip, 3D and 2D star clicks, a cited answer, Escape and question history.
+- Fixed touch drag cancellation and made the active pointer retain ownership through release. The offline check and build passed. Chrome opened the router citation after the fix. A physical touch check is pending.
+- Recorded browser frame intervals on the available Lenovo laptop and wrote the steps for reproducing the test. The mid-range hardware target still needs verification. [Browser sample and probe commands](showcase-review.md#browser-frame-sample)
 - Checked the build and full suite in mock mode. Impeccable source detection reported no regex-matched findings. Rendered scans identified small format labels and a mobile line wrap. Fixed both and reran desktop and mobile scans. [Self-review](showcase-review.md)
 
 ## Case study
@@ -50,10 +52,11 @@
 
 ## GitHub
 
-- Pushed `showcase-overhaul` and verified the corrected repository description and topics. GitHub Actions passed the offline tests, build and Pages artifact step on the published branch. The deployment job hit the Pages branch restriction.
+- Pushed `showcase-overhaul` and the annotated tag `v0.6.0-showcase.1`. Verified the corrected repository description and topics. GitHub Actions passed the offline tests, build and Pages artifact step on the published branch. The deployment job hit the Pages branch restriction.
 
 ## Needs owner approval
 
 - License choice. The default branch has no tracked license and the goal leaves that decision to the owner.
 - Public Pages deployment. The existing environment allows `main`. Automatic approval review rejected adding `showcase-overhaul` without explicit approval for that publishing rule.
+- Public social preview. The PNG is in `docs/assets/social-preview.png`. Automatic approval review requires explicit approval to set it as the public link preview for `stanbang/Grasp`.
 - A held-out live embedding experiment has a proposed USD 0.015 cap. A live answer comparison and answer-support review has a proposed USD 0.115 provider cap. The inputs and rate sources are in [Proposed measurements and cost](facts.md#proposed-measurements-and-cost).
