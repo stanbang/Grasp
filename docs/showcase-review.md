@@ -16,6 +16,19 @@ The walkthrough keeps the replay separate and groups the interview topics in the
 
 The first keyboard pass scrolled the back control out of reach. The guide now keeps its back and example controls visible in a sticky header. Phone-width testing confirmed that the topic controls and evidence table fit. The rendered Impeccable scans reported no findings at the same desktop and phone viewports. Run the commands above with `/showcase/?view=guide` to repeat the check.
 
+## Replay timing
+
+Before the fix, Pause stopped the countdown while the panel entrance kept running. Pause now holds the panel, stars, links and page fade. The replay changes animation rates in place and restores the saved stage time when returning from the guide. A manual step while paused shows the new stage fully. Restart remounts the first stage even if it is already open. [Replay code](../apps/web/src/showcase/Showcase.tsx) · [Web Animations specification](https://drafts.csswg.org/web-animations-1/#dom-animation-updateplaybackrate)
+
+To reproduce the browser check, run the web preview and start the Computer networks sample. Step to **Connect the concepts** and pause while the page is fading. In the browser console, inspect the pause state, playback rate and current time.
+
+```js
+document.querySelector('main.showcase').getAnimations({ subtree: true })
+  .map(animation => [animation.animationName, animation.playState, animation.playbackRate, animation.currentTime]);
+```
+
+Switch from `1×` to `2×` while paused. The inspected animations stay at the same time and take the new rate. Open **How Grasp works** and return to the replay to check that it restores the frame. Restart twice from the first stage to see the entrance start again. In reduced motion, **Next stage** shows the text without the transition.
+
 ## Browser frame sample
 
 I measured the production build at `1c239c6` on a Lenovo 83DF laptop with an Intel Core i9-14900HX, an NVIDIA RTX 4060 Laptop GPU, 32 GB RAM and a 240 Hz display. Chrome 157 used hardware WebGL through ANGLE with a 1366 × 701 CSS-pixel viewport and a 1.875 device pixel ratio.

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type DragEvent, type FormEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { ArrowRight, ArrowUp, AudioLines, BookOpen, CircleHelp, FileText, PanelLeft, X } from "lucide-react";
 import type { ChatResponse, Citation, GraphNode } from "../types/contracts";
 import { installShowcaseDropHandlers, sampleTouchHandlers, sampleTransferType } from "./drop";
@@ -84,6 +84,8 @@ export function Showcase() {
   const sequence = useRef(0);
   const turnId = useRef(0);
   const clock = useRef({ step: 0, run: 0, elapsed: 0 });
+  const replayRoot = useRef<HTMLElement>(null);
+  const tunedAnimations = useRef(new WeakSet<Animation>());
   const newestTurn = useRef<HTMLDivElement>(null);
   const guideButton = useRef<HTMLButtonElement>(null);
   const returning = useRef(false);
@@ -104,6 +106,24 @@ export function Showcase() {
     guideButton.current?.focus();
     returning.current = false;
   }, [guideOpen]);
+
+  useLayoutEffect(() => {
+    if (!replayRoot.current || !stage || ready || playback.reduced) return;
+    const sameStage = clock.current.step === playback.step && clock.current.run === playback.run;
+    const elapsed = sameStage ? clock.current.elapsed : 0;
+    for (const region of replayRoot.current.querySelectorAll(".replay-content, .chart-arriving")) {
+      for (const animation of region.getAnimations({ subtree: true })) {
+        if (!tunedAnimations.current.has(animation)) {
+          // The guide unmounts the replay, so restored animations need the saved stage position.
+          animation.currentTime = !sameStage && !playback.playing
+            ? animation.effect?.getComputedTiming().endTime ?? 0
+            : elapsed;
+          tunedAnimations.current.add(animation);
+        }
+        animation.updatePlaybackRate(playback.speed);
+      }
+    }
+  }, [guideOpen, stage, ready, playback]);
 
   useEffect(() => {
     if (!stage || guideOpen) return;
@@ -231,8 +251,7 @@ export function Showcase() {
   const concept = trace?.graph.nodes.find(node => node.id === selected);
 
   const paused = !!trace && !ready && !playback.reduced && !playback.playing;
-  return <main className={`showcase${playback.reduced ? " showcase-reduced" : ""}${ready ? " showcase-ready" : ""}${paused ? " showcase-paused" : ""}`}
-    style={{ "--replay-pace": 1 / playback.speed } as CSSProperties}>
+  return <main ref={replayRoot} className={`showcase${playback.reduced ? " showcase-reduced" : ""}${ready ? " showcase-ready" : ""}${paused ? " showcase-paused" : ""}`}>
     <StarChart key={trace?.id ?? "sky"} trace={trace} stage={stage?.kind} highlighted={highlighted} selected={selected} reduced={playback.reduced} onSelect={setSelected} />
     <header className="showcase-header">
       <div className="header-leading">

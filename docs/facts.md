@@ -91,6 +91,8 @@ The README's [architecture image](assets/grasp-architecture.png) came from the o
 
 The [browser frame sample](showcase-review.md#browser-frame-sample) records the build revision, device, display, browser, callbacks per second and frame intervals. Recreate the browser probe with `npm run build` and `node scripts/prepare_showcase_frame_probe.cjs`, then follow the linked test steps. These are single-machine observations. The sustained frame-rate goal for a representative mid-range laptop and physical touch behavior remain unverified.
 
+The [replay timing check](showcase-review.md#replay-timing) records how to verify the stop, rate and restart behavior on the real stage animations with the browser inspector.
+
 The [Pages artifact check](showcase-review.md#github-pages-artifact) gives the commands to download and serve the actual Actions build. It verifies the repository base path, walkthrough, ranking controls, citation and lazy-loaded graph over a static server. The public URL needs a successful Pages deployment.
 
 ## Interview questions and missing evidence

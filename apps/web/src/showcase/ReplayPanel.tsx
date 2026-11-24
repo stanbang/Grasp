@@ -52,7 +52,7 @@ export function ReplayPanel({ trace, stage, playback, onToggle, onStep, onSkip, 
       <h2>{details.title}</h2>
       <p>{details.caption}</p>
     </div>
-    {!ready && <div className="replay-content" key={stage.kind}>
+    {!ready && <div className="replay-content" key={`${playback.run}:${stage.kind}`}>
       {(stage.kind === "pages" || stage.kind === "links") && <div className={stage.kind === "links" ? "pages-fading" : undefined}><Pages trace={trace} /></div>}
       {stage.kind === "text" && <div className="extract-preview" tabIndex={0} aria-label="Extracted text by page">
         {trace.pages.map(page => <section key={page.page}><h3>Page {page.page}</h3><pre>{page.text.trim()}</pre></section>)}

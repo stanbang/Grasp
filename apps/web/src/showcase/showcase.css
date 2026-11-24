@@ -56,9 +56,9 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, select:focus-visi
 .chart-star-active .chart-star { fill: var(--accent); }
 .chart-halo { fill: var(--accent); fill-opacity: 0.21; transform-box: fill-box; transform-origin: center; animation: chart-pulse 1.6s ease-out 2; }
 .chart-target { fill: transparent; cursor: pointer; pointer-events: all; }
-.chart-arriving .chart-star { transform: translate(150px, -40px); opacity: 0; animation: chart-settle calc(1.4s * var(--replay-pace)) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.chart-arriving g:nth-of-type(even) .chart-star { animation-delay: calc(120ms * var(--replay-pace)); }
-.chart-arriving line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-link calc(1.25s * var(--replay-pace)) ease-out calc(250ms * var(--replay-pace)) forwards; }
+.chart-arriving .chart-star { transform: translate(150px, -40px); opacity: 0; animation: chart-settle 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.chart-arriving g:nth-of-type(even) .chart-star { animation-delay: 120ms; }
+.chart-arriving line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw-link 1.25s ease-out 250ms forwards; }
 .orbit-engine { position: absolute; inset: 0; pointer-events: auto; }
 .orbit-engine canvas { display: block; }
 .chart-controls { position: fixed; inset: auto auto 25px 24px; display: flex; flex-wrap: wrap; gap: 3px; z-index: 2; max-inline-size: 220px; }
@@ -121,7 +121,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, select:focus-visi
 .paper p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; margin: 8px 0 12px; color: var(--muted); font-size: 0.79rem; line-height: 1.5; }
 .paper i { display: block; block-size: 1px; margin: 8px 0 0; background: var(--rule); }
 .paper i:last-child { inline-size: 66%; }
-.pages-fading { animation: page-dissolve calc(1.55s * var(--replay-pace)) cubic-bezier(0.55, 0, 0.8, 0.65) forwards; }
+.pages-fading { animation: page-dissolve 1.55s cubic-bezier(0.55, 0, 0.8, 0.65) forwards; }
 .extract-preview { max-block-size: 135px; overflow: auto; margin: 0; padding: 12px 15px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); color: var(--muted); text-align: start; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8rem; line-height: 1.6; }
 .extract-preview h3 { margin: 0 0 5px; color: var(--accent); font-size: 0.78rem; }
 .extract-preview pre { margin: 0 0 15px; white-space: inherit; font: inherit; }
@@ -252,4 +252,4 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, select:focus-visi
 .showcase-reduced *, .showcase-reduced *::before, .showcase-reduced *::after { animation: none !important; transition: none !important; }
 .showcase-reduced .chart-arriving .chart-star { opacity: 1; transform: none; }
 .showcase-reduced .chart-arriving line { stroke-dashoffset: 0; }
-.showcase-paused .chart-arriving *, .showcase-paused .pages-fading, .showcase-paused .recorded-lines li { animation-play-state: paused; }
+.showcase-paused .chart-arriving *, .showcase-paused .replay-content, .showcase-paused .pages-fading, .showcase-paused .recorded-lines li { animation-play-state: paused; }

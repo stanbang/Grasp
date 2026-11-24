@@ -41,6 +41,7 @@
 - Self-reviewed desktop and 390-pixel browser layouts. Exercised keyboard sample selection, reduced-motion steps, pause, speed, restart, skip, 3D and 2D star clicks, a cited answer, Escape and question history.
 - Fixed touch drag cancellation and made the active pointer retain ownership through release. The offline check and build passed. Chrome opened the router citation after the fix. A physical touch check is pending.
 - Added regression coverage for sample taps, pointer ownership, drag cancellation and duplicate clicks. The tests call the same handlers used by the sample buttons. The built app opened notes from a desktop drag, a click and the keyboard. Run `node --test scripts/tests/showcase.test.cjs`.
+- Reproduced the panel animation continuing after Pause. The replay now holds the visuals when paused, changes animation rates in place and restores the frame when returning from the guide. I verified these behaviors, same-stage restart and manual reduced-motion steps in the browser. [Replay timing check](showcase-review.md#replay-timing)
 - Recorded browser frame intervals on the available Lenovo laptop and wrote the steps for reproducing the test. The mid-range hardware target still needs verification. [Browser sample and probe commands](showcase-review.md#browser-frame-sample)
 - Checked the build and full suite in mock mode. Impeccable source detection reported no regex-matched findings. Rendered scans identified small format labels and a mobile line wrap. Fixed both and reran desktop and mobile scans. [Self-review](showcase-review.md)
 
