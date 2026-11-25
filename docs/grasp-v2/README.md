@@ -1,20 +1,20 @@
-# GRASP 2.0 Phase 0
+# GRASP 2.0 planning and evidence
 
-Research and implementation proposal for review, 24 November 2026 (Singapore). The source brief is [GRASP_V2_SPEC.md](../GRASP_V2_SPEC.md). The [handover](../HANDOVER.md) describes prior work. The current request authorizes Phase 0 documentation and baseline verification. Later implementation, publication and provider runs require their own approval.
+The owner approved Phase 0 and the Direction A+ [Phase 1.1 whiteboard](phase-1-1/README.md). The [Developer Preview v0.1 specification](developer-preview.md) proposes the subsequent implementation plan for the 7 December 2026 HTX interview. Phase 2 awaits approval of that plan.
 
-Phase 0 was approved. The [Phase 1 checkpoint](phase-1.md) records the first shared canvas implementation. The [Phase 1.1 design review](phase-1-1/README.md) compares three rendered directions and records the Direction A implementation awaiting visual approval.
+The original Phase 0 source brief is [GRASP_V2_SPEC.md](../GRASP_V2_SPEC.md). The [handover](../HANDOVER.md) describes earlier work. The [Phase 1 checkpoint](phase-1.md) records the first shared canvas implementation. The [Phase 1.1 design review](phase-1-1/README.md) preserves the audit and compares all three rendered directions.
 
 | Review | What it covers |
 | --- | --- |
 | [Reference investigation](references.md) | Enso browser and REA evidence, PayNow repository and demo, reference comparison, canvas library selection |
 | [Architecture and branch audit](baseline.md) | Branch histories, reusable code, current data flow, baseline results and limits |
-| [Product and interaction brief](../../PRODUCT.md) and [design specification](../../DESIGN.md) | The two workspaces, initial journey, visual system and interaction states |
+| [Vision](../../VISION.md), [product brief](../../PRODUCT.md) and [design specification](../../DESIGN.md) | Developer Preview direction, preserved workspace roles, visual system and interaction states |
 | [Shared canvas and contracts](canvas-architecture.md) | Rendering, identity, storage, compatibility, observability and AI changes |
 | [Roadmap and verification](roadmap.md) | Phase order, dependencies, measurable acceptance and work still pending |
 | [HTX storyboard](storyboard.md) | Five-minute route, claims, presenter prompts, failure recovery and optional depth |
 
-## Decision for review
+## Phase 0 decisions
 
 Start from `showcase-overhaul` at `98f8cda`. It preserves the runnable `main` workspace and the strongest collection of replay, evaluation and interview evidence. The other feature line has working additions that should be ported selectively, especially upload status handling, adjacent source inspection and bounded PDF previews. Review each candidate against the new canvas and existing API contracts. [Branch comparison](baseline.md#branch-recommendation)
 
-Use React Flow for the shared 2D editor, pending the interaction spike in Phase 1. Keep canonical knowledge IDs in the existing graph, version board edits separately, and load the existing Three.js graph when requested. Start with a single real graph rendered on the shared board and validate camera and selection behavior before adding authoring features. [Decision and alternatives](references.md#canvas-library-decision) · [Phase 1 gate](roadmap.md)
+The approved implementation uses React Flow for the shared 2D editor. It keeps canonical knowledge IDs in the existing graph and loads the Three.js graph when requested. The revised plan adds persistence and agent operations above that renderer. [Decision and alternatives](references.md#canvas-library-decision) · [Phase 1.1 verification](phase-1-1/README.md#verification-on-25-november-2026)

@@ -1,4 +1,14 @@
-# Showcase progress
+# GRASP progress
+
+## Developer Preview v0.1
+
+- **25 November 2026, approved:** The owner approved the Phase 1.1 Direction A+ whiteboard. The local feature branch contains the implementation (`ea8e246`) and its review record (`ae76ddb`). The checkpoint passed 72 Python tests, 24 Node tests, contract and TypeScript checks, production build and the disposable Chrome suite. Physical projector and screen-reader review remained unverified. [Checkpoint](grasp-v2/phase-1-1/README.md)
+- **25 November 2026, planning:** Audited reuse for the local developer preview. Proposed one FastAPI board service, additive SQLite project state, thin CLI and Codex MCP adapters, one sandboxed prototype path and a human-approved export. The SDK choice is documented from official sources. Windows compatibility, the adapter handshake and isolation are planned gates. [Specification](grasp-v2/developer-preview.md) · [Architecture](grasp-v2/canvas-architecture.md#developer-preview-service)
+- **Awaiting approval:** Phase 2 starts after approval of the revised plan. The dependency addition needs owner confirmation before installation. The schedule targets the complete slice by 4 December and reserves 5–6 December for integration and rehearsal ahead of the 7 December interview. [Roadmap](grasp-v2/roadmap.md) · [HTX presentation](grasp-v2/storyboard.md)
+
+## Showcase history
+
+The remainder records the original showcase work and its approval history. The current Developer Preview follows the gates above.
 
 ## Audit
 

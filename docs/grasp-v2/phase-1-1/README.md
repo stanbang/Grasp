@@ -121,4 +121,4 @@ To repeat the browser suite against the review server, set `$env:GRASP_EVIDENCE_
 
 ## Approval boundary
 
-The owner reviews the actual running Direction A implementation before Phase 2. The board's illustrative diagrams are ready for later trace bindings. The Phase 1.1 review uses offline mock mode and session-local board edits.
+The owner approved the running Direction A implementation on 25 November 2026. Its review used offline mock mode and session-local board edits. The approved implementation is `ea8e246`, with its verification record at `ae76ddb`. The [Developer Preview plan](../developer-preview.md) is a separate approval gate for the revised Phase 2 scope.

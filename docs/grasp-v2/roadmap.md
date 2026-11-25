@@ -1,20 +1,43 @@
 # Implementation roadmap and verification
 
-Phase 0 is for review. Each later phase starts after the owner's go, ends with a runnable checkpoint and records changed files, commands, test results and limitations. Use the existing verification commands at every boundary. Preserve partial test failures and evidence.
+This is the proposed Developer Preview v0.1 roadmap for the HTX interview on **7 December 2026**. Phase 0 research and Phase 1.1 Direction A+ are approved. Production work starts after the owner approves the revised plan. Each phase requires the owner's go and ends with a runnable checkpoint. Target dates assume timely review. All dates are Singapore time. [Preview specification](developer-preview.md) · [HTX demonstration](storyboard.md)
 
-| Phase and priority | Scope and dependency | Exit gate |
-| --- | --- | --- |
-| **0 · Research** | Read both feature lines and the showcase, run the baseline and decide library, contracts and storyboard. | The evidence index, design, branch recommendation, implementation plan and known limits are ready for review. |
-| **1 · P0 Canvas foundation** | After branch approval, spike React Flow on React 18 using the real graph adapter and a single repository-authored board. Deliver the shared shell, typed cards/edges, camera, fit controls, editing, grouping, multi-select and an on-demand 3D toggle. Keep the existing workflow reachable while feature parity develops. Start with session-local edits. | C1–C3 and C8. Open a seeded concept board, select, drag, resize, group and fit. Switch to 3D and back with the same canonical selection. A build or pointer/accessibility regression blocks rollout. |
-| **2 · P0 Engineering Canvas** | Compose all seven boards using the shared canvas and repository evidence. Add ordered frames, navigation, evidence links and private presenter notes. | C4 and C8. All important claims link to an existing symbol, contract or report. Frame navigation and focus restore work with keyboard and reduced motion. |
-| **3 · P0 Knowledge Canvas** | Surface real import, scope, questions, evidence, saved conversations, lifecycle and mastery. Add versioned SQLite board persistence and basic user notes. Adapt eligible feature branch UX and preview code one piece at a time. | C5–C8. A representative existing data snapshot opens. Folder failures remain actionable. A cited answer can be traced through a moved concept. |
-| **4 · P1 Pipeline views** | Render coarse ingestion events first. Add measured safe instrumentation and a trace tied to actual retrieval. Prefer a single execution path and additive contracts. | C9. Verify live event replay, unavailable/skipped states, exact trace evidence, and explicit recorded vs local mock vs live provider labels. |
-| **5 · P1 Assisted editing** | Add schema-validated preview/apply, bounded subboards, simple strokes and additional visual operations. Coalesce edits into undo units. | C10, C2 and C6. Approved changes are reversible and invalid or stale requests leave persisted state intact. |
-| **6 · P0 Interview delivery** | Prepare and validate fictional sample, common five-minute route, isolated reset, keyboard and projector review, performance and fallback. Run Impeccable critique/polish after UI work and final audit and detector. | C11–C13 and regression results for C1–C10. The complete journey is rehearsed and can run without provider access. |
+| Phase | Target | Deliverable and dependency | Exit gate |
+| --- | --- | --- | --- |
+| **2 · Shared canvas service** | 26–27 Nov | Add persisted project boards and typed operations to the existing FastAPI and SQLite process. Connect one project board in the approved shell. Existing Knowledge and Engineering entry points keep working. | Create a board, add a note and move an object from the browser. Reload the browser and restart the API. IDs and saved geometry are identical. Stale, retried, malformed and unauthorized batches behave as specified. |
+| **3 · Local CLI and Codex MCP** | 28–29 Nov | Add thin CLI and stdio MCP clients over Phase 2, using the compatible, approved SDK. Prepare the local Windows launch configuration and restricted agent credential. | Codex lists, creates and reads a board, then commits one typed mutation. The browser sees the same revision. CLI reads it too. Active selection is readable when present and explicitly unavailable otherwise. |
+| **4 · Questions, requirements and context** | 30 Nov–1 Dec | Add typed questions, decisions and annotations with persistent object links. Add scoped, optional retrieval. Let Codex draft architecture and a user journey on the same board. | Resolve two questions in the browser. Codex reads both answers and updates linked objects. Demonstrate one authorized exact source and a project with no source scope. |
+| **5 · Prototype, feedback and approval** | 2–4 Dec | Stage a static video editor example and a simple agent edit. Register an isolated preview, record region feedback, read it from Codex and register a new asset revision. Add human approval and immutable JSON export. | Run a complete brief-to-export flow by Dec 4. Verify isolation before enabling preview. The approved revision and prototype digest survive later edits. Agent approval attempts fail. |
+| **6 · Integration and HTX rehearsal** | 5–6 Dec | Reserve both days for integration, regressions, projector and keyboard checks, and rehearsal. Freeze feature scope on Dec 4. Keep the existing RAG walkthrough and evaluation ready for follow-ups. | Complete two timed runs and rehearse the fallback. Verify stable recording labels, a disposable reset, build, contract drift, tests, accessibility and honest mode disclosure. Record any missed gate before presenting. |
+
+Commit to a single vertical slice by Dec 4. Run the lightest useful integration test at each boundary, including a browser reload after a Codex mutation as soon as Phase 3 works. Start the stage-5 prototype isolation spike before relying on the interactive frame. If approvals or integration slip, defer all stretch items and present the last verified checkpoint plus the labeled fallback. Report any incomplete essential step as such.
 
 ## Acceptance criteria
 
-Numbers below are proposed gates for review. Record actual outcomes against them. The [baseline](baseline.md#baseline-verification) documents the Phase 0 runs.
+| Gate | Pass condition |
+| --- | --- |
+| D1 · One durable state | Compare browser and CLI or Codex snapshots before and after refresh and API restart. Stable object and link IDs, revision, placement, question status and accepted requirement records match. Changing the camera or clearing selection does not change the persisted revision. Existing study tables and generated public contracts remain compatible. |
+| D2 · Atomic, attributable operations | Competing requests against the same base revision yield one commit and one `409`. Replaying the committed mutation returns its prior receipt. Invalid, stale, cross-board and unauthorized operations leave the snapshot unchanged. Recover an unsaved browser draft after a conflict. Verify user and agent attribution in the saved result. |
+| D3 · Real agent integration | A fresh local Codex session discovers and calls the stdio adapter. Capture tool receipts for create, state read, canvas update, selection or unavailable, question/annotation read, prototype registration and export. Compare IDs and revisions against the actual UI and SQLite-backed service. |
+| D4 · Optional, exact context | A scoped fixture search returns only authorized ready documents and preserves ranked order. Verify re-opened quote, one-based page and Unicode span against stored text. Run the requirements and prototype flow with an empty document scope. Source-backed, proposed and user-authored content have distinct visible provenance. |
+| D5 · Isolated interactive preview | In the actual rehearsal browser, import/play the sample, select a timeline range, simulate a cut and edit captions. Confirm a registered bundle is bound to a revision and digest. Verify unauthorized app access, foreign navigation, denied network operations and out-of-root asset access fail. Verify the user can return focus to the host canvas. |
+| D6 · Feedback and approval | Capture feedback against one region of revision 1. Have Codex read it and register an observable revision 2 update. Reject approval by agent and while a required question is open. Export a human-approved revision and compare actual decisions, acceptance criteria and digest. Later draft changes leave the old export byte-stable. |
+| D7 · Interview readiness | Turn a brief into a spec in a timed 4:30–5:30 run and repeat once. Rehearse the recorded-agent and offline RAG fallback. Verify the reset touches only disposable data. Run `python scripts/check.py`, `npm run build`, the browser regression suites, Impeccable UI reviews and `npx impeccable detect apps/web/src`. Document physical projector, keyboard and screen-reader coverage and gaps. |
+
+## Dependencies and risks
+
+| Risk or dependency | Reduce it early | Response if it remains |
+| --- | --- | --- |
+| Owner approval at each phase and SDK dependency | Review one runnable checkpoint at a time. Approve the MCP dependency before installation. Test the exact Windows interpreter, path and installed Codex client as the first Phase 3 task. | Hold production changes at the appropriate gate. Preserve a tested CLI and recorded agent exchange as rehearsal aids. |
+| API and MCP SDK lock conflicts | Check the official stable Python SDK against the lockfile in isolation first. Verify handshake and typed results before expanding the tool surface. | Run the adapter from a separate pinned environment and keep the FastAPI environment intact. |
+| Concurrent edits or stale previews | Land revision, scope and retry tests in Phase 2. Register immutable digests and tie feedback to a specific revision. | Keep the user's draft. Show the conflict and reload for comparison. Disable approval until the intended revision is current. |
+| Prototype isolation or media compatibility | Test the restrictive static workflow in Chrome before investing in the editor. Use an original bundled sample and a single supported browser/format. | Disable unverified embedding and show a labeled recording. Do not count the preview gate as passed. |
+| External agent latency or loss of network | Save the verified tool exchange and rehearsed project state. Prove the local API and mock RAG path separately. | Switch to the labeled recorded agent step and continue from the last verified local revision. |
+| Deadline and regression risk | Deliver one flow with one sample, one prototype and one exported JSON. Reserve Dec 5–6 before accepting stretch work. | Defer second-agent and second-project demos, richer RAG overlays and publication. Preserve the verified study and engineering path. |
+
+## Earlier acceptance criteria
+
+These historical targets record the original canvas plan. Use the compatible behaviors as regressions. The Developer Preview gates govern release. Seven engineering frames, pipeline instrumentation and the original large-board benchmark are deferred. The [baseline](baseline.md#baseline-verification) documents the Phase 0 runs.
 
 | ID | Verification and pass threshold |
 | --- | --- |
@@ -32,7 +55,7 @@ Numbers below are proposed gates for review. Record actual outcomes against them
 | C12 · Performance | Profile a named desktop/Chrome environment and a 250-object/400-edge board at 1440 × 900. In three 10-second pan/drag/zoom runs, target p95 frame interval ≤ 33 ms and p95 input-to-visible update ≤ 80 ms. Report traces, element counts, device, browser, zoom range and misses. Treat targets as release gates to tune with evidence. |
 | C13 · Regression and delivery | Contract drift check, Python and Node tests, strict TypeScript and production build pass. Desktop smoke includes complete use of both workspaces, grounded questions and recorded fallback. Projector and responsive review include dark/light, keyboard and motion. Run `npx impeccable detect apps/web/src` and record remaining findings. Time one complete presentation run, targeting 4:30–5:30. |
 
-## Risks and open choices
+## Earlier risks and open choices
 
 - Scope and rendering quality have first priority. Test camera and custom card accessibility early. Use lazy loading, memoized mapping and visibility filtering when measurements justify them. Keep routing, layout, persistence and presentation independent of 3D.
 - Native Enso controls were outside the observed public surface. Treat advanced freehand, camera timing and inspector behavior as GRASP design choices verified in Phase 1 or Phase 5, as applicable.

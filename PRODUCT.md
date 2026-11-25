@@ -8,35 +8,35 @@ web
 
 ## Stack
 
-Vite, React 18, strict TypeScript, Tailwind CSS, Zustand, Lucide and react-force-graph-3d/Three.js. Python 3.11, FastAPI, Pydantic v2, LangChain, persistent local ChromaDB and SQLite through SQLModel. Providers are Gemini or OpenAI. A deterministic mock mode works without a key. Phase 0 proposes React Flow for the shared 2D canvas. [Canvas decision](docs/grasp-v2/references.md#canvas-library-decision)
+Vite, React 18, strict TypeScript, Tailwind CSS, Zustand, Lucide, React Flow for the 2D canvas and react-force-graph-3d/Three.js on demand. Python 3.11, FastAPI, Pydantic v2, LangChain, persistent local ChromaDB and SQLite through SQLModel. Gemini and OpenAI are supported providers. A deterministic mock mode works without a key. A local CLI and stdio MCP adapter are proposed for Developer Preview v0.1. [Canvas decision](docs/grasp-v2/references.md#canvas-library-decision) · [Preview specification](docs/grasp-v2/developer-preview.md)
 
 ## Users
 
-Students studying their own PDF, Markdown and text notes, and interviewers reviewing the project's engineering decisions. A portfolio visitor can use the lightweight recorded showcase.
+Developers and project owners shaping an idea with an external coding agent. Students can still study PDF, Markdown and text notes. Interviewers can review the design work and the evidence behind the existing RAG implementation.
 
 ## Product Purpose
 
-Help students organize connected ideas, ask questions in context and check the supporting evidence. Let an interviewer follow the same application's architecture and observe how a source becomes a grounded answer.
+Give the user an editable visual proposal before implementation. Work through questions and requirements on the canvas, try the prototype and approve a versioned specification the coding agent can pick up. [Vision](VISION.md)
 
 ## Positioning
 
-The same source chunks support the knowledge graph, answer citations and mastery checks. A student can move a concept card, inspect it and return to the source passage. An interviewer can move from a system diagram into the real workflow and return to the same frame.
+GRASP owns the shared board, evidence, feedback and approval record. Codex or another MCP-capable coding agent does the implementation. Indexed sources can inform a proposal and expose exact quotes. Questions, decisions and visual feedback remain useful for projects without documents.
 
 ## Operating Context
 
-The Phase 0 proposal opens into a canvas-first **Knowledge Canvas** for study. Students can open a board, add sources, explore progressively revealed concepts, organize the board and ask a question with visible source scope. **Engineering Canvas** shares the interaction model and adds a repository-backed architecture walkthrough, inspectable pipeline and guided presentation across seven frames.
+The preview adds persistent **Project boards** to the approved whiteboard. The **Knowledge Canvas** remains available for import, scoped questions, exact source inspection and 3D graph exploration. The **Engineering Canvas** presents the existing pipeline using repository-backed objects and its presentation views.
 
-The primary target is the local single-owner workspace and a projector-ready HTX demonstration. The existing 3D graph remains available on demand. The existing static replay remains useful for portfolio visitors with no backend. Opening the architecture boards requires no model request. Use explicit labels for live provider, local mock processing and recorded replay. The interview demo uses an isolated library and disposable board state.
+The initial target is a local single-owner workspace and a five-minute HTX demonstration on 7 December 2026. Use an isolated demo library and project board. Label live agent calls, local mock processing, simulated prototype behavior and recorded replay where they occur. The public static showcase retains its offline route.
 
 ## Capabilities and Constraints
 
-The verified v1 baseline includes file and folder import, graph exploration, cited Q&A, source lifecycle, saved conversations, quizzes, retrieval evaluation and self-hosting controls. The v2 milestones preserve those capabilities and progressively integrate them into the canvas. Phase 0 is documentation and verification. Each subsequent phase requires the owner's go. [Baseline](docs/grasp-v2/baseline.md) · [Roadmap](docs/grasp-v2/roadmap.md)
+Preserve file and folder import, graph exploration, cited Q&A, source lifecycle, saved conversations, quizzes, retrieval evaluation and self-hosting controls. Preview delivery adds typed board operations, durable questions and decisions, one isolated prototype workflow and a versioned approval export. Each phase requires the owner's go. [Baseline](docs/grasp-v2/baseline.md) · [Roadmap](docs/grasp-v2/roadmap.md)
 
 Progress retains `masteredCount`, `exploredCount`, `totalNodes`, `coveragePercent` and `crossDocLinks`. Mastery remains grounded in quizzes. Keep canonical concepts, document provenance and exact source spans intact. Persist 2D board geometry independently. 3D force positions stay transient. Documents stay local in mock mode. Live mode sends selected text to the configured provider. Collaboration, tenant isolation and public hosting are outside this plan.
 
 ## Brand Commitments
 
-Calm dark navy, restrained canvas geometry, one cool accent, gold for mastery and a light palette for projection. The board carries the story. Controls and inspectors appear where the user can act. Keep plain copy, purposeful motion and a lightweight first view.
+Direction A+ uses warm charcoal, editorial titles, drawn technical figures, handwritten annotations and restrained semantic color. Gold marks mastery in the knowledge view. Keep inspectors contextual, camera motion purposeful and the whiteboard visible throughout the workflow. [Approved design](DESIGN.md#shared-whiteboard)
 
 ## Evidence on Hand
 
@@ -44,8 +44,8 @@ The existing notes, reports and recorded traces support the presentation. The fr
 
 ## Product Principles
 
-- Let users organize and explore the canvas before asking a question.
-- Keep explanations one interaction from their source.
-- Use real events for demonstrations and make the current mode visible.
-- Keep meaningful assisted edits previewable, scoped and reversible.
+- Put clarifying questions next to the objects and steps they affect.
+- Distinguish proposals, assumptions, user decisions and source evidence.
+- Let the user choose the revision they approve. Keep the approved specification readable after later edits.
+- Use real events for demonstrations and identify mock, simulated and recorded behavior.
 - Verify complete journeys at each runnable checkpoint.

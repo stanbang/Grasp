@@ -1,6 +1,35 @@
 # HTX presentation storyboard
 
-Proposed five-minute route. Each frame has an audience-facing diagram and separate presenter notes. Stay on one canvas while advancing frames. Keep a return point when opening a source or switching to study. Source links in the final deck should target exact paths and pinned commits.
+**7 December 2026 · Developer Preview v0.1.** Show one collaboration cycle on a GRASP project board. Run it through an isolated library and board. Keep the approved Engineering Canvas ready for a RAG follow-up. [Preview scope](developer-preview.md) · [Delivery gates](roadmap.md#acceptance-criteria)
+
+## Five-minute Developer Preview
+
+| Time | Show on screen | Evidence and narration |
+| --- | --- | --- |
+| 0:00–0:40 | Ask Codex to plan an AI video editor and clarify the brief before building. Show the linked board Codex creates with its first diagram and open questions. | Explain that the board shows the proposal and decisions the agent shares. Point to a real `boardId` or tool receipt. |
+| 0:40–1:25 | Answer two consequential questions on the board. Require approval before publishing and make captions editable. Let Codex read the answers and update the user journey. | Show the persisted requirements next to the relevant objects. Explain how the same saved revision is visible to the CLI, agent and browser. |
+| 1:25–2:00 | If using the bundled editing brief, open one source-backed format or caption detail in its exact passage. | RAG supplies relevant context when a project has sources. Show the scope and page reference. If time is short, keep this to one quote. |
+| 2:00–3:05 | Open the registered prototype and play the bundled clip. Select a timeline range, simulate a cut and change one caption. | Explain which interactions work in the browser and label simulated AI and Instagram. Use a registered or pre-staged revision for the short run. The rehearsal includes a full agent-authored registration from the original prompt. |
+| 3:05–4:15 | Mark the caption or publishing control with visual feedback. Have Codex read it and register one revised prototype. Compare the changed area with revision 1. | Show the feedback target and exact revision ID. Keep the change small enough to verify live. Use the recorded exchange if the agent exceeds the allotted time. |
+| 4:15–5:00 | Approve the current board revision and show its exported JSON. | Point to two accepted requirements, the prototype digest and a measurable acceptance criterion. Close with how a coding agent can use the export. |
+
+Ask the agent to clarify silence removal or highlight detection, caption treatment and editability, supported formats, publishing approval, and local versus remote processing. Decide only what the demo needs. Use a board note to capture remaining questions. The simulated video pipeline can use a bundled sample, with local interactions for playback, timeline, captions and export settings. Keep publishing in simulated approval throughout.
+
+### Rehearsal and recovery
+
+- By Dec 4 verify one full run from a clean, disposable workspace, including initial agent creation of the prototype and the later edit. Save sanitized tool receipts, both asset revisions, the approved export and a short capture of the agent exchange. Identify prebuilt assets and recorded steps in the short presentation.
+- On Dec 5 test the actual Windows Codex configuration, launch the app from a restart, check the target Chrome profile and rehearse switching to the local recording. Verify the fallback from a copied board and library. Use exact keys, paths and committed fixture versions in the rehearsal record.
+- On Dec 6 complete two 4:30–5:30 runs. Practice with keyboard and reduced motion, and verify the actual projector when available. Align zoom to the whiteboard. Keep the [Engineering Canvas](phase-1-1/README.md) and original [retrieval evaluation](../evaluation.md) ready to open.
+- Use separate labels for **live Codex**, **local mock RAG**, **simulated video processing/publishing** and **recorded agent exchange**. If the agent is slow or offline, identify the recording and show the corresponding verified board state. If iframe isolation or media playback is unavailable, show the labeled recording and continue to the last verified local approval state. Do not represent a restored result as a live tool call.
+- Keep install, reset and optional provider checks away from the audience. Reset only the named rehearsal data and registered sample assets, with confirmation. In the demo, show one exact source quote and one evidence-backed limitation when asked about quality.
+
+### RAG and engineering follow-up
+
+Use the approved Engineering Canvas to follow page extraction, chunk offsets, indexed embeddings, scoped retrieval, SQLite resolution and exact citation validation. Open the existing playback for richer stage evidence. For evaluation, distinguish archived live-provider and mock results, explain why rank relevance and answer support require separate checks, and disclose that the corpus and labels are authored. Keep [retrieval decisions](../decisions/ADR-002-retrieval-baseline.md), [exact-source decisions](../decisions/ADR-001-source-provenance.md) and the [interview talk track](../interview-talk-track.md) within reach.
+
+## Earlier RAG walkthrough route
+
+The original five-minute storyboard below is retained as an engineering follow-up or study-workspace fallback. Its seven frames are a presentation outline. The approved Engineering Canvas has its own verified overview and focus modes.
 
 | Time | Frame and audience action | Presenter notes and implementation evidence |
 | --- | --- | --- |
@@ -12,7 +41,7 @@ Proposed five-minute route. Each frame has an audience-facing diagram and separa
 | 3:45–4:30 | **6 · Reliability.** Show a successful test, one recorded failure path and a comparison from the archived four-note experiment. | Explain one validation retry, exact provenance, hash deduplication and durable cleanup. Twenty labels and five scoped cases give a bounded signal. Separate archived Gemini evaluation from the new mock rerun. [Evaluation](../evaluation.md) · [Decision record](../decisions/ADR-002-retrieval-baseline.md) |
 | 4:30–5:00 | **7 · Limits and next experiments.** Close on a short limitations frame with optional source links. | Discuss OCR recognition, independent held-out relevance/claim-support tests, quotas, concurrency, local single-owner storage and missing tenant controls. Mention options such as reranking only as future experiments. [Facts and limits](../facts.md) |
 
-## Rehearsal and fallback
+### Earlier rehearsal notes
 
 Use the existing public [memory and learning note](../../samples/memory-and-learning.md) and [recorded trace](../../apps/web/src/showcase/traces/memory-and-learning.json) until the fictional scenario is implemented. In the fresh Phase 0 mock smoke, “What is retrieval practice?” returned exact page-one citations, and “How does mitochondrial chemiosmosis work?” returned no citations under the same document scope. The exact scoped result remains testable with the repository fixture. For multi-document exploration use the existing [benchmark questions](../../apps/api/eval/portfolio-questions.json) and the recorded result labels.
 
