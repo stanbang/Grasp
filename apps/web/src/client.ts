@@ -2,7 +2,7 @@ import type { IngestionEvent } from './types/contracts';
 let accessToken = '';
 export function setAccessToken(token: string): void { accessToken = token; }
 export class ApiError extends Error {
-    constructor(message: string, public status: number) { super(message); }
+    constructor(message: string, public status: number, public detail?: unknown) { super(message); }
 }
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
     const headers = new Headers(options.headers);
@@ -11,7 +11,9 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     const response = await fetch('/api' + path, { ...options, headers });
     if (!response.ok) {
         const data = await response.json().catch(() => ({ detail: 'The server could not complete this request.' }));
-        throw new ApiError(typeof data.detail === 'string' ? data.detail : 'Please check the submitted values.', response.status);
+        const detail: unknown = data.detail;
+        const message = typeof detail === 'string' ? detail : 'Please check the submitted values.';
+        throw new ApiError(message, response.status, detail);
     }
     return response;
 }

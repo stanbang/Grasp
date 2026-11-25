@@ -1,8 +1,9 @@
 import { ArrowRight, ArrowUpRight, FileText, MessageSquare, Pin, Ungroup, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../client';
+import type { CanvasObjectContext } from '../types/canvas-contracts';
 import type { ChunksResponse, Citation, Document } from '../types/contracts';
-import { removeAuthored, type AuthoredCard, type Card } from './board';
+import { removeAuthored, type AuthoredCard, type Card, type SourceSelection } from './board';
 import { CanvasVisualization } from './CanvasVisualization';
 import { illustrationOptions } from './TechnicalIllustration';
 import type { InspectedLink } from './CanvasBoard';
@@ -14,7 +15,7 @@ const linkRoles = { structural: 'Context', data: 'Data flow', process: 'Processi
 function Passages({ card, documents, onSource, onPin }: {
   card: Card;
   documents: Document[];
-  onSource: (citation: Citation) => void;
+  onSource: (citation: SourceSelection) => void;
   onPin: (citation: Citation) => void;
 }) {
   const ids = card.concept?.docIds ?? (card.document?.status === 'done' ? [card.document.id] : []);
@@ -60,16 +61,72 @@ function Passages({ card, documents, onSource, onPin }: {
   </section>;
 }
 
-export function CanvasInspector({ card, link, session, documents, onClose, onSource, onAsk, onExplore, onPin }: {
+function ProjectObjectContext({ boardId, objectId, revision, onSource }: {
+  boardId: string;
+  objectId: string;
+  revision: number;
+  onSource: (citation: SourceSelection) => void;
+}) {
+  const [context, setContext] = useState<CanvasObjectContext>();
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void api<CanvasObjectContext>(`/boards/${encodeURIComponent(boardId)}/objects/${encodeURIComponent(objectId)}/context`)
+      .then(result => { if (active) { setContext(result); setFailed(false); } })
+      .catch(() => { if (active) { setContext(undefined); setFailed(true); } });
+    return () => { active = false; };
+  }, [boardId, objectId, revision]);
+  if (failed) return <p role="alert">Could not load the saved object context.</p>;
+  if (!context) return null;
+  const object = context.object;
+  return <>
+    <p>{object.createdBy === 'agent' ? 'Added by agent' : 'Added by user'}
+      {object.updatedBy !== object.createdBy && (object.updatedBy === 'agent' ? ' · Edited by agent' : ' · Edited by user')}</p>
+    {object.requirement && <section>
+      <h3>Requirement</h3>
+      <p>{object.requirement.status === 'accepted' ? 'Accepted by user' : object.requirement.status === 'rejected' ? 'Rejected by user' : 'Proposed'}</p>
+      {!!object.requirement.acceptanceCriteria?.length && <ul>
+        {object.requirement.acceptanceCriteria.map((criterion, index) => <li key={index}>{criterion}</li>)}
+      </ul>}
+    </section>}
+    {object.question && <section>
+      <h3>{object.question.required ? 'Required question' : 'Question'}</h3>
+      <p>{object.answer ? `User answer: ${object.answer.text}` : 'Awaiting an answer'}</p>
+    </section>}
+    {object.prototype && <section>
+      <h3>Prototype revision {object.prototype.revision}</h3><p>{object.prototype.entryPoint}</p>
+    </section>}
+    {context.canonicalConcept && <p>Linked concept: {context.canonicalConcept.label}</p>}
+    {!!context.relatedObjects.length && <section><h3>Related objects</h3>
+      <ul>{context.relatedObjects.map(item => <li key={item.id}>{item.title}</li>)}</ul>
+    </section>}
+    {!!context.evidence.length && <section className="board-passages"><h3>Source passages</h3>
+      {context.evidence.map(({ reference, available, quote, sourceName }) =>
+        <div className="board-passage" key={`${reference.chunkId}:${reference.charStart}:${reference.charEnd}`}>
+          {available && quote !== null ? <>
+            <div className="board-passage-actions"><button type="button" onClick={() => onSource({
+              chunkId: reference.chunkId, docId: reference.docId, page: reference.page, quote, sourceSpan: reference,
+            })}><FileText size={15} /><span>{sourceName} · p{reference.page}</span><ArrowUpRight size={14} /></button></div>
+            <blockquote>{quote}</blockquote>
+          </> : <p>Source passage unavailable · p{reference.page}</p>}
+        </div>)}
+    </section>}
+  </>;
+}
+
+export function CanvasInspector({ card, link, session, documents, onClose, onSource, onAsk, onExplore, onPin,
+  projectBoardId, savedRevision }: {
   card?: Card;
   link?: InspectedLink;
   session: BoardSession;
   documents: Document[];
   onClose: () => void;
-  onSource: (citation: Citation) => void;
+  onSource: (citation: SourceSelection) => void;
   onAsk: (card: Card) => void;
   onExplore: (id: string) => void;
   onPin: (citation: Citation) => void;
+  projectBoardId?: string;
+  savedRevision?: number;
 }) {
   const conceptId = card?.concept?.id;
   const explored = card?.concept?.masteryState;
@@ -116,7 +173,7 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
           if (title && title !== draft.title) editCard({ title });
           else event.target.value = draft.title;
         }} /></label>
-        {draft.kind !== 'group' && <label>Text<textarea key={draft.description} defaultValue={draft.description} maxLength={4000} rows={5}
+        {draft.kind !== 'group' && !(projectBoardId && draft.kind === 'evidence') && <label>Text<textarea key={draft.description} defaultValue={draft.description} maxLength={4000} rows={5}
           onBlur={event => { if (event.target.value !== draft.description) editCard({ description: event.target.value }); }} /></label>}
         {draft.kind === 'annotation' && <label>Annotation style<select value={draft.noteStyle ?? 'plain'} onChange={event => {
           const style = event.target.value;
@@ -126,6 +183,8 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
           const illustration = illustrationOptions.find(option => option.id === event.target.value);
           if (illustration) editCard({ illustration: illustration.id, ...(draft.title === 'New illustration' ? { title: illustration.label } : {}) });
         }}>{illustrationOptions.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>}
+        {projectBoardId && draft.projectObject && savedRevision !== undefined && <ProjectObjectContext
+          boardId={projectBoardId} objectId={draft.id} revision={savedRevision} onSource={onSource} />}
         <button type="button" className="board-inspector-action" onClick={remove}>{draft.kind === 'group' ? <><Ungroup size={16} /> Ungroup</> : 'Remove object'}</button>
       </> : card && <>
         {card.description && <p>{card.description}</p>}

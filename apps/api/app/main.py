@@ -2,10 +2,14 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI, Request
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from sqlmodel import Session
 
 from .config import PROJECT_ROOT, get_settings
-from .request_controls import RequestControls
+from .canvas_routes import router as canvas_router
+from .request_controls import RequestControls, is_board_path, request_path
 from .llm import provider_check
 from .document_routes import router as document_router
 from .study_routes import router as study_router
@@ -37,13 +41,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="Grasp API", version="0.6.0",
-    description="Local document questions, exact source citations and a 3D knowledge map.",
+    description="Local project boards, document questions, exact source citations and a 3D knowledge map.",
     lifespan=lifespan,
 )
 app.add_middleware(RequestControls)
 app.include_router(document_router)
 app.include_router(study_router)
 app.include_router(conversation_router)
+app.include_router(canvas_router)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, error: RequestValidationError):
+    if is_board_path(request_path(request.scope)):
+        # Exclude raw input, which can contain non-JSON values such as NaN.
+        return JSONResponse(status_code=422, content={"detail": [
+            {"loc": issue["loc"], "msg": issue["msg"], "type": issue["type"]} for issue in error.errors()
+        ]})
+    return await request_validation_exception_handler(request, error)
 
 
 @app.get("/health", response_model=HealthResponse)

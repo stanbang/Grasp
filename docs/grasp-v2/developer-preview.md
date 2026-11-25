@@ -1,6 +1,6 @@
 # GRASP Developer Preview v0.1
 
-Planning baseline for owner review, 25 November 2026. This brief governs the proposed post-Phase-1.1 sequence wherever it differs from the original spatial knowledge workspace plan. Approval of the Direction A+ implementation is recorded. Approval of this implementation plan is pending. [Vision](../../VISION.md) · [Approved whiteboard](phase-1-1/README.md)
+Approved plan for the post-Phase-1.1 sequence, 25 November 2026. It governs wherever it differs from the original spatial knowledge workspace plan. [Vision](../../VISION.md) · [Approved whiteboard](phase-1-1/README.md) · [Phase 2 service checkpoint](phase-2.md)
 
 ## The product
 

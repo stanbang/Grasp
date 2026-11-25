@@ -1,6 +1,10 @@
 # Grasp handover
 
-## Start here for Developer Preview Phases 2 and 3
+## Start here for the Phase 2 service review
+
+The owner approved the revised Developer Preview plan. Phase 2 adds durable Project boards in the existing FastAPI app and SQLite library. Browser edits and external HTTP edits share a revisioned board. The [Phase 2 checkpoint](grasp-v2/phase-2.md) has run instructions and the operation contract for the next phase. Wait for the owner's go before starting the CLI and stdio MCP adapter.
+
+## Developer Preview handoff before Phase 2
 
 **Handoff snapshot, 25 November 2026 (Singapore).** The HTX interview is **7 December 2026**. The plan targets a complete preview by 4 December and reserves 5–6 December for integration and rehearsal. Phase 1.1 has the owner's explicit visual approval. The revised implementation plan was delivered for review. This handover records no separate go for Phase 2, so confirm the owner's latest instruction when the new thread starts. Finish and verify Phase 2 before taking up Phase 3, and obtain the owner's go at the boundary.
 

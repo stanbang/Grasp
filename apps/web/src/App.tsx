@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUp, Box, FilePlus2, FolderOpen, Layers3, MessageSquare, Moon, Presentation, Settings, Sun, Workflow, X } from 'lucide-react';
+import { ArrowUp, Box, FilePlus2, FolderOpen, Layers3, LayoutPanelTop, MessageSquare, Moon, Presentation, Settings, Sun, Workflow, X } from 'lucide-react';
 import { CanvasBoard } from './canvas/CanvasBoard';
 import { CanvasInspector } from './canvas/CanvasInspector';
 import { ExplorerBoundary } from './canvas/ExplorerBoundary';
-import { conceptObjectId, knowledgeScene, type BoardKind, type Card } from './canvas/board';
+import { NewProjectBoard, ProjectCanvas, useProjectDirectory } from './canvas/ProjectCanvas';
+import { conceptObjectId, knowledgeScene, type BoardKind, type Card, type SourceSelection } from './canvas/board';
 import { engineeringScene } from './canvas/engineering-board';
 import { useBoard } from './canvas/use-board';
 import { ConceptView, SourceView, WorkspaceSettings } from './WorkspaceDialogs';
@@ -11,7 +12,7 @@ import { api, apiFetch, ApiError, documentEvents, setAccessToken } from './clien
 import { droppedFiles, isSupportedNote, installFileDropHandlers } from './folder-upload';
 import { useStudyGraph } from './study-store';
 import { updateUpload, type UploadState } from './upload-state';
-import type { ChatResponse, Citation, Conversation, Document, DocumentsResponse, GraphResponse, HealthResponse, Turn, Turns } from './types/contracts';
+import type { ChatResponse, Conversation, Document, DocumentsResponse, GraphResponse, HealthResponse, Turn, Turns } from './types/contracts';
 
 const Mindmap = lazy(() => import('./Mindmap').then(module => ({ default: module.Mindmap })));
 
@@ -21,7 +22,8 @@ function savedConversation(): string | null {
 }
 
 function requestedBoard(): BoardKind {
-  return new URLSearchParams(window.location.search).get('board') === 'engineering' ? 'engineering' : 'knowledge';
+  const board = new URLSearchParams(window.location.search).get('board');
+  return board === 'engineering' || board === 'project' ? board : 'knowledge';
 }
 
 export function App() {
@@ -29,6 +31,9 @@ export function App() {
   const knowledge = useBoard('knowledge');
   const engineering = useBoard('engineering');
   const [workspace, setWorkspace] = useState<BoardKind>(requestedBoard);
+  const [projectId, setProjectId] = useState(() => new URLSearchParams(window.location.search).get('projectBoard') ?? '');
+  const [accessVersion, setAccessVersion] = useState(0);
+  const project = useProjectDirectory(workspace === 'project', projectId, accessVersion);
   const [presenting, setPresenting] = useState(false);
   const [render3D, setRender3D] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -46,7 +51,7 @@ export function App() {
   const [highlight, setHighlight] = useState<string[]>([]);
   const [scope, setScope] = useState<string[]>([]);
   const [scopeEmpty, setScopeEmpty] = useState(false);
-  const [citation, setCitation] = useState<Citation | null>(null);
+  const [citation, setCitation] = useState<SourceSelection | null>(null);
   const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
   const [settings, setSettings] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -125,6 +130,15 @@ export function App() {
   useEffect(() => {
     if (workspace === 'knowledge' && questionOpen) textarea.current?.focus();
   }, [workspace, questionOpen]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (workspace === 'knowledge') url.searchParams.delete('board');
+    else url.searchParams.set('board', workspace);
+    if (workspace === 'project' && projectId) url.searchParams.set('projectBoard', projectId);
+    else url.searchParams.delete('projectBoard');
+    window.history.replaceState(window.history.state, '', url);
+  }, [workspace, projectId]);
 
   useEffect(() => {
     const top = latestTurn.current?.offsetTop ?? 0;
@@ -305,6 +319,7 @@ export function App() {
         <nav className="canvas-workspaces" aria-label="Workspaces">
           <button type="button" aria-pressed={workspace === 'knowledge'} onClick={() => changeWorkspace('knowledge')}><Box size={15} /><span>Knowledge</span></button>
           <button type="button" aria-pressed={workspace === 'engineering'} onClick={() => changeWorkspace('engineering')}><Workflow size={15} /><span>Engineering</span></button>
+          <button type="button" aria-pressed={workspace === 'project'} onClick={() => changeWorkspace('project')}><LayoutPanelTop size={15} /><span>Projects</span></button>
         </nav>
       </div>}
       <div className="canvas-header-actions">
@@ -317,6 +332,15 @@ export function App() {
             <button type="button" className="canvas-add-files" aria-label="Add documents" title="Add documents" disabled={working} onClick={() => fileInput.current?.click()}><FilePlus2 size={17} /><span>Add documents</span></button>}
         </>}
         {workspace === 'engineering' && <button ref={presentationButton} type="button" className="canvas-text-button" aria-label="Present board" title="Present board" onClick={() => changePresentation(true)}><Presentation size={17} /><span>Present</span></button>}
+        {workspace === 'project' && <select className="project-picker" aria-label="Project boards" value={projectId} onChange={event => {
+          project.reset();
+          setProjectId(event.target.value);
+        }}>
+          <option value="">New board</option>
+          {projectId && !project.boards.some(board => board.id === projectId) &&
+            <option value={projectId}>{project.board?.title ?? 'Selected board'}</option>}
+          {project.boards.map(board => <option key={board.id} value={board.id}>{board.title}</option>)}
+        </select>}
         <button type="button" className="board-icon" aria-label={theme === 'dark' ? 'Use light theme' : 'Use dark theme'} title={theme === 'dark' ? 'Use light theme' : 'Use dark theme'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
         <button type="button" className="board-icon" aria-label="Workspace options" title="Workspace options" disabled={working} onClick={() => setSettings(true)}><Settings size={17} /></button>
         </>}
@@ -333,7 +357,17 @@ export function App() {
 
     <main className={`canvas-main${workspace === 'knowledge' && questionOpen ? ' canvas-main--asking' : ''}`}>
       <div className="canvas-content">
-        {render3D && workspace === 'knowledge' ? <div className="canvas-three">
+        {workspace === 'project' ? <>
+          {project.board ? <ProjectCanvas key={project.board.id} initial={project.board} theme={theme} documents={documents} onSource={setCitation} />
+            : !projectId ? <NewProjectBoard onCreate={board => {
+                project.remember(board);
+                setProjectId(board.id);
+              }} />
+            : !project.problem && <p className="canvas-loading" role="status">Loading board…</p>}
+          {project.problem && !locked && <div className="canvas-error" role="alert">
+            <span>{project.problem}</span><button type="button" onClick={project.retry}>Retry</button>
+          </div>}
+        </> : render3D && workspace === 'knowledge' ? <div className="canvas-three">
           <ExplorerBoundary onReturn={() => setRender3D(false)}>
             <Suspense fallback={<p className="canvas-loading" role="status">Loading 3D explorer…</p>}>
               <Mindmap graph={graph} highlight={emphasized} onSelect={id => {
@@ -424,7 +458,8 @@ export function App() {
       event.preventDefault();
       setAccessToken(token);
       void refresh().then(async () => {
-        if (conversation) await openConversation(conversation);
+        if (conversation) await openConversation(conversation, workspace === 'knowledge');
+        setAccessVersion(value => value + 1);
         setLocked(false);
         setError('');
       }).catch(failure);

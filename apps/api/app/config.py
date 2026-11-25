@@ -10,9 +10,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, hide_input_in_errors=True)
     mock_llm: bool = True
     access_token: str = Field(default="", repr=False)
+    agent_token: str = Field(default="", repr=False)
     requests_per_minute: int = Field(default=120, ge=1)
     ocr_enabled: bool = False
     ocr_language: str = "eng"
@@ -34,6 +35,12 @@ class Settings(BaseModel):
             raise ValueError("CHUNK_OVERLAP must be smaller than CHUNK_SIZE.")
         return self
 
+    @model_validator(mode="after")
+    def check_agent_token(self) -> "Settings":
+        if self.agent_token and (not self.access_token or self.agent_token == self.access_token):
+            raise ValueError("GRASP_AGENT_TOKEN needs a different, nonempty ACCESS_TOKEN.")
+        return self
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -47,6 +54,7 @@ def get_settings() -> Settings:
     return Settings(
         mock_llm=mock_value == "1",
         access_token=os.getenv("ACCESS_TOKEN", ""),
+        agent_token=os.getenv("GRASP_AGENT_TOKEN", ""),
         requests_per_minute=os.getenv("REQUESTS_PER_MINUTE", "120"),
         ocr_enabled=os.getenv("OCR_ENABLED", "0") == "1",
         ocr_language=os.getenv("OCR_LANGUAGE", "eng"),

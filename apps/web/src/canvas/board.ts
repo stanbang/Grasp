@@ -1,8 +1,10 @@
 import type { Citation, Document, GraphNode, GraphResponse } from '../types/contracts';
+import type { CanvasConnection, CanvasEvidenceRef, CanvasObject } from '../types/canvas-contracts';
 import type { Illustration } from './TechnicalIllustration';
 import type { SimilarityPlot } from './CanvasVisualization';
 
-export type BoardKind = 'knowledge' | 'engineering';
+export type BoardKind = 'knowledge' | 'engineering' | 'project';
+export type SourceSelection = Citation & { sourceSpan?: Pick<CanvasEvidenceRef, 'charStart' | 'charEnd'> };
 export type Point = { x: number; y: number };
 export type Rect = Point & { width: number; height: number };
 export type Placement = Rect & { groupId?: string };
@@ -44,8 +46,12 @@ export type BoardLink = {
 export type BoardScene = { cards: Card[]; links: BoardLink[] };
 export type AuthoredCard = Pick<Card, 'id' | 'title' | 'description' | 'placement' | 'illustration' | 'noteStyle' | 'evidence'> & {
   kind: 'explanation' | 'annotation' | 'group' | 'heading' | 'text' | 'illustration' | 'evidence';
+  projectObject?: CanvasObject;
 };
-type AuthoredLink = Pick<BoardLink, 'id' | 'source' | 'target' | 'label' | 'role'> & { origin: 'authored' };
+export type AuthoredLink = Pick<BoardLink, 'id' | 'source' | 'target' | 'label' | 'role'> & {
+  origin: 'authored';
+  projectConnection?: CanvasConnection;
+};
 export type BoardDocument = {
   schemaVersion: 1;
   kind: BoardKind;

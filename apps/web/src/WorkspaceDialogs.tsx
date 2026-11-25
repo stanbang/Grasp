@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { api, apiFetch, remove } from './client';
+import type { SourceSelection } from './canvas/board';
 import type { Citation, PageResponse, DocumentsResponse, GraphResponse, GraphNode, Chunk, ChunksResponse, QuizResponse, GradeResponse } from './types/contracts';
 
 export function ConceptView({ node, graph, onSelect, onSource, onClose }: {
@@ -36,7 +37,7 @@ export function Modal({ title, onClose, children }: {
     return <dialog ref={dialog} className="workspace-dialog" onCancel={onClose} aria-label={title}><header><h2>{title}</h2><button aria-label="Close dialog" onClick={onClose}><X size={18}/></button></header>{children}</dialog>;
 }
 export function SourceView({ citation, sourceName, onClose }: {
-    citation: Citation;
+    citation: SourceSelection;
   sourceName?: string;
     onClose: () => void;
 }) {
@@ -45,7 +46,7 @@ export function SourceView({ citation, sourceName, onClose }: {
     const [error, setError] = useState('');
     useEffect(() => { let active = true; let objectUrl = ''; void api<PageResponse>(`/documents/${citation.docId}/pages/${citation.page}`).then(value => { if (active)
         setPage(value); }).catch(() => { if (active)
-        setError('The source has been removed. The cited quote below is preserved with the conversation.'); }); void apiFetch(`/documents/${citation.docId}/original`).then(async (response) => { if (response.headers.get('content-type')?.includes('pdf')) {
+        setError('The original source is unavailable. The saved quote is shown below.'); }); void apiFetch(`/documents/${citation.docId}/original`).then(async (response) => { if (response.headers.get('content-type')?.includes('pdf')) {
         objectUrl = URL.createObjectURL(await response.blob());
         if (active)
             setUrl(objectUrl);
@@ -53,7 +54,13 @@ export function SourceView({ citation, sourceName, onClose }: {
             URL.revokeObjectURL(objectUrl);
     } }).catch(() => { }); return () => { active = false; if (objectUrl)
         URL.revokeObjectURL(objectUrl); }; }, [citation]);
-    const index = page?.text.indexOf(citation.quote) ?? -1;
+    let index = page?.text.indexOf(citation.quote) ?? -1;
+    if (page && citation.sourceSpan) {
+        const { charStart, charEnd } = citation.sourceSpan;
+        const characters = Array.from(page.text);
+        index = characters.slice(charStart, charEnd).join('') === citation.quote
+            ? characters.slice(0, charStart).join('').length : -1;
+    }
   return <Modal title={`Source · page ${citation.page}`} onClose={onClose}>
     {sourceName && <p className="board-source-name">{sourceName}</p>}
     {error && <p role="status">{error}</p>}

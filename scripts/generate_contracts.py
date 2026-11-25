@@ -4,10 +4,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from pydantic import BaseModel
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 
-from app.schemas import PUBLIC_MODELS, Schema
+from app.schemas import PUBLIC_MODELS
+from app.canvas_contracts import CANVAS_MODELS
 from app.conversations import Conversation, Conversations, Turn, Turns
 from app.study_routes import ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse
 from app.showcase_models import SHOWCASE_MODELS
@@ -21,8 +24,8 @@ def typescript_type(schema: dict[str, Any], *, optional: bool = False) -> str:
         return json.dumps(schema["const"])
     if "enum" in schema:
         return " | ".join(json.dumps(value) for value in schema["enum"])
-    if "anyOf" in schema:
-        variants = schema["anyOf"]
+    if "anyOf" in schema or "oneOf" in schema:
+        variants = schema.get("anyOf", schema.get("oneOf", []))
         if optional:
             variants = [item for item in variants if item.get("type") != "null"]
         return " | ".join(typescript_type(item) for item in variants)
@@ -38,7 +41,9 @@ def typescript_type(schema: dict[str, Any], *, optional: bool = False) -> str:
     return {"integer": "number", "number": "number", "string": "string", "boolean": "boolean", "null": "null"}.get(kind, "unknown")
 
 
-def generate_types(models: tuple[type[Schema], ...] = PUBLIC_MODELS, imports: str = "") -> str:
+def generate_types(
+    models: tuple[type[BaseModel], ...] = PUBLIC_MODELS, imports: str = "", *, preserve_null: bool = False,
+) -> str:
     lines = ["// Generated from Pydantic by scripts/generate_contracts.py; change the source schema.", ""]
     if imports:
         lines.extend([imports, ""])
@@ -49,7 +54,7 @@ def generate_types(models: tuple[type[Schema], ...] = PUBLIC_MODELS, imports: st
         for name, field in schema["properties"].items():
             optional = name not in required
             suffix = "?" if optional else ""
-            lines.append(f"  {name}{suffix}: {typescript_type(field, optional=optional)};")
+            lines.append(f"  {name}{suffix}: {typescript_type(field, optional=optional and not preserve_null)};")
         lines.extend(["}", ""])
     return "\n".join(lines)
 
@@ -83,6 +88,7 @@ def main() -> None:
     args = parser.parse_args()
     outputs = {
         ROOT / "apps/web/src/types/contracts.ts": generate_types(),
+        ROOT / "apps/web/src/types/canvas-contracts.ts": generate_types(CANVAS_MODELS, preserve_null=True),
         ROOT / "apps/web/src/showcase/trace-types.ts": generate_types(
             SHOWCASE_MODELS, 'import type { ChatResponse, Chunk, GraphResponse, PageResponse } from "../types/contracts";',
         ),

@@ -4,9 +4,11 @@ import { emptyBoard, type BoardDocument, type BoardKind } from './board';
 
 const historyLimit = 60;
 type Update = (board: BoardDocument) => BoardDocument;
+type BoardEdit = { previous: BoardDocument; next: BoardDocument; restoreRevision?: number };
+type BoardPersistence = { initial: BoardDocument; save: (edit: BoardEdit) => boolean };
 
-export function useBoard(kind: BoardKind) {
-  const [document, render] = useState(() => emptyBoard(kind));
+export function useBoard(kind: BoardKind, persistence?: BoardPersistence) {
+  const [document, render] = useState(() => persistence?.initial ?? emptyBoard(kind));
   const current = useRef(document);
   const history = useRef({ undo: [] as BoardDocument[], redo: [] as BoardDocument[] });
   const gesture = useRef<BoardDocument | null>(null);
@@ -20,10 +22,15 @@ export function useBoard(kind: BoardKind) {
   }
 
   function commit(previous: BoardDocument, next: BoardDocument) {
+    const revised = { ...next, revision: previous.revision + 1 };
+    if (persistence && !persistence.save({ previous, next: revised })) {
+      if (current.current !== previous) show(previous);
+      return;
+    }
     const versions = history.current;
     versions.undo = [...versions.undo.slice(1 - historyLimit), previous];
     versions.redo = [];
-    show({ ...next, revision: current.current.revision + 1 });
+    show(revised);
   }
 
   function update(change: Update) {
@@ -54,15 +61,28 @@ export function useBoard(kind: BoardKind) {
   function restore(direction: 'undo' | 'redo') {
     if (gesture.current) return;
     const versions = history.current;
-    const previous = versions[direction].pop();
-    if (!previous) return;
+    const target = versions[direction].at(-1);
+    if (!target) return;
+    const previous = current.current;
+    const next = { ...target, revision: previous.revision + 1 };
+    if (persistence && !persistence.save({ previous, next, restoreRevision: target.revision })) return;
+    versions[direction].pop();
     versions[direction === 'undo' ? 'redo' : 'undo'].push(current.current);
-    show({ ...previous, revision: current.current.revision + 1 });
+    show(next);
+  }
+
+  function adopt(next: BoardDocument, expectedRevision: number, resetHistory: boolean) {
+    if (gesture.current || current.current.revision !== expectedRevision) return false;
+    show(next);
+    if (resetHistory) history.current = { undo: [], redo: [] };
+    select(ids => ids.filter(id => next.authoredCards.some(card => card.id === id)));
+    selectLinks(ids => ids.filter(id => next.authoredLinks.some(link => link.id === id)));
+    return true;
   }
 
   return {
     document, selected, select, selectedLinks, selectLinks, viewport,
-    update, begin, finish, cancel, restore,
+    update, begin, finish, cancel, restore, adopt,
     canUndo: history.current.undo.length > 0, canRedo: history.current.redo.length > 0,
   };
 }

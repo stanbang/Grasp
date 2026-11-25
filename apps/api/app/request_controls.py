@@ -6,6 +6,17 @@ from fastapi import HTTPException
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Scope, Receive, Send, Message
 
+
+def request_path(scope: Scope) -> str:
+    path = scope.get("path", "")
+    root = scope.get("root_path", "")
+    return path[len(root):] or "/" if root and (path == root or path.startswith(root + "/")) else path
+
+
+def is_board_path(path: str) -> bool:
+    return path == "/boards" or path.startswith("/boards/")
+
+
 class RequestControls:
     def __init__(self, app: ASGIApp):
         self.app=app
@@ -18,13 +29,24 @@ class RequestControls:
             return
         settings=scope['app'].state.storage.settings
         headers={key.decode().lower():value.decode() for key,value in scope.get('headers',[])}
-        path=scope.get('path','')
-        root_path=scope.get('root_path','')
-        if root_path and path.startswith(root_path):
-            path=path[len(root_path):] or '/'
-        if settings.access_token and path!='/health':
-            supplied=headers.get('authorization','').removeprefix('Bearer ')
-            if not hmac.compare_digest(supplied,settings.access_token):
+        path=request_path(scope)
+        authorization=headers.get("authorization", "")
+        supplied=authorization.removeprefix("Bearer ").encode()
+        if is_board_path(path):
+            actor = None
+            if not settings.access_token and not authorization:
+                actor = "user"
+            elif authorization.startswith("Bearer "):
+                if settings.access_token and hmac.compare_digest(supplied, settings.access_token.encode()):
+                    actor = "user"
+                elif settings.agent_token and hmac.compare_digest(supplied, settings.agent_token.encode()):
+                    actor = "agent"
+            if actor is None:
+                await JSONResponse({"detail": "Enter a valid project board access token."}, status_code=401)(scope,receive,send)
+                return
+            scope.setdefault("state", {})["board_actor"] = actor
+        elif settings.access_token and path!='/health':
+            if not hmac.compare_digest(supplied,settings.access_token.encode()):
                 await JSONResponse({'detail':'Enter the workspace access token.'},status_code=401)(scope,receive,send)
                 return
         client=str(settings.data_dir)+':'+str(scope.get('client',('unknown',))[0])

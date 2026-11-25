@@ -4,6 +4,8 @@ The [Developer Preview service](#developer-preview-service) is the proposed arch
 
 ## Developer Preview service
 
+Phase 2 implements the Project board service, persistence, revision receipts and browser synchronization. The design below also describes later work on approval, selection and prototypes. [Phase 2 service contract](phase-2.md#http-contract-for-phase-3)
+
 The project board API runs inside the existing FastAPI process and uses the existing SQLite engine. Start with versioned JSON board snapshots and immutable approvals. Keep the live editor and CLI or MCP adapter on the same routes. Keep the separate Knowledge and Engineering projections and the static showcase available throughout the migration.
 
 ```mermaid
