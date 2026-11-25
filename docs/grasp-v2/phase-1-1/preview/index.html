@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Grasp · Whiteboard design review</title>
+  <link rel="stylesheet" href="./preview.css">
+  <script type="module" src="./preview.js"></script>
+</head>
+<body>
+  <main id="desk" aria-label="Grasp whiteboard preview">
+    <div id="surface" tabindex="0" aria-label="Canvas">
+      <div id="world">
+        <div id="regions"></div>
+        <svg id="edges" aria-label="Connections"></svg>
+        <div id="objects"></div>
+      </div>
+      <div id="marquee" hidden></div>
+    </div>
+
+    <div class="board-switch">
+      <button class="chrome board-button" id="board-menu-toggle" aria-expanded="false" type="button">
+        <span class="wordmark"><span data-icon="grasp" aria-hidden="true"></span>Grasp</span>
+        <span class="switch-divider"></span>
+        <span id="board-name">Engineering</span>
+        <span data-icon="chevron" aria-hidden="true"></span>
+      </button>
+      <div id="board-menu" class="chrome menu" hidden>
+        <button type="button" data-board="engineering">Engineering</button>
+        <button type="button" data-board="knowledge">Knowledge</button>
+        <button type="button" id="open-outline">Find objects</button>
+      </div>
+    </div>
+
+    <div class="review">
+      <span class="review-label">Design preview</span>
+      <nav class="chrome directions" aria-label="Design directions">
+        <a href="?direction=a" data-direction="a" aria-label="Direction A · Technical whiteboard">A</a>
+        <a href="?direction=b" data-direction="b" aria-label="Direction B · Precision workspace">B</a>
+        <a href="?direction=c" data-direction="c" aria-label="Direction C · Evidence workspace">C</a>
+      </nav>
+      <button type="button" id="present" class="chrome icon-button" aria-label="Present" title="Present"><span data-icon="present" aria-hidden="true"></span></button>
+    </div>
+
+    <div class="chrome tools" role="toolbar" aria-label="Canvas tools">
+      <button type="button" class="icon-button" data-tool="select" aria-label="Select" title="Select (V)"><span data-icon="select" aria-hidden="true"></span></button>
+      <button type="button" class="icon-button" data-tool="pan" aria-label="Pan" title="Pan (H)"><span data-icon="hand" aria-hidden="true"></span></button>
+      <div class="tool-rule"></div>
+      <button type="button" class="icon-button" id="add-text" aria-label="Add text" title="Add text"><span data-icon="text" aria-hidden="true"></span></button>
+      <button type="button" class="icon-button" id="add-note" aria-label="Add note" title="Add note"><span data-icon="note" aria-hidden="true"></span></button>
+      <button type="button" class="icon-button" id="undo" aria-label="Undo" title="Undo"><span data-icon="undo" aria-hidden="true"></span></button>
+      <button type="button" class="icon-button" id="redo" aria-label="Redo" title="Redo"><span data-icon="redo" aria-hidden="true"></span></button>
+    </div>
+
+    <div class="selection-tools chrome" id="selection-tools" hidden role="toolbar" aria-label="Selection actions">
+      <button type="button" id="inspect-selection">Inspect</button>
+      <button type="button" class="icon-button" id="fit-selection" title="Fit selection" aria-label="Fit selection"><span data-icon="target" aria-hidden="true"></span></button>
+    </div>
+
+    <div class="chrome viewport" role="toolbar" aria-label="Viewport">
+      <button type="button" class="icon-button" id="zoom-out" aria-label="Zoom out" title="Zoom out"><span data-icon="minus" aria-hidden="true"></span></button>
+      <output id="zoom-level" aria-label="Zoom level">100%</output>
+      <button type="button" class="icon-button" id="zoom-in" aria-label="Zoom in" title="Zoom in"><span data-icon="plus" aria-hidden="true"></span></button>
+      <button type="button" class="icon-button fit-button" id="fit-board" aria-label="Fit board" title="Fit board (F)"><span data-icon="fit" aria-hidden="true"></span></button>
+    </div>
+
+    <aside id="inspector" class="chrome inspector" aria-label="Object inspector" tabindex="-1" hidden>
+      <header>
+        <h2 id="inspect-title"></h2>
+        <button type="button" id="close-inspector" class="icon-button" aria-label="Close inspector" title="Close inspector"><span data-icon="close" aria-hidden="true"></span></button>
+      </header>
+      <div id="inspect-content"></div>
+    </aside>
+    <aside id="outline" class="chrome outline" aria-label="Board outline" hidden>
+      <header>
+        <h2>Find objects</h2>
+        <button type="button" id="close-outline" class="icon-button" aria-label="Close outline" title="Close outline"><span data-icon="close" aria-hidden="true"></span></button>
+      </header>
+      <input id="find" type="search" aria-label="Search objects" placeholder="Search this board">
+      <ul id="outline-list"></ul>
+    </aside>
+    <button id="leave-presentation" class="chrome leave-presentation" type="button" hidden>Exit presentation</button>
+  </main>
+</body>
+</html>

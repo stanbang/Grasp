@@ -2,7 +2,7 @@
 
 Research and implementation proposal for review, 24 November 2026 (Singapore). The source brief is [GRASP_V2_SPEC.md](../GRASP_V2_SPEC.md). The [handover](../HANDOVER.md) describes prior work. The current request authorizes Phase 0 documentation and baseline verification. Later implementation, publication and provider runs require their own approval.
 
-Phase 0 was approved. The [Phase 1 checkpoint](phase-1.md) records the shared canvas implementation, review evidence and run instructions. Phase 2 awaits approval of the running workspace.
+Phase 0 was approved. The [Phase 1 checkpoint](phase-1.md) records the first shared canvas implementation. The [Phase 1.1 design review](phase-1-1/README.md) compares three rendered directions and records the Direction A implementation awaiting visual approval.
 
 | Review | What it covers |
 | --- | --- |
