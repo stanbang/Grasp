@@ -1,0 +1,164 @@
+import json
+import os
+from pathlib import Path
+import socket
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
+import time
+import tomllib
+import unittest
+from uuid import uuid4
+
+from mcp.client import Client
+from mcp.client.stdio import StdioServerParameters
+
+from grasp_agent.client import GraspClient, GraspError, loopback_url
+
+ROOT = Path(__file__).resolve().parents[3]
+OWNER = "protocol-test-owner"
+AGENT = "protocol-test-agent"
+TOOLS = {
+    "list_boards", "create_board", "get_board", "get_selection", "apply_canvas_operations",
+    "get_annotations", "get_requirements", "search_knowledge", "read_source",
+}
+OBJECT = {
+    "id": "note", "kind": "annotation", "title": "Useful note",
+    "placement": {"x": 0, "y": 30, "width": 220, "height": 100},
+}
+
+
+def free_port() -> int:
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        return listener.getsockname()[1]
+
+
+class ProtocolTests(unittest.IsolatedAsyncioTestCase):
+    @classmethod
+    def setUpClass(cls):
+        work = ROOT / "work"
+        work.mkdir(exist_ok=True)
+        directory = TemporaryDirectory(prefix="phase3-protocol-", dir=work)
+        cls.addClassCleanup(directory.cleanup)
+        python = ROOT / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
+        port = free_port()
+        cls.base = f"http://127.0.0.1:{port}"
+        cls.agent_env = {"GRASP_API_URL": cls.base, "GRASP_AGENT_TOKEN": AGENT}
+        log = Path(directory.name) / "api.log"
+        with log.open("wb") as output:
+            process = subprocess.Popen([
+                str(python), "-m", "uvicorn", "app.main:app", "--app-dir", "apps/api",
+                "--host", "127.0.0.1", "--port", str(port),
+            ], cwd=ROOT, stderr=output, stdout=output, env={
+                **os.environ, "DATA_DIR": directory.name, "MOCK_LLM": "1", "ACCESS_TOKEN": OWNER,
+                "GRASP_AGENT_TOKEN": AGENT, "GRASP_AGENT_SOURCE_DOC_IDS": "",
+            })
+        cls.addClassCleanup(cls.stop_api, process)
+        deadline = time.monotonic() + 15
+        while process.poll() is None and time.monotonic() < deadline:
+            try:
+                GraspClient(cls.base, AGENT).doctor()
+                break
+            except GraspError:
+                time.sleep(.2)
+        else:
+            raise RuntimeError(f"The protocol fixture API did not start.\n{log.read_text()}")
+
+    @staticmethod
+    def stop_api(process):
+        if process.poll() is not None:
+            return
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/t", "/f", "/pid", str(process.pid)], capture_output=True, check=False)
+        else:
+            process.terminate()
+        process.wait(timeout=8)
+
+    def connect(self, base: str | None = None):
+        transport = StdioServerParameters(
+            command=sys.executable, args=["-m", "grasp_agent", "mcp", "serve"],
+            env={**self.agent_env, "GRASP_API_URL": base or self.base},
+        )
+        return Client(transport, mode="legacy", read_timeout_seconds=8)
+
+    def cli(self, *arguments, input=None):
+        return subprocess.run([sys.executable, "-m", "grasp_agent", *arguments], input=input,
+                              env={**os.environ, **self.agent_env}, capture_output=True, text=True, timeout=10)
+
+    async def test_stdio_discovery_mutation_replay_and_validation(self):
+        async with self.connect() as client:
+            listed = await client.list_tools()
+            self.assertEqual({tool.name for tool in listed.tools}, TOOLS)
+            created = await client.call_tool("create_board", {"title": "Protocol check"})
+            self.assertFalse(created.is_error, created.content)
+            board_id = created.structured_content["id"]
+            requirement = {
+                **OBJECT, "id": "requirement", "kind": "requirement", "title": "Editable captions",
+                "requirement": {"status": "proposed", "acceptanceCriteria": ["Captions can be edited"]},
+            }
+            arguments = {
+                "board_id": board_id, "base_revision": 0, "mutation_id": uuid4().hex,
+                "operations": [{"type": "addObject", "object": item} for item in (OBJECT, requirement)],
+            }
+            invalid = await client.call_tool("apply_canvas_operations", {
+                **arguments, "operations": [{"type": "unrecognizedOperation"}],
+            })
+            self.assertTrue(invalid.is_error)
+            self.assertEqual(invalid.structured_content["error"]["code"], "invalidRequest")
+            applied = await client.call_tool("apply_canvas_operations", arguments)
+            self.assertFalse(applied.is_error, applied.content)
+            self.assertEqual(applied.structured_content["revision"], 1)
+            self.assertEqual(applied.structured_content["actor"], "agent")
+            replay = await client.call_tool("apply_canvas_operations", arguments)
+            self.assertEqual(replay.structured_content, applied.structured_content)
+            stale = await client.call_tool("apply_canvas_operations", {**arguments, "mutation_id": uuid4().hex})
+            self.assertTrue(stale.is_error)
+            self.assertEqual(stale.structured_content["error"]["currentRevision"], 1)
+            self.assertEqual(stale.structured_content["error"]["code"], "staleRevision")
+            current = await client.call_tool("get_board", {"board_id": board_id})
+            self.assertEqual(current.structured_content, applied.structured_content["board"])
+            annotation = await client.call_tool("get_annotations", {"board_id": board_id, "author": "agent"})
+            self.assertEqual(annotation.structured_content["annotations"][0]["title"], OBJECT["title"])
+            requirements = await client.call_tool("get_requirements", {"board_id": board_id})
+            self.assertEqual(requirements.structured_content["requirements"][0]["requirement"], requirement["requirement"])
+            selection = await client.call_tool("get_selection", {"board_id": board_id})
+            self.assertFalse(selection.structured_content["available"])
+            empty = await client.call_tool("search_knowledge", {"query": "captions", "doc_ids": []})
+            self.assertEqual(empty.structured_content, {"mode": "mock", "results": []})
+
+    async def test_stdio_lists_tools_when_api_is_unavailable(self):
+        async with self.connect(f"http://127.0.0.1:{free_port()}") as client:
+            self.assertIn("list_boards", {tool.name for tool in (await client.list_tools()).tools})
+            result = await client.call_tool("list_boards")
+            self.assertTrue(result.is_error)
+            self.assertEqual(result.structured_content["error"]["code"], "serviceUnavailable")
+
+    def test_cli_configuration_and_round_trip(self):
+        configured = self.cli("init")
+        self.assertEqual(configured.returncode, 0, configured.stderr)
+        config = tomllib.loads(configured.stdout)["mcp_servers"]["grasp"]
+        self.assertEqual(config["env_vars"], ["GRASP_AGENT_TOKEN"])
+        self.assertEqual(config["env"]["GRASP_API_URL"], self.base)
+        self.assertNotIn(AGENT, configured.stdout)
+        self.assertEqual(json.loads(self.cli("doctor").stdout)["status"], "ok")
+        board = json.loads(self.cli("board", "create", "CLI check").stdout)
+        self.assertEqual(json.loads(self.cli("board", "read", board["id"]).stdout), board)
+        url = self.cli("open", board["id"], "--print-url")
+        self.assertTrue(url.stdout.strip().endswith(f"projectBoard={board['id']}"))
+        malformed = self.cli("board", "apply", board["id"], "-", input="{bad")
+        self.assertEqual(malformed.returncode, 1)
+        self.assertEqual(json.loads(malformed.stderr)["error"]["code"], "invalidJson")
+        batch = {"baseRevision": 0, "mutationId": uuid4().hex, "operations": [{"type": "addObject", "object": OBJECT}]}
+        written = self.cli("board", "apply", board["id"], "-", input=json.dumps(batch))
+        self.assertEqual(written.returncode, 0, written.stderr)
+        self.assertEqual(json.loads(written.stdout)["revision"], 1)
+        self.assertEqual(json.loads(self.cli("search", "captions").stdout)["results"], [])
+
+
+class LocalUrlTests(unittest.TestCase):
+    def test_untrusted_urls_are_rejected(self):
+        for url in ("https://127.0.0.1:8000", "http://192.0.2.1", "http://127.0.0.1:8000/private",
+                    "http://127.0.0.1.example.org", "http://token@127.0.0.1", "http://127.0.0.1:8000/?token=one"):
+            with self.subTest(url=url), self.assertRaises(GraspError):
+                loopback_url(url, allow_api_path=True)

@@ -11,6 +11,7 @@ The original Phase 0 source brief is [GRASP_V2_SPEC.md](../GRASP_V2_SPEC.md). Th
 | [Vision](../../VISION.md), [product brief](../../PRODUCT.md) and [design specification](../../DESIGN.md) | Developer Preview direction, preserved workspace roles, visual system and interaction states |
 | [Shared canvas and contracts](canvas-architecture.md) | Rendering, identity, storage, compatibility, observability and AI changes |
 | [Phase 2 service checkpoint](phase-2.md) | Project board HTTP operations, revision checks, browser synchronization and local verification |
+| [Phase 3 CLI and MCP checkpoint](phase-3.md) | Windows installation, scoped tools, protocol tests and independent Codex verification |
 | [Roadmap and verification](roadmap.md) | Phase order, dependencies, measurable acceptance and work still pending |
 | [HTX storyboard](storyboard.md) | Five-minute route, claims, presenter prompts, failure recovery and optional depth |
 

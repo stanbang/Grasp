@@ -4,7 +4,7 @@
 
 Ask questions about your notes, see how concepts connect and open the exact passage behind an answer.
 
-[Run the recorded showcase](#run-grasp) · [Interactive walkthrough](#walk-through-rag) · [Evaluation](#4-how-did-i-evaluate-it-and-choose-components)
+[Run the recorded showcase](#run-grasp) · [Interactive walkthrough](#walk-through-rag) · [Evaluation](#4-how-did-i-evaluate-it-and-choose-components) · [Local CLI and Codex MCP](docs/grasp-v2/phase-3.md)
 
 ![The Grasp showcase opens a sample note, traces it into a constellation and reveals a cited answer.](docs/assets/showcase.gif)
 

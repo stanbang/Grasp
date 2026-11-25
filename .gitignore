@@ -13,6 +13,7 @@ uploads/
 
 # Python
 .venv/
+.venv-mcp/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -26,6 +27,7 @@ dist/
 apps/web/src/tailwind.generated.css
 
 # Local tools and verification captures
+.codex/config.toml
 .agents/skills/
 .impeccable/config.local.json
 .impeccable/questions/

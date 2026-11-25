@@ -26,14 +26,14 @@ Use one FastAPI board service in the existing server. The web client, local CLI 
 
 ### Agent integration
 
-Use the official Python MCP SDK v2 and its stdio transport. The stable v2 line supports Python 3.11 and the `MCPServer` interface. Phase 3 pins the compatible patch release after resolving the current lockfile and verifying `initialize`, `tools/list` and one read/write round trip in the installed Codex client on Windows. Prefer an isolated adapter virtual environment if SDK resolution would change the API environment. The CLI uses one shared, fixed-endpoint HTTP client and Python's argument parsing. No dependency has been installed for this plan. Adding the MCP SDK requires owner approval under the repository's dependency rule. [Official MCP Python SDK](https://py.sdk.modelcontextprotocol.io/)
+Phase 3 uses the official Python MCP SDK v2.3.0 and stdio in a separate Python 3.11 environment. The shared adapter uses a fixed loopback HTTP client and Python's argument parsing. [Phase 3 checkpoint](phase-3.md) · [Official MCP Python SDK](https://py.sdk.modelcontextprotocol.io/)
 
-Configure a trusted local Codex project with a launch command pointing to the approved virtual environment and module. This is the proposed shape, with paths and port supplied during Phase 3. The local agent token is forwarded by name. Codex documents `command`, `args`, `cwd` and `env_vars` for stdio MCP. [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#configure-in-configtoml)
+Configure a trusted local Codex project with the launch snippet from `grasp init`. It points to the installed adapter and forwards the agent token by environment-variable name. [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#configure-in-configtoml)
 
 ```toml
 [mcp_servers.grasp]
 command = 'C:\path\to\Grasp\.venv-mcp\Scripts\python.exe'
-args = ["-m", "grasp_agent", "mcp"]
+args = ["-m", "grasp_agent", "mcp", "serve"]
 cwd = 'C:\path\to\Grasp'
 env_vars = ["GRASP_AGENT_TOKEN"]
 
@@ -41,15 +41,15 @@ env_vars = ["GRASP_AGENT_TOKEN"]
 GRASP_API_URL = "http://127.0.0.1:8019"
 ```
 
-The installed Windows Codex CLI reported `0.171.0-alpha.13.2` and exposed the `mcp` command. A GRASP server handshake has yet to be tested. In Phase 3, verify the trusted project configuration with `codex mcp list`, check `/mcp` in a fresh TUI session, then make an actual tool call and confirm the result after a browser reload. Test Claude Code after the Codex flow passes. [Codex CLI setup](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#configure-with-the-cli)
+The installed Windows Codex CLI `0.171.0-alpha.13.2` discovered the registered server and made real read/write calls in fresh sessions. The CLI and browser read the same revision. Claude Code remains a stretch exercise. [Verification](phase-3.md#live-codex-integration)
 
 | Tool capability | First verified phase | Authorization and contract |
 | --- | --- | --- |
 | List, create and read boards | 3 | Scope reads to the configured local workspace. New project boards get durable IDs and its draft access. Keep list and snapshots bounded. |
 | Apply canvas operations | 3 | Validate a bounded batch, explicit board ID, `baseRevision` and `mutationId`. Return committed revision or typed conflict. |
 | Read current selection | 3 | Return board-scoped object IDs from the active browser session or an explicit unavailable result. Keep presence transient. |
-| Search knowledge and read exact evidence | 4 | Search explicit allowed document IDs. Return rank and stable source handles. Resolve exact spans from stored text. An empty scope means no search. |
-| Read annotations, open questions and resolved requirements | 4 | Return typed records and object associations from the same board revision. User answers and decisions carry server-verified attribution. |
+| Search knowledge and read exact evidence | 3 | Search explicit owner-shared document IDs. Return rank and stable source handles. Resolve exact spans from stored text. An empty scope means no search. |
+| Read annotations, open questions and resolved requirements | 3 | Return typed records and object associations from the same board revision. User answers and decisions carry server-verified attribution. Phase 4 adds their browser workflow. |
 | Register an isolated prototype | 5 | Register a staged bundle ID, attachment, related requirements and content digest. The tool accepts no arbitrary filesystem paths or remote endpoints. |
 | Export an approved specification | 5 | Read an immutable approved snapshot by ID. Only a user action through the workspace can approve it. The adapter has no publish or implementation tool. |
 

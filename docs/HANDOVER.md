@@ -1,5 +1,9 @@
 # Grasp handover
 
+## Phase 3 CLI and MCP review
+
+The Windows CLI and stdio adapter share the Phase 2 API. Independent Codex sessions created and edited a project, read the browser's selected object and owner annotation, and searched the existing index for an exact source passage. The [Phase 3 checkpoint](grasp-v2/phase-3.md) records installation, contracts and verification. Use the [agent guide](grasp-v2/agent-guide.md) for the next rehearsal. The Phase 4 browser workflow begins after the owner's go.
+
 ## Phase 2 service acceptance
 
 The owner approved Phase 2 after manual acceptance and engineering review. The agent created the acceptance board at revision 1, and HTTP readback verified the owner's changes at revision 8. The owner approved keeping the polling sync and starting Phase 3. [Phase 2 checkpoint and API contract](grasp-v2/phase-2.md)
