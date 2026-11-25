@@ -12,18 +12,19 @@ py -3.11 -m venv .venv-mcp
 $grasp = '.\.venv-mcp\Scripts\grasp.exe'
 ```
 
-Set distinct `ACCESS_TOKEN` and `GRASP_AGENT_TOKEN` values for the API in the local `.env`. Start GRASP with `py -3.11 scripts/dev.py`. Use `--setup` on the first checkout. The default development API is `http://127.0.0.1:8000`; the web workspace is on port 5173. A production build serves both from one origin and adds `/api` to the API base.
+Keep distinct `ACCESS_TOKEN` and `GRASP_AGENT_TOKEN` values in the project's ignored `.env`. Start GRASP with `py -3.11 scripts/dev.py`. Use `--setup` on the first checkout. The default development API is `http://127.0.0.1:8000`, and the web workspace is on port 5173. A production build serves both from one origin and adds `/api` to the API base.
 
-In the PowerShell window that launches the CLI or Codex, set the same agent token and the URL of the running API.
+In a second PowerShell window, open the repository root and check the connection.
 
 ```powershell
-$env:GRASP_API_URL = 'http://127.0.0.1:8000'
-$env:GRASP_AGENT_TOKEN = Read-Host 'GRASP agent token' -MaskInput
+$grasp = '.\.venv-mcp\Scripts\grasp.exe'
 & $grasp doctor
 & $grasp init
 ```
 
-Use `GRASP_WEB_URL` when Vite runs on a different port. `grasp init` prints a Codex stdio configuration with the installed Python path and the token's environment variable name. Merge the snippet into the trusted project's local `.codex/config.toml`, then run `codex mcp list` from the project and open a fresh Codex session from the same environment. Use `/mcp` in the Codex terminal interface to inspect the tools. The locally registered rehearsal config uses `http://127.0.0.1:8033/api`. Regenerate its API URL for a different launch. [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#configure-in-configtoml)
+`grasp init` prints the absolute Python executable, working directory and path to the project's `.env`. Merge its GRASP section into the trusted project's `.codex/config.toml`. If it already contains GRASP, replace both old GRASP sections together. The project configuration on the acceptance machine has already been updated. Run `codex.cmd mcp list` from the repository, then start `codex.cmd` and type `/mcp`. Ask Codex to call `list_boards` to check access. [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#configure-in-configtoml)
+
+The development connection reads `API_PORT` and the agent token from `.env` in a fresh shell. Start Codex from the trusted GRASP directory to use the project registration. A process-level `GRASP_AGENT_TOKEN` or `GRASP_API_URL` takes precedence, so clear stale overrides if the wrong instance or token is selected. For a production instance, generate a pinned config with `grasp --api-url http://127.0.0.1:8019/api init`, using that instance's actual address. Restart the API after editing its `.env`, and launch a new Codex session after changing its MCP config.
 
 Codex may ask for approval for `apply_canvas_operations` because batches can change or remove saved objects. Approve the intended call when prompted. The verification used the installed CLI's `--approve-for-me` option for the disposable write session. A noninteractive session that disables approvals can discover and read the board while a mutation awaits approval.
 
@@ -58,7 +59,7 @@ Codex may ask for approval for `apply_canvas_operations` because batches can cha
 | `search_knowledge` | `query`, explicit `doc_ids`, optional `top_k` | Ranked excerpts and references from the existing index. |
 | `read_source` | `reference` from search | Availability, exact quote, source name, one-based page and exclusive-end Unicode span. |
 
-The Phase 2 service remains responsible for all mutations and permissions. Its agent role can make draft canvas edits. The workspace owner retains answers, requirement decisions and revision restoration. The adapter uses fixed HTTP routes on `127.0.0.1`, with the agent token supplied as an environment variable. Prototype asset registration and approved specification export belong to Phase 5.
+The Phase 2 service remains responsible for all mutations and permissions. Its agent role can make draft canvas edits. The workspace owner retains answers, requirement decisions and revision restoration. The adapter uses fixed HTTP routes on `127.0.0.1` and loads the agent token from the local settings or its process environment. Prototype asset registration and approved specification export belong to Phase 5.
 
 The active visible Project tab periodically shares selected object IDs with the API. Selection can expire 25 seconds after the last heartbeat and is available only at the current revision. It uses memory and leaves the board revision untouched.
 
@@ -77,7 +78,7 @@ node scripts/tests/project-browser.cjs
 
 The SDK test launches the stdio server and a disposable FastAPI process. It checks legacy handshake and discovery, an applied batch, identical replay, stale revisions, an invalid operation, unavailable service and the installed CLI's configuration and read/write path. The API tests cover owner-only selection, expiry, revision matching, explicit source scopes and exact Unicode spans. The Chrome regression checks the same browser renderer, failed-draft recovery and API restart.
 
-Four adapter tests, 80 API tests, 24 Node checks, contract drift, strict TypeScript and the production build passed. The Chrome Project, Knowledge and Engineering regressions passed.
+The Phase 3 checkpoint passed four adapter tests, 80 API tests, 24 Node checks, contract drift, strict TypeScript and the production build. The Chrome Project, Knowledge and Engineering regressions passed.
 
 ### Live Codex integration
 
@@ -88,5 +89,11 @@ The installed `codex-cli 0.171.0-alpha.13.2` discovered the project-registered s
 - The browser owner session added **Owner acceptance note** and selected **Editable captions**. A fresh Codex session called `get_selection`, `get_annotations`, `get_requirements` and `get_board`. It matched the selection ID to **Editable captions** at revision 4 and quoted the user-attributed note exactly. The installed CLI read the same board and revision. The browser showed the saved note and architecture again after reload.
 
 Board ID `059f2e47-f2eb-496d-8865-8f461a587404`. Local session receipts are under `work/phase3-live-878ea239/`. [Short guide for agents](agent-guide.md)
+
+### Standalone Windows acceptance repair
+
+Startup records from standalone Codex `0.172.0` showed `missingToken` immediately followed by a closed connection during `initialize`. The trusted project registration forwarded a shell variable that was absent and still targeted the disposable API on port 8033. The development API and Vite were listening on ports 8000 and 5173. The previous bundled verification supplied temporary credentials to its terminal.
+
+The corrected registration uses the project's ignored `.env` and derives the development address from `API_PORT`. Configuration and HTTP errors now appear on tool invocation, after stdio initialization can report the tool catalog. All six adapter tests passed, including a fresh-shell authenticated request and a structured missing-token response. Two fresh standalone `codex.cmd` sessions successfully called an empty-scope `search_knowledge` on the development API with no shell-exported credentials. GRASP was restarted between those sessions. Anonymous and deliberately invalid requests returned `401`.
 
 Phase 4 begins after the owner's review. Claude Code verification is a stretch item.

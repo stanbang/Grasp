@@ -28,17 +28,17 @@ Use one FastAPI board service in the existing server. The web client, local CLI 
 
 Phase 3 uses the official Python MCP SDK v2.3.0 and stdio in a separate Python 3.11 environment. The shared adapter uses a fixed loopback HTTP client and Python's argument parsing. [Phase 3 checkpoint](phase-3.md) · [Official MCP Python SDK](https://py.sdk.modelcontextprotocol.io/)
 
-Configure a trusted local Codex project with the launch snippet from `grasp init`. It points to the installed adapter and forwards the agent token by environment-variable name. [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#configure-in-configtoml)
+Configure a trusted local Codex project with the launch snippet from `grasp init`. It points to the installed adapter and the project's ignored `.env`. Process overrides are forwarded by name. [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#configure-in-configtoml)
 
 ```toml
 [mcp_servers.grasp]
 command = 'C:\path\to\Grasp\.venv-mcp\Scripts\python.exe'
 args = ["-m", "grasp_agent", "mcp", "serve"]
 cwd = 'C:\path\to\Grasp'
-env_vars = ["GRASP_AGENT_TOKEN"]
+env_vars = ["GRASP_AGENT_TOKEN", "GRASP_API_URL"]
 
 [mcp_servers.grasp.env]
-GRASP_API_URL = "http://127.0.0.1:8019"
+GRASP_ENV_FILE = 'C:\path\to\Grasp\.env'
 ```
 
 The installed Windows Codex CLI `0.171.0-alpha.13.2` discovered the registered server and made real read/write calls in fresh sessions. The CLI and browser read the same revision. Claude Code remains a stretch exercise. [Verification](phase-3.md#live-codex-integration)

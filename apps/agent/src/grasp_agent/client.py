@@ -4,7 +4,6 @@ from http.client import HTTPConnection, HTTPException
 from typing import Any
 from urllib.parse import urlencode, urlsplit
 
-DEFAULT_API_URL = "http://127.0.0.1:8000"
 DEFAULT_WEB_URL = "http://127.0.0.1:5173"
 ID_PATTERN = r"^[a-zA-Z0-9][a-zA-Z0-9_:-]{0,95}$"
 MAX_REQUEST_BYTES = 65_536
@@ -62,7 +61,7 @@ def web_board_url(base: str, board_id: str | None) -> str:
 def request_error(status: int, detail: Any) -> GraspError:
     text = detail if isinstance(detail, str) else ""
     if status == 401:
-        return GraspError("unauthorized", "Check that GRASP_AGENT_TOKEN matches the token on the running API.", status=status)
+        return GraspError("unauthorized", "Check the local GRASP agent token and API address. Restart the API after editing .env.", status=status)
     if status == 409 and isinstance(detail, dict):
         code = detail.get("code")
         revision = detail.get("currentRevision")
@@ -85,7 +84,7 @@ class GraspClient:
     def __init__(self, api_url: str, token: str):
         self.api_url = loopback_url(api_url, allow_api_path=True)
         if not token:
-            raise GraspError("missingToken", "Set GRASP_AGENT_TOKEN in the process that starts grasp or Codex.")
+            raise GraspError("missingToken", "Set GRASP_AGENT_TOKEN in the project's .env or in the process that launches GRASP.")
         if not token.isascii() or not token.isprintable() or any(character.isspace() for character in token):
             raise GraspError("invalidToken", "Use the workspace agent token without whitespace.")
         self._token = token

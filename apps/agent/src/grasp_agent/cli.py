@@ -5,7 +5,9 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from .client import DEFAULT_API_URL, DEFAULT_WEB_URL, MAX_REQUEST_BYTES, GraspClient, GraspError, JsonObject
+from dotenv import dotenv_values
+
+from .client import MAX_REQUEST_BYTES, GraspClient, GraspError, JsonObject
 from .client import loopback_url, web_board_url
 
 
@@ -28,25 +30,49 @@ def read_json(source: str) -> JsonObject:
     return value
 
 
-def codex_config(api_url: str) -> str:
-    api_url = loopback_url(api_url, allow_api_path=True)
+def settings_file() -> Path:
+    return Path(os.environ.get("GRASP_ENV_FILE") or ".env").resolve()
+
+
+def local_settings() -> dict[str, str | None]:
+    try:
+        return dotenv_values(settings_file(), encoding="utf-8-sig")
+    except (OSError, UnicodeError) as error:
+        raise GraspError("invalidSettings", "Could not read the local GRASP .env file as UTF-8.") from error
+
+
+def api_address(override: str | None, settings: dict[str, str | None]) -> str:
+    address = override or os.environ.get("GRASP_API_URL")
+    port = os.environ.get("API_PORT", settings.get("API_PORT") or "8000")
+    return loopback_url(address or f"http://127.0.0.1:{port}", allow_api_path=True)
+
+
+def connect(api_url: str | None) -> GraspClient:
+    settings = local_settings()
+    token = os.environ.get("GRASP_AGENT_TOKEN", settings.get("GRASP_AGENT_TOKEN") or "")
+    return GraspClient(api_address(api_url, settings), token)
+
+
+def codex_config(api_url: str | None) -> str:
     def quote(value: str) -> str:
         return json.dumps(value, ensure_ascii=False)
+    forwarded = ["GRASP_AGENT_TOKEN", "GRASP_API_URL"] if api_url is None else ["GRASP_AGENT_TOKEN"]
+    address = f"\nGRASP_API_URL = {quote(loopback_url(api_url, allow_api_path=True))}" if api_url else ""
     return (
         "[mcp_servers.grasp]\n"
         f"command = {quote(str(Path(sys.executable).resolve()))}\n"
         'args = ["-m", "grasp_agent", "mcp", "serve"]\n'
         f"cwd = {quote(str(Path.cwd()))}\n"
-        'env_vars = ["GRASP_AGENT_TOKEN"]\n'
+        f"env_vars = {json.dumps(forwarded)}\n"
         "tool_timeout_sec = 40\n\n"
         "[mcp_servers.grasp.env]\n"
-        f"GRASP_API_URL = {quote(api_url)}"
+        f"GRASP_ENV_FILE = {quote(str(settings_file()))}{address}"
     )
 
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="grasp", description="Work with a running local GRASP workspace.")
-    root.add_argument("--api-url", default=os.environ.get("GRASP_API_URL", DEFAULT_API_URL))
+    root.add_argument("--api-url")
     root.add_argument("--web-url", default=os.environ.get("GRASP_WEB_URL"))
     commands = root.add_subparsers(dest="command", required=True)
 
@@ -93,8 +119,10 @@ def run(args: argparse.Namespace) -> JsonObject | str | None:
     if args.command == "init":
         return codex_config(args.api_url)
     if args.command == "open":
-        api_url = loopback_url(args.api_url, allow_api_path=True)
-        web_base = args.web_url or (api_url.removesuffix("/api") if api_url.endswith("/api") else DEFAULT_WEB_URL)
+        settings = local_settings()
+        api_url = api_address(args.api_url, settings)
+        web_port = os.environ.get("WEB_PORT", settings.get("WEB_PORT") or "5173")
+        web_base = args.web_url or (api_url.removesuffix("/api") if api_url.endswith("/api") else f"http://127.0.0.1:{web_port}")
         url = web_board_url(web_base, args.board_id)
         if args.print_url:
             return url
@@ -102,7 +130,12 @@ def run(args: argparse.Namespace) -> JsonObject | str | None:
             raise GraspError("browserUnavailable", f"Open this URL in your browser: {url}")
         return None
 
-    client = GraspClient(args.api_url, os.environ.get("GRASP_AGENT_TOKEN", ""))
+    if args.command == "mcp":
+        from .mcp_server import create_server
+        create_server(lambda: connect(args.api_url)).run(transport="stdio")
+        return None
+
+    client = connect(args.api_url)
     match args.command:
         case "doctor":
             return client.doctor()
@@ -112,10 +145,6 @@ def run(args: argparse.Namespace) -> JsonObject | str | None:
             return client.search(args.query, args.doc, args.top_k)
         case "source":
             return client.source(read_json(args.reference))
-        case "mcp":
-            from .mcp_server import create_server
-            create_server(client).run(transport="stdio")
-            return None
     raise AssertionError("Unknown command.")
 
 

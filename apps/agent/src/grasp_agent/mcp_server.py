@@ -28,7 +28,7 @@ def result(action: Callable[[], JsonObject]) -> CallToolResult:
     )
 
 
-def create_server(client: GraspClient) -> MCPServer:
+def create_server(connect: Callable[[], GraspClient]) -> MCPServer:
     server = MCPServer(
         "GRASP", version="0.1.0", subscriptions=False, log_level="WARNING",
         instructions=(
@@ -44,22 +44,22 @@ def create_server(client: GraspClient) -> MCPServer:
         offset: Annotated[int, Field(ge=0)] = 0, limit: Annotated[int, Field(ge=1, le=100)] = 50,
     ) -> CallToolResult:
         """List a page of project board summaries. Use nextOffset for the next page."""
-        return result(lambda: client.list_boards(offset, limit))
+        return result(lambda: connect().list_boards(offset, limit))
 
     @server.tool(annotations=ToolAnnotations(destructiveHint=False, openWorldHint=False))
     def create_board(title: Title) -> CallToolResult:
         """Create an empty project board. The service assigns its board ID and revision 0."""
-        return result(lambda: client.create_board(title))
+        return result(lambda: connect().create_board(title))
 
     @server.tool(annotations=read_only)
     def get_board(board_id: Identifier) -> CallToolResult:
         """Read the current saved board, its revision, objects, connections, questions and answers."""
-        return result(lambda: client.get_board(board_id))
+        return result(lambda: connect().get_board(board_id))
 
     @server.tool(annotations=read_only)
     def get_selection(board_id: Identifier) -> CallToolResult:
         """Read the owner's recent Project browser selection, or available=false when no selection is shared."""
-        return result(lambda: client.get_selection(board_id))
+        return result(lambda: connect().get_selection(board_id))
 
     @server.tool(annotations=ToolAnnotations(destructiveHint=True, idempotentHint=True, openWorldHint=False))
     def apply_canvas_operations(
@@ -75,17 +75,17 @@ def create_server(client: GraspClient) -> MCPServer:
         For staleRevision, use get_board and review the new head before submitting a revised batch.
         """
         batch = {"baseRevision": base_revision, "mutationId": mutation_id, "operations": operations}
-        return result(lambda: client.apply(board_id, batch))
+        return result(lambda: connect().apply(board_id, batch))
 
     @server.tool(annotations=read_only)
     def get_annotations(board_id: Identifier, author: Literal["user", "agent"] | None = None) -> CallToolResult:
         """Read saved annotations. Optionally filter by the role that created or most recently edited them."""
-        return result(lambda: client.annotations(board_id, author))
+        return result(lambda: connect().annotations(board_id, author))
 
     @server.tool(annotations=read_only)
     def get_requirements(board_id: Identifier) -> CallToolResult:
         """Read saved requirements with status, criteria and attribution at the current board revision."""
-        return result(lambda: client.requirements(board_id))
+        return result(lambda: connect().requirements(board_id))
 
     @server.tool(annotations=read_only)
     def search_knowledge(
@@ -93,11 +93,11 @@ def create_server(client: GraspClient) -> MCPServer:
         top_k: Annotated[int, Field(ge=1, le=10)] = 5,
     ) -> CallToolResult:
         """Search the existing index for passages within explicit, owner-shared document IDs. Empty scope returns no results."""
-        return result(lambda: client.search(query, doc_ids, top_k))
+        return result(lambda: connect().search(query, doc_ids, top_k))
 
     @server.tool(annotations=read_only)
     def read_source(reference: dict[str, JsonValue]) -> CallToolResult:
         """Read the exact saved quote for a search reference. Pass its chunkId, docId, page, charStart and charEnd unchanged."""
-        return result(lambda: client.source(reference))
+        return result(lambda: connect().source(reference))
 
     return server

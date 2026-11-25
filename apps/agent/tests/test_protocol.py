@@ -44,7 +44,9 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
         python = ROOT / (".venv/Scripts/python.exe" if os.name == "nt" else ".venv/bin/python")
         port = free_port()
         cls.base = f"http://127.0.0.1:{port}"
-        cls.agent_env = {"GRASP_API_URL": cls.base, "GRASP_AGENT_TOKEN": AGENT}
+        cls.settings = Path(directory.name) / ".env"
+        cls.settings.write_text(f"API_PORT={port}\nGRASP_AGENT_TOKEN={AGENT}\n", encoding="utf-8")
+        cls.agent_env = {"GRASP_API_URL": cls.base, "GRASP_AGENT_TOKEN": AGENT, "GRASP_ENV_FILE": str(cls.settings)}
         log = Path(directory.name) / "api.log"
         with log.open("wb") as output:
             process = subprocess.Popen([
@@ -75,10 +77,10 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             process.terminate()
         process.wait(timeout=8)
 
-    def connect(self, base: str | None = None):
+    def connect(self, base: str | None = None, *, settings: Path | None = None):
         transport = StdioServerParameters(
             command=sys.executable, args=["-m", "grasp_agent", "mcp", "serve"],
-            env={**self.agent_env, "GRASP_API_URL": base or self.base},
+            env={"GRASP_ENV_FILE": str(settings)} if settings else {**self.agent_env, "GRASP_API_URL": base or self.base},
         )
         return Client(transport, mode="legacy", read_timeout_seconds=8)
 
@@ -134,13 +136,32 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(result.is_error)
             self.assertEqual(result.structured_content["error"]["code"], "serviceUnavailable")
 
+    async def test_stdio_uses_project_dotenv_without_shell_exports(self):
+        async with self.connect(settings=self.settings) as client:
+            self.assertEqual({tool.name for tool in (await client.list_tools()).tools}, TOOLS)
+            response = await client.call_tool("list_boards")
+            self.assertFalse(response.is_error, response.content)
+            self.assertIn("boards", response.structured_content)
+
+    async def test_missing_token_is_a_tool_error_instead_of_failed_initialization(self):
+        async with self.connect(settings=self.settings.with_name("missing.env")) as client:
+            self.assertEqual({tool.name for tool in (await client.list_tools()).tools}, TOOLS)
+            response = await client.call_tool("list_boards")
+            self.assertTrue(response.is_error)
+            self.assertEqual(response.structured_content["error"]["code"], "missingToken")
+
     def test_cli_configuration_and_round_trip(self):
         configured = self.cli("init")
         self.assertEqual(configured.returncode, 0, configured.stderr)
         config = tomllib.loads(configured.stdout)["mcp_servers"]["grasp"]
-        self.assertEqual(config["env_vars"], ["GRASP_AGENT_TOKEN"])
-        self.assertEqual(config["env"]["GRASP_API_URL"], self.base)
+        self.assertEqual(config["env_vars"], ["GRASP_AGENT_TOKEN", "GRASP_API_URL"])
+        self.assertEqual(config["env"], {"GRASP_ENV_FILE": str(self.settings)})
         self.assertNotIn(AGENT, configured.stdout)
+        pinned = self.cli("--api-url", self.base + "/api", "init")
+        self.assertEqual(pinned.returncode, 0, pinned.stderr)
+        table = tomllib.loads(pinned.stdout)["mcp_servers"]["grasp"]
+        self.assertEqual(table["env"]["GRASP_API_URL"], self.base + "/api")
+        self.assertEqual(table["env_vars"], ["GRASP_AGENT_TOKEN"])
         self.assertEqual(json.loads(self.cli("doctor").stdout)["status"], "ok")
         board = json.loads(self.cli("board", "create", "CLI check").stdout)
         self.assertEqual(json.loads(self.cli("board", "read", board["id"]).stdout), board)
