@@ -1,6 +1,6 @@
 # Phase 2 · Shared canvas service
 
-**Checkpoint for review, 25 November 2026.** Projects use the same React Flow renderer as the Knowledge and Engineering canvases. The browser and external HTTP clients read and write the same saved project board. Knowledge and Engineering retain their existing projections and session-local edits.
+**Approved on 25 November 2026.** Projects use the same React Flow renderer as the Knowledge and Engineering canvases. The browser and external HTTP clients read and write the same saved project board. Knowledge and Engineering retain their existing projections and session-local edits.
 
 ## Run the workspace
 
@@ -88,4 +88,8 @@ The production browser check uses the repository's existing Playwright Core test
 - The Knowledge and Engineering browser regression passed, including camera and editing gestures, presentation, source inspection, scoped chat, ingest progress and the 3D fallback. The Project canvas was also checked at 390 × 844.
 - The migration preserved the contents of all 14 existing tables in a copy of the Phase 1.1 SQLite library. The copy held two documents and four chunks. A new board saved successfully, and SQLite integrity and foreign key checks passed.
 
-Phase 2 covers HTTP collaboration on Project boards and typed context. CLI, stdio MCP, transient shared selection, scoped retrieval, prototype asset registration and approval exports remain later work. The owner reviews this checkpoint before Phase 3 starts.
+### Manual acceptance
+
+The agent credential created **Phase 2 — Agent Collaboration Test** and added the video-editor architecture in one batch. Revision 1 held nine objects, eight connections and an unanswered cut-policy question. The owner moved four objects, edited the publishing annotation and recorded an answer through the owner API. An agent-authenticated HTTP read after restarting the isolated server found all three kinds of changes at revision 8. The annotation read “Review AI-generated cuts manually before approving the final export.” The saved answer attributed to the user permitted silence removal, duplicate removal and high-confidence scene transitions, with human approval for narrative or creative cuts.
+
+The owner approved the checkpoint, including its polling-based synchronization.

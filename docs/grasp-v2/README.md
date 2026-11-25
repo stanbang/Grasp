@@ -1,6 +1,6 @@
 # GRASP 2.0 planning and evidence
 
-The owner approved Phase 0, the Direction A+ [Phase 1.1 whiteboard](phase-1-1/README.md) and the [Developer Preview v0.1 specification](developer-preview.md) for the 7 December 2026 HTX interview. The [Phase 2 service checkpoint](phase-2.md) is ready for review. Phase 3 begins after the owner's go.
+The owner approved Phase 0, the Direction A+ [Phase 1.1 whiteboard](phase-1-1/README.md), the [Developer Preview v0.1 specification](developer-preview.md) and the [Phase 2 service checkpoint](phase-2.md) for the 7 December 2026 HTX interview.
 
 The original Phase 0 source brief is [GRASP_V2_SPEC.md](../GRASP_V2_SPEC.md). The [handover](../HANDOVER.md) describes earlier work. The [Phase 1 checkpoint](phase-1.md) records the first shared canvas implementation. The [Phase 1.1 design review](phase-1-1/README.md) preserves the audit and compares all three rendered directions.
 

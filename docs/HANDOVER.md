@@ -1,8 +1,8 @@
 # Grasp handover
 
-## Start here for the Phase 2 service review
+## Phase 2 service acceptance
 
-The owner approved the revised Developer Preview plan. Phase 2 adds durable Project boards in the existing FastAPI app and SQLite library. Browser edits and external HTTP edits share a revisioned board. The [Phase 2 checkpoint](grasp-v2/phase-2.md) has run instructions and the operation contract for the next phase. Wait for the owner's go before starting the CLI and stdio MCP adapter.
+The owner approved Phase 2 after manual acceptance and engineering review. The agent created the acceptance board at revision 1, and HTTP readback verified the owner's changes at revision 8. The owner approved keeping the polling sync and starting Phase 3. [Phase 2 checkpoint and API contract](grasp-v2/phase-2.md)
 
 ## Developer Preview handoff before Phase 2
 

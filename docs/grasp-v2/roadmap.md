@@ -1,6 +1,6 @@
 # Implementation roadmap and verification
 
-This is the approved Developer Preview v0.1 roadmap for the HTX interview on **7 December 2026**. Phase 0 research and Phase 1.1 Direction A+ are approved. The [Phase 2 service checkpoint](phase-2.md) is ready for review. Each phase requires the owner's go and ends with a runnable checkpoint. Target dates assume timely review. All dates are Singapore time. [Preview specification](developer-preview.md) · [HTX demonstration](storyboard.md)
+This is the approved Developer Preview v0.1 roadmap for the HTX interview on **7 December 2026**. Phase 0 research, Phase 1.1 Direction A+ and the [Phase 2 service checkpoint](phase-2.md) are approved. Each phase requires the owner's go and ends with a runnable checkpoint. Target dates assume timely review. All dates are Singapore time. [Preview specification](developer-preview.md) · [HTX demonstration](storyboard.md)
 
 | Phase | Target | Deliverable and dependency | Exit gate |
 | --- | --- | --- | --- |
