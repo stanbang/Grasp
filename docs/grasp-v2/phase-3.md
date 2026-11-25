@@ -14,17 +14,26 @@ $grasp = '.\.venv-mcp\Scripts\grasp.exe'
 
 Keep distinct `ACCESS_TOKEN` and `GRASP_AGENT_TOKEN` values in the project's ignored `.env`. Start GRASP with `py -3.11 scripts/dev.py`. Use `--setup` on the first checkout. The default development API is `http://127.0.0.1:8000`, and the web workspace is on port 5173. A production build serves both from one origin and adds `/api` to the API base.
 
-In a second PowerShell window, open the repository root and check the connection.
+## Register once for Codex desktop and CLI
+
+In a second PowerShell window, open the repository root and run the following commands. The registration uses the existing Python environment and the absolute path to the ignored `.env`.
 
 ```powershell
 $grasp = '.\.venv-mcp\Scripts\grasp.exe'
 & $grasp doctor
-& $grasp init
+$graspPython = (Resolve-Path -LiteralPath '.venv-mcp/Scripts/python.exe').Path
+$graspSettings = (Resolve-Path -LiteralPath '.env').Path
+codex.cmd mcp add grasp --env "GRASP_ENV_FILE=$graspSettings" -- $graspPython -m grasp_agent mcp serve
+codex.cmd mcp list
 ```
 
-`grasp init` prints the absolute Python executable, working directory and path to the project's `.env`. Merge its GRASP section into the trusted project's `.codex/config.toml`. If it already contains GRASP, replace both old GRASP sections together. The project configuration on the acceptance machine has already been updated. Run `codex.cmd mcp list` from the repository, then start `codex.cmd` and type `/mcp`. Ask Codex to call `list_boards` to check access. [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli#configure-in-configtoml)
+`codex.cmd mcp add` writes to `%USERPROFILE%\.codex\config.toml` by default, or to `$env:CODEX_HOME\config.toml` if set. Use the same Codex home for desktop and CLI. The registration is available to local Codex chats opened from other directories. If you move this GRASP checkout or recreate its Python environment at a different path, run the registration again with the new paths. [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp#connect-codex-to-an-mcp-server)
 
-The development connection reads `API_PORT` and the agent token from `.env` in a fresh shell. Start Codex from the trusted GRASP directory to use the project registration. A process-level `GRASP_AGENT_TOKEN` or `GRASP_API_URL` takes precedence, so clear stale overrides if the wrong instance or token is selected. For a production instance, generate a pinned config with `grasp --api-url http://127.0.0.1:8019/api init`, using that instance's actual address. Restart the API after editing its `.env`, and launch a new Codex session after changing its MCP config.
+In Codex desktop, open **Settings → MCP servers** and check that `grasp` is enabled. Select **Restart** if offered. If GRASP is still missing, quit Codex completely, including from the Windows notification area if it is still running there, then reopen it from Start. Open a new **local** Codex chat, type `/mcp` and ask the agent to list your GRASP boards. In the standalone CLI, start a new session and use the same check. [Desktop MCP setup](https://learn.chatgpt.com/docs/extend/mcp#configure-in-the-chatgpt-desktop-app)
+
+The user-level registration reads the agent token and `API_PORT` from `.env`. For a production instance served under `/api`, add `--env "GRASP_API_URL=http://127.0.0.1:8019/api"` before `--`, using the actual address. Restart the API after editing its `.env`.
+
+For project-only registration, `grasp init` still prints a TOML snippet for the trusted project's `.codex/config.toml`. If both registrations exist, the trusted project's entry takes precedence inside that checkout. That entry can forward `GRASP_AGENT_TOKEN` and `GRASP_API_URL` from the launching process. Check for stale overrides if the project connects to a different instance.
 
 Codex may ask for approval for `apply_canvas_operations` because batches can change or remove saved objects. Approve the intended call when prompted. The verification used the installed CLI's `--approve-for-me` option for the disposable write session. A noninteractive session that disables approvals can discover and read the board while a mutation awaits approval.
 
@@ -95,5 +104,13 @@ Board ID `059f2e47-f2eb-496d-8865-8f461a587404`. Local session receipts are unde
 Startup records from standalone Codex `0.172.0` showed `missingToken` immediately followed by a closed connection during `initialize`. The trusted project registration forwarded a shell variable that was absent and still targeted the disposable API on port 8033. The development API and Vite were listening on ports 8000 and 5173. The previous bundled verification supplied temporary credentials to its terminal.
 
 The corrected registration uses the project's ignored `.env` and derives the development address from `API_PORT`. Configuration and HTTP errors now appear on tool invocation, after stdio initialization can report the tool catalog. All six adapter tests passed, including a fresh-shell authenticated request and a structured missing-token response. Two fresh standalone `codex.cmd` sessions successfully called an empty-scope `search_knowledge` on the development API with no shell-exported credentials. GRASP was restarted between those sessions. Anonymous and deliberately invalid requests returned `401`.
+
+### Windows desktop registration
+
+The trusted GRASP checkout had the only registration. Standalone Codex CLI `0.172.0` and the desktop bundle `0.171.0-alpha.13.2` both found it inside the checkout and missed it from the parent directory. No `CODEX_HOME` override was set. Recent Codex logs recorded successful GRASP initialization after the standalone repair. Both clients use the existing Python 3.11 environment and the same development API on port 8000.
+
+After adding the user-level registration, fresh standalone and desktop-bundled sessions from outside the checkout made authenticated `list_boards` and `get_annotations` calls, respectively. The active desktop chat listed the existing boards and created **Codex Desktop MCP Verification**. It saved three architecture objects, two connections and an annotation in one batch, retrieved the annotation, edited an object and read back revision 2.
+
+The owner's acceptance check is to repeat the workflow in a fresh desktop chat after refreshing MCP, then add a note in the browser and ask the chat to read it with the `author: user` filter. The verification board's note is agent-authored.
 
 Phase 4 begins after the owner's review. Claude Code verification is a stretch item.
