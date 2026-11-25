@@ -61,6 +61,7 @@ Codex may ask for approval for `apply_canvas_operations` because batches can cha
 | `list_boards` | Optional `offset`, `limit` | Summaries and the next offset. |
 | `create_board` | `title` | A new board with agent attribution. |
 | `get_board` | `board_id` | The saved snapshot, including questions and answers. |
+| `get_board_context` | Optional `board_id` and `since_revision` | Active-board resolution, the saved snapshot and selection, and attributed changes since the given revision. |
 | `get_selection` | `board_id` | Recent selected object IDs, their revision and availability. |
 | `apply_canvas_operations` | `board_id`, `base_revision`, `mutation_id`, `operations` | The atomic commit receipt or a structured error such as `staleRevision`. |
 | `get_annotations` | `board_id`, optional `author` | Annotation objects, their attribution and the board revision. The role filter matches the creator or last editor. |
@@ -114,3 +115,11 @@ After adding the user-level registration, fresh standalone and desktop-bundled s
 The owner's acceptance check is to repeat the workflow in a fresh desktop chat after refreshing MCP, then add a note in the browser and ask the chat to read it with the `author: user` filter. The verification board's note is agent-authored.
 
 Phase 4 begins after the owner's review. Claude Code verification is a stretch item.
+
+### Phase 3.1 collaboration
+
+The browser shares the board ID, saved revision and selected object IDs under a per-tab identity. Closing or leaving Projects releases that tab's context. An inactive tab expires after 25 seconds without a heartbeat. With overlapping boards, the context tool returns candidate titles and IDs. When two tabs share the same board, the tool reports an ambiguous selection. A conversation can keep its resolved board ID even when the browser changes.
+
+The context tool reads the saved head and history in one transaction. History comes from existing snapshots, with the revision author and the changed fields of each object or connection. The browser uses the existing revision poll to show agent edits. [Install the reusable skill and run acceptance](agent-guide.md)
+
+The 26 November check passed 82 API tests, 24 Node tests, TypeScript and contract checks, the production build, all six stdio MCP tests, and the two-tab browser regression. A fresh session in the desktop-bundled Codex runtime discovered the user-level skill from outside the checkout. Through MCP it saved the video-editor layout at revision 1, explained the browser selection, recognized the owner note, arrow and moved card at revision 5, and applied an approval gate at revision 6. The same browser tab showed the gate without a refresh. MCP readback confirmed that the owner edits and unrelated cards survived. The same Codex session explained the gate after it was selected. The Claude Code installer was checked against a disposable configuration directory.

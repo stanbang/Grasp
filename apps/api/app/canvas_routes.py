@@ -4,9 +4,10 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response
 from sqlmodel import Session
 from sqlalchemy import text
 
-from .agent_contracts import BoardSelection, BoardSelectionUpdate
+from .agent_contracts import BoardContext, BoardPresenceUpdate, BoardSelection, BoardSelectionUpdate
+from .board_context import read_board_context
 from .canvas_contracts import (
-    BoardCommit, BoardConflictResponse, BoardList, CanvasBatch, CanvasObjectContext, CreateBoard, ProjectBoard,
+    BoardCommit, BoardConflictResponse, BoardList, CanvasBatch, CanvasId, CanvasObjectContext, CreateBoard, ProjectBoard,
 )
 from .canvas_service import board_row, commit_batch, conflict, create_board, list_boards, object_context, read_board, revision_row
 from .request_controls import agent_source_scope
@@ -27,6 +28,22 @@ def boards(
 def new_board(request: Request, payload: CreateBoard) -> ProjectBoard:
     with Session(request.app.state.storage.engine) as session:
         return create_board(session, payload.title, request.state.board_actor)
+
+
+@router.get("/context")
+def board_context(
+    request: Request, boardId: CanvasId | None = None, sinceRevision: Annotated[int | None, Query(ge=0)] = None,
+) -> BoardContext:
+    with Session(request.app.state.storage.engine) as session:
+        session.execute(text("BEGIN"))
+        return read_board_context(session, request.app.state.board_selections.active_tabs(), boardId, sinceRevision)
+
+
+@router.delete("/active/{tab_id}", status_code=204)
+def release_active_board(request: Request, tab_id: CanvasId, sequence: Annotated[int, Query(ge=0)]) -> Response:
+    require_selection_owner(request)
+    request.app.state.board_selections.share(tab_id, sequence, None)
+    return Response(status_code=204)
 
 
 @router.get("/{board_id}", response_model=ProjectBoard, responses={204: {"description": "Revision unchanged"}})
@@ -70,13 +87,32 @@ def selection(request: Request, board_id: str) -> BoardSelection:
 
 @router.put("/{board_id}/selection", responses={409: {"model": BoardConflictResponse}})
 def publish_selection(request: Request, board_id: str, payload: BoardSelectionUpdate) -> BoardSelection:
+    verify_selection(request, board_id, payload.baseRevision, payload.objectIds)
+    return request.app.state.board_selections.publish(
+        board_id, payload.baseRevision, list(dict.fromkeys(payload.objectIds)),
+    )
+
+
+@router.put("/{board_id}/presence", status_code=204, responses={409: {"model": BoardConflictResponse}})
+def share_active_board(request: Request, board_id: CanvasId, payload: BoardPresenceUpdate) -> Response:
+    verify_selection(request, board_id, payload.baseRevision, payload.objectIds or [])
+    request.app.state.board_selections.share(
+        payload.tabId, payload.sequence, board_id, payload.baseRevision, payload.objectIds,
+    )
+    return Response(status_code=204)
+
+
+def require_selection_owner(request: Request) -> None:
     if request.state.board_actor != "user":
         raise HTTPException(403, "Only the workspace owner can share a browser selection.")
+
+
+def verify_selection(request: Request, board_id: str, revision: int, object_ids: list[str]) -> None:
+    require_selection_owner(request)
     with Session(request.app.state.storage.engine) as session:
         state = read_board(session, board_id)
         assert state is not None
-        if state.revision != payload.baseRevision:
+        if state.revision != revision:
             conflict("staleRevision", "The board changed before this selection was shared.", state.revision)
-        if not set(payload.objectIds).issubset(state.objects):
+        if not set(object_ids).issubset(state.objects):
             raise HTTPException(422, "Select objects on the current board.")
-    return request.app.state.board_selections.publish(board_id, state.revision, list(dict.fromkeys(payload.objectIds)))

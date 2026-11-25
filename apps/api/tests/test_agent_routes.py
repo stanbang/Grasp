@@ -80,6 +80,117 @@ def test_selection_is_transient_owner_only_and_matches_board_revision(client, mo
     assert client.put(path, headers=OWNER, json=payload).json()["detail"]["code"] == "staleRevision"
 
 
+def test_context_resolves_browsers_without_guessing_and_rejects_late_heartbeats(client, monkeypatch):
+    now = [100.0]
+    monkeypatch.setattr(board_selections, "monotonic", lambda: now[0])
+    first, second = create_board(client), create_board(client)
+    assert add_object(client, first, "selected").status_code == 200
+
+    def share(board, tab, sequence, ids, revision=1, headers=OWNER):
+        return client.put(f"/boards/{board}/presence", headers=headers, json={
+            "tabId": tab, "sequence": sequence, "baseRevision": revision, "objectIds": ids,
+        })
+
+    def context(**parameters):
+        response = client.get("/boards/context", headers=AGENT, params=parameters)
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    assert context()["status"] == "noActiveBoard"
+    assert share(first, "tab-a", 1, ["selected"], headers=AGENT).status_code == 403
+    assert share(first, "tab-a", 1, ["unowned"]).status_code == 422
+    assert share(first, "tab-a", 1, ["selected", "selected"]).status_code == 204
+    active = context()
+    assert active["board"]["id"] == first
+    assert active["selection"] == {"status": "selected", "objectIds": ["selected"]}
+    assert client.get(f"/boards/{first}/selection", headers=AGENT).json()["available"]
+
+    assert share(second, "tab-b", 1, [], revision=0).status_code == 204
+    ambiguous = context()
+    assert ambiguous["status"] == "ambiguousBoard" and ambiguous["board"] is None
+    assert {candidate["id"] for candidate in ambiguous["candidates"]} == {first, second}
+    assert context(boardId=first)["selection"] == active["selection"]
+    assert context(boardId=second)["selection"]["status"] == "empty"
+
+    assert share(first, "tab-b", 2, [], revision=1).status_code == 204
+    assert context()["selection"]["status"] == "ambiguous"
+    release = "/boards/active/tab-b?sequence=3"
+    assert client.delete(release, headers=AGENT).status_code == 403
+    assert client.delete(release, headers=OWNER).status_code == 204
+    assert share(second, "tab-b", 2, [], revision=0).status_code == 204
+    assert context()["board"]["id"] == first
+    assert share(first, "tab-a", 2, None).status_code == 204
+    assert context()["selection"]["status"] == "unavailable"
+    assert share(first, "tab-a", 3, [], revision=0).status_code == 409
+
+    now[0] += board_selections.SELECTION_TTL_SECONDS
+    assert context()["status"] == "noActiveBoard"
+    assert context(boardId=first)["board"]["revision"] == 1
+
+
+def test_context_reports_attributed_history_and_keeps_the_selected_revision_consistent(client):
+    board = create_board(client)
+    assert add_object(client, board, "card", headers=AGENT).status_code == 200
+    assert client.put(f"/boards/{board}/presence", headers=OWNER, json={
+        "tabId": "tab", "sequence": 1, "baseRevision": 1, "objectIds": ["card"],
+    }).status_code == 204
+    path = f"/boards/{board}/ops"
+    note = {"id": "note", "kind": "annotation", "title": "Review before publish", "placement": PLACEMENT}
+    requirement = {
+        "id": "approval", "kind": "requirement", "title": "Require human approval", "placement": PLACEMENT,
+        "requirement": {"status": "accepted", "acceptanceCriteria": ["Record reviewer approval"]},
+    }
+    written = client.post(path, headers=OWNER, json={
+        "baseRevision": 1, "mutationId": "owner-review", "operations": [
+            {"type": "placeObject", "objectId": "card", "placement": {**PLACEMENT, "x": 150}},
+            {"type": "addObject", "object": note},
+            {"type": "addObject", "object": requirement},
+            {"type": "addConnection", "connection": {
+                "id": "note-to-card", "source": "note", "target": "card", "label": "Review", "role": "annotation",
+            }},
+        ],
+    })
+    assert written.status_code == 200, written.text
+    assert client.post(path, headers=AGENT, json={
+        "baseRevision": 2, "mutationId": "agent-later", "operations": [
+            {"type": "placeObject", "objectId": "card", "placement": {**PLACEMENT, "x": 160}},
+        ],
+    }).status_code == 200
+    response = client.get("/boards/context", headers=AGENT, params={"boardId": board, "sinceRevision": 1})
+    assert response.status_code == 200, response.text
+    value = response.json()
+    assert value["board"]["revision"] == 3
+    assert value["board"]["objects"]["card"]["updatedBy"] == "agent"
+    assert value["board"]["objects"]["note"]["createdBy"] == "user"
+    assert value["annotationIds"] == ["note"]
+    assert value["requirementIds"] == ["approval"]
+    assert value["proposalIds"] == ["card"]
+    assert value["selection"] == {"status": "stale", "objectIds": []}
+    first, second = value["changes"]["revisions"]
+    assert first["actor"] == "user" and second["actor"] == "agent"
+    assert {"id": "card", "kind": "text", "label": "Fixture", "change": "modified", "fields": ["placement"]} in first["objects"]
+    assert first["connections"][0]["change"] == "added"
+    assert first["connections"][0]["id"] == "note-to-card"
+    assert value["changes"]["nextSinceRevision"] is None
+    assert client.get("/boards/context", headers=AGENT, params={"sinceRevision": 1}).status_code == 422
+    assert client.get("/boards/context", headers=AGENT, params={"boardId": board, "sinceRevision": 4}).status_code == 422
+
+    for base in range(3, 15):
+        write = client.post(path, headers=OWNER, json={
+            "baseRevision": base, "mutationId": f"move-{base}", "operations": [
+                {"type": "placeObject", "objectId": "card", "placement": {**PLACEMENT, "x": base}},
+            ],
+        })
+        assert write.status_code == 200, write.text
+    first_page = client.get("/boards/context", headers=AGENT, params={"boardId": board, "sinceRevision": 0}).json()
+    assert first_page["board"]["revision"] == 15
+    cursor = first_page["changes"]["nextSinceRevision"]
+    second_page = client.get("/boards/context", headers=AGENT, params={"boardId": board, "sinceRevision": cursor}).json()
+    assert second_page["changes"]["revisions"][0]["revision"] == cursor + 1
+    assert second_page["changes"]["throughRevision"] == 15
+    assert second_page["changes"]["nextSinceRevision"] is None
+
+
 def seed_sources():
     public_quote = "🧪 Editable captions require reviewer approval."
     private_quote = "Private captions may mention another client."

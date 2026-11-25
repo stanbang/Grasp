@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, apiFetch } from '../client';
-import type { BoardList, BoardSelectionUpdate, BoardSummary, ProjectBoard } from '../types/canvas-contracts';
+import type { BoardList, BoardPresenceUpdate, BoardSummary, ProjectBoard } from '../types/canvas-contracts';
 import type { Document } from '../types/contracts';
 import type { SourceSelection } from './board';
 import { CanvasBoard } from './CanvasBoard';
@@ -9,18 +9,34 @@ import { useProjectBoard } from './use-project-board';
 
 const emptyScene = { cards: [], links: [] };
 const ignoreProjectAction = () => {};
+let tabId: string | undefined;
+let presenceSequence = 0;
 
 function useSharedSelection(id: string, revision: number, objectIds: string[], saved: boolean) {
   const selectionKey = objectIds.join(',');
   useEffect(() => {
-    if (!saved) return;
-    const controller = new AbortController();
-    const selection: BoardSelectionUpdate = {
-      baseRevision: revision, objectIds: selectionKey ? selectionKey.split(',') : [],
+    const tab = tabId ??= crypto.randomUUID();
+    function release() {
+      void apiFetch(`/boards/active/${tab}?sequence=${++presenceSequence}`, {
+        method: 'DELETE', keepalive: true,
+      }).catch(() => {});
+    }
+    window.addEventListener('pagehide', release);
+    return () => {
+      window.removeEventListener('pagehide', release);
+      release();
     };
+  }, [id]);
+  useEffect(() => {
+    const tab = tabId ??= crypto.randomUUID();
+    const controller = new AbortController();
     function publish() {
       if (document.hidden) return;
-      void apiFetch(`/boards/${encodeURIComponent(id)}/selection`, {
+      const selection: BoardPresenceUpdate = {
+        tabId: tab, sequence: ++presenceSequence, baseRevision: revision,
+        objectIds: saved ? (selectionKey ? selectionKey.split(',') : []) : null,
+      };
+      void apiFetch(`/boards/${encodeURIComponent(id)}/presence`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(selection), signal: controller.signal,
       }).catch(() => {});
@@ -28,11 +44,13 @@ function useSharedSelection(id: string, revision: number, objectIds: string[], s
     const first = window.setTimeout(publish, 180);
     const heartbeat = window.setInterval(publish, 10_000);
     document.addEventListener('visibilitychange', publish);
+    window.addEventListener('pageshow', publish);
     return () => {
       controller.abort();
       window.clearTimeout(first);
       window.clearInterval(heartbeat);
       document.removeEventListener('visibilitychange', publish);
+      window.removeEventListener('pageshow', publish);
     };
   }, [id, revision, selectionKey, saved]);
 }

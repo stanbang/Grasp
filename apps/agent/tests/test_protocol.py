@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[3]
 OWNER = "protocol-test-owner"
 AGENT = "protocol-test-agent"
 TOOLS = {
-    "list_boards", "create_board", "get_board", "get_selection", "apply_canvas_operations",
+    "list_boards", "create_board", "get_board", "get_board_context", "get_selection", "apply_canvas_operations",
     "get_annotations", "get_requirements", "search_knowledge", "read_source",
 }
 OBJECT = {
@@ -120,6 +120,14 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(stale.structured_content["error"]["code"], "staleRevision")
             current = await client.call_tool("get_board", {"board_id": board_id})
             self.assertEqual(current.structured_content, applied.structured_content["board"])
+            automatic = await client.call_tool("get_board_context", {})
+            self.assertEqual(automatic.structured_content["status"], "noActiveBoard")
+            context = await client.call_tool("get_board_context", {"board_id": board_id, "since_revision": 0})
+            self.assertFalse(context.is_error, context.content)
+            self.assertEqual(context.structured_content["board"], current.structured_content)
+            self.assertEqual(context.structured_content["annotationIds"], ["note"])
+            self.assertEqual(context.structured_content["requirementIds"], ["requirement"])
+            self.assertEqual(context.structured_content["changes"]["revisions"][0]["actor"], "agent")
             annotation = await client.call_tool("get_annotations", {"board_id": board_id, "author": "agent"})
             self.assertEqual(annotation.structured_content["annotations"][0]["title"], OBJECT["title"])
             requirements = await client.call_tool("get_requirements", {"board_id": board_id})

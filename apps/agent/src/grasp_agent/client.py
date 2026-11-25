@@ -141,6 +141,15 @@ class GraspClient:
     def get_board(self, board_id: str) -> JsonObject:
         return self._json("GET", board_path(board_id))
 
+    def get_board_context(self, board_id: str | None = None, since_revision: int | None = None) -> JsonObject:
+        query: dict[str, str | int] = {}
+        if board_id is not None:
+            board_path(board_id)
+            query["boardId"] = board_id
+        if since_revision is not None:
+            query["sinceRevision"] = since_revision
+        return self._json("GET", f"/boards/context?{urlencode(query)}")
+
     def get_selection(self, board_id: str) -> JsonObject:
         return self._json("GET", board_path(board_id) + "/selection")
 

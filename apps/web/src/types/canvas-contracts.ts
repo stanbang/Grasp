@@ -247,6 +247,51 @@ export interface BoardSelection {
   objectIds: Array<string>;
 }
 
+export interface BoardPresenceUpdate {
+  tabId: string;
+  sequence: number;
+  baseRevision: number;
+  objectIds: Array<string> | null;
+}
+
+export interface BoardContextSelection {
+  status: "selected" | "empty" | "unavailable" | "stale" | "ambiguous";
+  objectIds: Array<string>;
+}
+
+export interface BoardItemChange {
+  id: string;
+  label: string;
+  kind: string;
+  change: "added" | "modified" | "removed";
+  fields: Array<string>;
+}
+
+export interface BoardRevisionChanges {
+  revision: number;
+  actor: "user" | "agent";
+  objects: Array<BoardItemChange>;
+  connections: Array<BoardItemChange>;
+}
+
+export interface BoardChanges {
+  fromRevision: number;
+  throughRevision: number;
+  revisions: Array<BoardRevisionChanges>;
+  nextSinceRevision: number | null;
+}
+
+export interface BoardContext {
+  status: "ready" | "noActiveBoard" | "ambiguousBoard";
+  candidates: Array<BoardSummary>;
+  board: ProjectBoard | null;
+  selection: BoardContextSelection | null;
+  annotationIds: Array<string>;
+  requirementIds: Array<string>;
+  proposalIds: Array<string>;
+  changes: BoardChanges | null;
+}
+
 export interface KnowledgeSearch {
   query: string;
   docIds: Array<string>;

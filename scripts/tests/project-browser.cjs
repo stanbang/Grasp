@@ -67,6 +67,15 @@ const card = (page, name) => page.locator('.react-flow__node').filter({ has: pag
 const revision = (page, number) => page.getByText(`Revision ${number}`, { exact: true }).waitFor();
 const place = { x: 350, y: 100, width: 228, height: 116 };
 
+async function waitForContext(matches) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const context = await request('/boards/context');
+    if (matches(context)) return context;
+    await delay(150);
+  }
+  assert.fail('The browser did not share the expected active board context');
+}
+
 async function uploadEvidence() {
   const upload = new FormData();
   upload.append('file', new Blob(['# Source\n\n🧪 A token comes before the target token.']), 'project-evidence.md');
@@ -170,6 +179,27 @@ async function run() {
       assert.ok(attempt < 14, 'Browser selection was not published to the agent');
       await delay(150);
     }
+    const active = await waitForContext(value => value.board?.id === id && value.selection?.status === 'selected');
+    assert.deepEqual(active.selection.objectIds, [agentObject.id]);
+    assert.deepEqual(active.annotationIds, [noteId]);
+    const history = (await request(`/boards/context?boardId=${id}&sinceRevision=1`)).changes.revisions;
+    assert.ok(history.some(delta => delta.actor === 'user' &&
+      delta.objects.some(item => item.id === noteId && item.fields.includes('placement'))));
+    assert.ok(history.some(delta => delta.actor === 'agent' &&
+      delta.connections.some(item => item.id === 'agent-arrow' && item.change === 'added')));
+
+    const other = await request('/boards', { title: 'Second test board' }, owner);
+    const otherPage = await browser.newPage();
+    await otherPage.goto(`${base}/?board=project&projectBoard=${other.id}`);
+    await unlock(otherPage);
+    await revision(otherPage, 0);
+    const ambiguous = await waitForContext(value => value.status === 'ambiguousBoard');
+    assert.deepEqual(new Set(ambiguous.candidates.map(candidate => candidate.id)), new Set([id, other.id]));
+    assert.deepEqual((await request(`/boards/context?boardId=${id}`)).selection.objectIds, [agentObject.id]);
+    await button(otherPage, 'Engineering').click();
+    await waitForContext(value => value.board?.id === id);
+    await otherPage.close();
+    console.log('PASS board context reports browser edits and distinguishes two open boards');
     await button(page, 'Close inspector').click();
 
     await card(page, 'Browser note').dblclick();

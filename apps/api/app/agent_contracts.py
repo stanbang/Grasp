@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, StringConstraints
 
-from .canvas_contracts import CanvasContract, CanvasEvidenceRef, CanvasId, Revision
+from .canvas_contracts import Actor, BoardSummary, CanvasContract, CanvasEvidenceRef, CanvasId, ProjectBoard, Revision
 
 
 class BoardSelectionUpdate(CanvasContract):
@@ -15,6 +15,51 @@ class BoardSelection(CanvasContract):
     revision: Revision
     available: bool
     objectIds: list[CanvasId]
+
+
+class BoardPresenceUpdate(CanvasContract):
+    tabId: CanvasId
+    sequence: Revision
+    baseRevision: Revision
+    objectIds: Annotated[list[CanvasId], Field(max_length=200)] | None
+
+
+class BoardContextSelection(CanvasContract):
+    status: Literal["selected", "empty", "unavailable", "stale", "ambiguous"]
+    objectIds: list[CanvasId]
+
+
+class BoardItemChange(CanvasContract):
+    id: CanvasId
+    label: str
+    kind: str
+    change: Literal["added", "modified", "removed"]
+    fields: list[str]
+
+
+class BoardRevisionChanges(CanvasContract):
+    revision: Revision
+    actor: Actor
+    objects: list[BoardItemChange]
+    connections: list[BoardItemChange]
+
+
+class BoardChanges(CanvasContract):
+    fromRevision: Revision
+    throughRevision: Revision
+    revisions: list[BoardRevisionChanges]
+    nextSinceRevision: Revision | None
+
+
+class BoardContext(CanvasContract):
+    status: Literal["ready", "noActiveBoard", "ambiguousBoard"]
+    candidates: list[BoardSummary]
+    board: ProjectBoard | None
+    selection: BoardContextSelection | None
+    annotationIds: list[CanvasId]
+    requirementIds: list[CanvasId]
+    proposalIds: list[CanvasId]
+    changes: BoardChanges | None
 
 
 class KnowledgeSearch(CanvasContract):
@@ -35,4 +80,7 @@ class KnowledgeResults(CanvasContract):
     results: list[KnowledgeHit]
 
 
-AGENT_MODELS = (BoardSelectionUpdate, BoardSelection, KnowledgeSearch, KnowledgeHit, KnowledgeResults)
+AGENT_MODELS = (
+    BoardSelectionUpdate, BoardSelection, BoardPresenceUpdate, BoardContextSelection, BoardItemChange,
+    BoardRevisionChanges, BoardChanges, BoardContext, KnowledgeSearch, KnowledgeHit, KnowledgeResults,
+)
