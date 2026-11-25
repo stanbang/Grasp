@@ -2,7 +2,7 @@ import hmac
 import time
 from collections import defaultdict, deque
 from threading import Lock
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Scope, Receive, Send, Message
 
@@ -15,6 +15,16 @@ def request_path(scope: Scope) -> str:
 
 def is_board_path(path: str) -> bool:
     return path == "/boards" or path.startswith("/boards/")
+
+
+def is_agent_path(path: str) -> bool:
+    return is_board_path(path) or path in {"/knowledge/search", "/knowledge/source"}
+
+
+def agent_source_scope(request: Request) -> frozenset[str] | None:
+    if request.state.board_actor == "agent":
+        return request.app.state.storage.settings.agent_source_doc_ids
+    return None
 
 
 class RequestControls:
@@ -32,7 +42,7 @@ class RequestControls:
         path=request_path(scope)
         authorization=headers.get("authorization", "")
         supplied=authorization.removeprefix("Bearer ").encode()
-        if is_board_path(path):
+        if is_agent_path(path):
             actor = None
             if not settings.access_token and not authorization:
                 actor = "user"
@@ -42,7 +52,7 @@ class RequestControls:
                 elif settings.agent_token and hmac.compare_digest(supplied, settings.agent_token.encode()):
                     actor = "agent"
             if actor is None:
-                await JSONResponse({"detail": "Enter a valid project board access token."}, status_code=401)(scope,receive,send)
+                await JSONResponse({"detail": "Enter a valid GRASP access token."}, status_code=401)(scope,receive,send)
                 return
             scope.setdefault("state", {})["board_actor"] = actor
         elif settings.access_token and path!='/health':

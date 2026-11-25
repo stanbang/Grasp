@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT / "apps" / "api"))
 
 from app.schemas import PUBLIC_MODELS
 from app.canvas_contracts import CANVAS_MODELS
+from app.agent_contracts import AGENT_MODELS
 from app.conversations import Conversation, Conversations, Turn, Turns
 from app.study_routes import ChatRequest, NodeRequest, Question, QuizResponse, GradeRequest, GradeResponse
 from app.showcase_models import SHOWCASE_MODELS
@@ -88,7 +89,7 @@ def main() -> None:
     args = parser.parse_args()
     outputs = {
         ROOT / "apps/web/src/types/contracts.ts": generate_types(),
-        ROOT / "apps/web/src/types/canvas-contracts.ts": generate_types(CANVAS_MODELS, preserve_null=True),
+        ROOT / "apps/web/src/types/canvas-contracts.ts": generate_types((*CANVAS_MODELS, *AGENT_MODELS), preserve_null=True),
         ROOT / "apps/web/src/showcase/trace-types.ts": generate_types(
             SHOWCASE_MODELS, 'import type { ChatResponse, Chunk, GraphResponse, PageResponse } from "../types/contracts";',
         ),

@@ -161,6 +161,15 @@ async function run() {
     assert.equal(await button(page, 'Undo').isEnabled(), false, 'External updates clear the browser undo history');
     await card(page, agentObject.title).dblclick();
     await inspector.getByText('Added by agent', { exact: true }).waitFor();
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const selection = await request(board + '/selection');
+      if (selection.available) {
+        assert.deepEqual(selection.objectIds, [agentObject.id]);
+        break;
+      }
+      assert.ok(attempt < 14, 'Browser selection was not published to the agent');
+      await delay(150);
+    }
     await button(page, 'Close inspector').click();
 
     await card(page, 'Browser note').dblclick();
@@ -193,10 +202,12 @@ async function run() {
     console.log('PASS API restart and browser reload preserve revision, object IDs, geometry and connection');
 
     const { prefix, reference } = await uploadEvidence();
-    await write(7, [{ type: 'addObject', object: {
-      id: 'selected-span', title: 'Selected source span', kind: 'evidence',
-      placement: { ...place, x: 110, y: 260 }, evidence: [reference],
-    } }]);
+    await request(board + '/ops', {
+      baseRevision: 7, mutationId: randomUUID(), operations: [{ type: 'addObject', object: {
+        id: 'selected-span', title: 'Selected source span', kind: 'evidence',
+        placement: { ...place, x: 110, y: 260 }, evidence: [reference],
+      } }],
+    }, owner);
     await revision(page, 8);
     await button(page, 'Fit board').click();
     await card(page, 'Selected source span').dblclick();

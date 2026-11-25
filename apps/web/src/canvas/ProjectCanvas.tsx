@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { api } from '../client';
-import type { BoardList, BoardSummary, ProjectBoard } from '../types/canvas-contracts';
+import { api, apiFetch } from '../client';
+import type { BoardList, BoardSelectionUpdate, BoardSummary, ProjectBoard } from '../types/canvas-contracts';
 import type { Document } from '../types/contracts';
 import type { SourceSelection } from './board';
 import { CanvasBoard } from './CanvasBoard';
@@ -9,6 +9,33 @@ import { useProjectBoard } from './use-project-board';
 
 const emptyScene = { cards: [], links: [] };
 const ignoreProjectAction = () => {};
+
+function useSharedSelection(id: string, revision: number, objectIds: string[], saved: boolean) {
+  const selectionKey = objectIds.join(',');
+  useEffect(() => {
+    if (!saved) return;
+    const controller = new AbortController();
+    const selection: BoardSelectionUpdate = {
+      baseRevision: revision, objectIds: selectionKey ? selectionKey.split(',') : [],
+    };
+    function publish() {
+      if (document.hidden) return;
+      void apiFetch(`/boards/${encodeURIComponent(id)}/selection`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selection), signal: controller.signal,
+      }).catch(() => {});
+    }
+    const first = window.setTimeout(publish, 180);
+    const heartbeat = window.setInterval(publish, 10_000);
+    document.addEventListener('visibilitychange', publish);
+    return () => {
+      controller.abort();
+      window.clearTimeout(first);
+      window.clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', publish);
+    };
+  }, [id, revision, selectionKey, saved]);
+}
 
 export function useProjectDirectory(active: boolean, id: string, unlocked: number) {
   const [boards, setBoards] = useState<BoardSummary[]>([]);
@@ -101,6 +128,7 @@ export function ProjectCanvas({ initial, theme, documents, onSource }: {
   onSource: (citation: SourceSelection) => void;
 }) {
   const board = useProjectBoard(initial);
+  useSharedSelection(initial.id, board.savedRevision, board.session.selected, !board.saving && !board.issue);
   return <div ref={board.root}>
     <CanvasBoard seed={emptyScene} session={board.session} highlight={[]} theme={theme}
       importing={false} presenting={false} onInspect={ignoreProjectAction}

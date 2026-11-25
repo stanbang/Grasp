@@ -6,6 +6,8 @@ from typing import Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from .canvas_contracts import CanvasId
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -14,6 +16,7 @@ class Settings(BaseModel):
     mock_llm: bool = True
     access_token: str = Field(default="", repr=False)
     agent_token: str = Field(default="", repr=False)
+    agent_source_doc_ids: frozenset[CanvasId] = Field(default_factory=frozenset, max_length=100)
     requests_per_minute: int = Field(default=120, ge=1)
     ocr_enabled: bool = False
     ocr_language: str = "eng"
@@ -55,6 +58,9 @@ def get_settings() -> Settings:
         mock_llm=mock_value == "1",
         access_token=os.getenv("ACCESS_TOKEN", ""),
         agent_token=os.getenv("GRASP_AGENT_TOKEN", ""),
+        agent_source_doc_ids=frozenset(
+            value.strip() for value in os.getenv("GRASP_AGENT_SOURCE_DOC_IDS", "").split(",") if value.strip()
+        ),
         requests_per_minute=os.getenv("REQUESTS_PER_MINUTE", "120"),
         ocr_enabled=os.getenv("OCR_ENABLED", "0") == "1",
         ocr_language=os.getenv("OCR_LANGUAGE", "eng"),

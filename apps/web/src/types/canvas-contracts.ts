@@ -234,3 +234,33 @@ export interface CanvasObjectContext {
   canonicalConcept: CanvasConceptContext | null;
   canonicalRelationships: Array<CanvasRelationshipContext>;
 }
+
+export interface BoardSelectionUpdate {
+  baseRevision: number;
+  objectIds: Array<string>;
+}
+
+export interface BoardSelection {
+  boardId: string;
+  revision: number;
+  available: boolean;
+  objectIds: Array<string>;
+}
+
+export interface KnowledgeSearch {
+  query: string;
+  docIds: Array<string>;
+  topK?: number;
+}
+
+export interface KnowledgeHit {
+  rank: number;
+  sourceName: string;
+  reference: CanvasEvidenceRef;
+  excerpt: string;
+}
+
+export interface KnowledgeResults {
+  mode: "mock" | "live";
+  results: Array<KnowledgeHit>;
+}

@@ -22,6 +22,7 @@ LEGACY_DOCUMENT = "824e9b6a-9cb3-46e8-b885-049450cdb14c"
 def library(tmp_path, monkeypatch):
     for key, value in {
         "DATA_DIR": str(tmp_path), "MOCK_LLM": "1", "ACCESS_TOKEN": "test-owner", "GRASP_AGENT_TOKEN": "test-agent",
+        "GRASP_AGENT_SOURCE_DOC_IDS": LEGACY_DOCUMENT,
     }.items():
         monkeypatch.setenv(key, value)
     get_settings.cache_clear()

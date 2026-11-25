@@ -8,8 +8,10 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 
 from .config import PROJECT_ROOT, get_settings
+from .board_selections import BoardSelections
 from .canvas_routes import router as canvas_router
-from .request_controls import RequestControls, is_board_path, request_path
+from .knowledge_routes import router as knowledge_router
+from .request_controls import RequestControls, is_agent_path, request_path
 from .llm import provider_check
 from .document_routes import router as document_router
 from .study_routes import router as study_router
@@ -27,6 +29,7 @@ from .storage import Storage
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.storage = Storage(get_settings())
+    app.state.board_selections = BoardSelections()
     app.state.ingestion = IngestionQueue(app.state.storage)
     app.state.ingestion.recover_interrupted()
     from .document_lifecycle import backfill_digests, retry_pending_cleanup
@@ -49,11 +52,12 @@ app.include_router(document_router)
 app.include_router(study_router)
 app.include_router(conversation_router)
 app.include_router(canvas_router)
+app.include_router(knowledge_router)
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(request: Request, error: RequestValidationError):
-    if is_board_path(request_path(request.scope)):
+    if is_agent_path(request_path(request.scope)):
         # Exclude raw input, which can contain non-JSON values such as NaN.
         return JSONResponse(status_code=422, content={"detail": [
             {"loc": issue["loc"], "msg": issue["msg"], "type": issue["type"]} for issue in error.errors()

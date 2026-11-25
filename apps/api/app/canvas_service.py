@@ -113,7 +113,14 @@ def resolve_evidence(session: Session, reference: CanvasEvidenceRef) -> CanvasEv
     return CanvasEvidenceContext(reference=reference, available=False, quote=None, sourceName=None)
 
 
-def object_context(session: Session, board: ProjectBoard, object_id: str) -> CanvasObjectContext:
+def require_shared_documents(scope: frozenset[str] | None, document_ids: list[str] | set[str]) -> None:
+    if scope is not None and not scope.issuperset(document_ids):
+        raise HTTPException(403, "The workspace owner has not shared one or more of these documents with the agent.")
+
+
+def object_context(
+    session: Session, board: ProjectBoard, object_id: str, source_scope: frozenset[str] | None,
+) -> CanvasObjectContext:
     item = board.objects.get(object_id)
     if item is None:
         raise HTTPException(404, "Object not found on this board.")
@@ -128,15 +135,20 @@ def object_context(session: Session, board: ProjectBoard, object_id: str) -> Can
     relationships: list[CanvasRelationshipContext] = []
     for key in dict.fromkeys(edge.canonicalEdgeId for edge in links if edge.canonicalEdgeId):
         relationship = session.get(GraphEdgeRow, key)
-        if relationship:
+        if relationship and (source_scope is None or source_scope.issuperset(relationship.docIds)):
             relationships.append(CanvasRelationshipContext.model_validate(relationship.model_dump()))
+    evidence = [
+        resolve_evidence(session, reference) if source_scope is None or reference.docId in source_scope else
+        CanvasEvidenceContext(reference=reference, available=False, quote=None, sourceName=None)
+        for reference in item.evidence
+    ]
     return CanvasObjectContext(
         boardId=board.id, revision=board.revision, object=item, connections=links,
         relatedObjects=[board.objects[key] for key in related],
-        evidence=[resolve_evidence(session, reference) for reference in item.evidence],
+        evidence=evidence,
         canonicalConcept=CanvasConceptContext(
             id=node.id, label=node.label, summary=node.summary, docIds=node.docIds, sourceChunkIds=node.sourceChunkIds,
-        ) if node else None,
+        ) if node and (source_scope is None or source_scope.issuperset(node.docIds)) else None,
         canonicalRelationships=relationships,
     )
 
@@ -219,7 +231,9 @@ def apply_operation(
         question.updatedBy = actor
 
 
-def validate_board(session: Session, board: ProjectBoard, before: ProjectBoard, restoring: bool) -> None:
+def validate_board(
+    session: Session, board: ProjectBoard, before: ProjectBoard, restoring: bool, source_scope: frozenset[str] | None,
+) -> None:
     if len(board.objects) > 200 or len(board.connections) > 400:
         invalid("A project board can hold up to 200 objects and 400 connections.")
     for item in board.objects.values():
@@ -242,11 +256,15 @@ def validate_board(session: Session, board: ProjectBoard, before: ProjectBoard, 
         if len({(ref.chunkId, ref.charStart, ref.charEnd) for ref in item.evidence}) != len(item.evidence):
             invalid("Source spans on an object must be unique.")
         if item.canonicalNodeId and (previous is None or item.canonicalNodeId != previous.canonicalNodeId):
-            if session.get(GraphNodeRow, item.canonicalNodeId) is None:
+            canonical_node = session.get(GraphNodeRow, item.canonicalNodeId)
+            if canonical_node is None:
                 invalid("The canonical concept is unavailable.")
+            require_shared_documents(source_scope, canonical_node.docIds)
         for reference in item.evidence:
-            if (previous is None or reference not in previous.evidence) and not resolve_evidence(session, reference).available:
-                invalid("The evidence does not match an available source span.")
+            if previous is None or reference not in previous.evidence:
+                require_shared_documents(source_scope, {reference.docId})
+                if not resolve_evidence(session, reference).available:
+                    invalid("The evidence does not match an available source span.")
 
     endpoints: set[tuple[str, str]] = set()
     for edge in board.connections.values():
@@ -267,9 +285,12 @@ def validate_board(session: Session, board: ProjectBoard, before: ProjectBoard, 
                 canonical = session.get(GraphEdgeRow, edge.canonicalEdgeId)
                 if canonical is None or (canonical.source, canonical.target) != (source.canonicalNodeId, target.canonicalNodeId):
                     invalid("The canonical relationship does not match the connection's concepts.")
+                require_shared_documents(source_scope, canonical.docIds)
 
 
-def commit_batch(session: Session, board_id: str, batch: CanvasBatch, actor: Actor) -> BoardCommit:
+def commit_batch(
+    session: Session, board_id: str, batch: CanvasBatch, actor: Actor, source_scope: frozenset[str] | None,
+) -> BoardCommit:
     # Lock before reading the head so two workers cannot both accept the same base revision.
     session.execute(text("BEGIN IMMEDIATE"))
     head = board_row(session, board_id)
@@ -297,7 +318,7 @@ def commit_batch(session: Session, board_id: str, batch: CanvasBatch, actor: Act
         board = before.model_copy(deep=True)
         for operation in batch.operations:
             apply_operation(board, operation, actor, now)
-    validate_board(session, board, before, bool(restorations))
+    validate_board(session, board, before, bool(restorations), source_scope)
     head.revision += 1
     head.updated_at = now
     board.revision, board.updatedAt = head.revision, now
