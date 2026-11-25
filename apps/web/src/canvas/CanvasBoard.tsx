@@ -3,11 +3,12 @@ import {
   getViewportForBounds, type Connection, type OnEdgesChange, type OnNodesChange, type ReactFlowInstance,
 } from '@xyflow/react';
 import {
-  BoxSelect, Hand, Link2, List, Maximize, Minus, MousePointer2, Plus, Redo2, Scan, Undo2, X,
+  BoxSelect, ChevronLeft, ChevronRight, Hand, Link2, List, Maximize, Minus, MousePointer2, Plus, Redo2, Scan, Undo2, X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { CanvasCard, Relation, type CanvasEdge, type CanvasNode } from './CanvasObjects';
-import { bounds, groupCards, placeCard, projectBoard, rect, removeAuthored, zoomAt, type BoardLink, type BoardScene, type Card, type Placement } from './board';
+import { CanvasCard, Relation, sides, type CanvasEdge, type CanvasNode } from './CanvasObjects';
+import { bounds, groupCards, placeCard, projectBoard, rect, removeAuthored, zoomAt, type AuthoredCard, type BoardLink, type BoardScene, type Card, type Placement } from './board';
+import { engineeringPaths } from './engineering-board';
 import type { BoardSession } from './use-board';
 
 const nodeTypes = { card: CanvasCard };
@@ -15,8 +16,9 @@ const edgeTypes = { relation: Relation };
 const minimumZoom = 0.15;
 const maximumZoom = 3;
 const middleDrag = [1];
-const markerEnd = { type: MarkerType.ArrowClosed, width: 16, height: 16, color: 'var(--board-edge)' };
+type NewObject = Omit<AuthoredCard, 'id' | 'placement'>;
 type Tool = 'select' | 'pan' | 'connect';
+type PresentationPath = 'overview' | keyof typeof engineeringPaths;
 type Instance = ReactFlowInstance<CanvasNode, CanvasEdge>;
 export type InspectedLink = BoardLink & { sourceTitle: string; targetTitle: string };
 
@@ -33,14 +35,33 @@ function ports(source: Placement, target: Placement) {
   return y >= 0 ? [Position.Bottom, Position.Top] : [Position.Top, Position.Bottom];
 }
 
-export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, importing }: {
+function connectionHandles(width: number, height: number): CanvasNode['handles'] {
+  const centers = {
+    [Position.Left]: { x: 0, y: height / 2 },
+    [Position.Right]: { x: width, y: height / 2 },
+    [Position.Top]: { x: width / 2, y: 0 },
+    [Position.Bottom]: { x: width / 2, y: height },
+  };
+  // Layout already owns node geometry. Explicit ports keep edges mounted across controlled updates.
+  return sides.flatMap(position => {
+    const bounds = { ...centers[position], position, width: 0, height: 0 };
+    return [
+      { ...bounds, type: 'source' as const, id: `out-${position}` },
+      { ...bounds, type: 'target' as const, id: `in-${position}` },
+    ];
+  });
+}
+
+export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, importing, presenting, onInspect }: {
   seed: BoardScene;
   session: BoardSession;
   highlight: string[];
   theme: 'light' | 'dark';
   importing: boolean;
+  presenting: boolean;
+  onInspect: () => void;
   empty?: ReactNode;
-  inspect: (card: Card | undefined, link: InspectedLink | undefined, close: () => void) => ReactNode;
+  inspect: (card: Card | undefined, link: InspectedLink | undefined, close: () => void, pin: (object: NewObject) => void) => ReactNode;
 }) {
   const scene = useMemo(() => projectBoard(seed, session.document), [seed, session.document]);
   const byId = useMemo(() => new Map(scene.cards.map(card => [card.id, card])), [scene.cards]);
@@ -52,27 +73,38 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
   const [query, setQuery] = useState('');
   const [zoom, setZoom] = useState(session.viewport.current?.zoom ?? 1);
   const [ready, setReady] = useState(false);
+  const [presentationPath, setPresentationPath] = useState<PresentationPath>('overview');
+  const [presentationStep, setPresentationStep] = useState(0);
   const frame = useRef<HTMLDivElement>(null);
   const instance = useRef<Instance>();
   const inspectButton = useRef<HTMLButtonElement>(null);
+  const outlineButton = useRef<HTMLButtonElement>(null);
   const ignoreGesture = useRef(false);
   const focusAfterInspect = useRef<string>();
+  const editingViewport = useRef(session.viewport.current);
   const cardSelection = scene.cards.filter(card => session.selected.includes(card.id));
   const selectedCard = cardSelection.length === 1 ? cardSelection[0] : undefined;
   const selectedLink = scene.links.find(link => session.selectedLinks.includes(link.id));
   const selectedItem = selectedCard ?? selectedLink;
-  const showInspector = inspectOpen && !!selectedItem;
+  const showInspector = !presenting && inspectOpen && !!selectedItem;
   const canGroup = cardSelection.filter(card => card.kind !== 'group' && !card.placement.groupId).length > 1;
+  const outlineItems = outline ? scene.cards.filter(card => card.title.toLowerCase().includes(query.trim().toLowerCase())) : [];
+  const pathSteps = presentationPath === 'overview' ? [] : engineeringPaths[presentationPath];
 
-  function fit(items: Card[], animate = true) {
+  function fit(items: Card[], animate = true, alignTop = false) {
     const area = bounds(items);
     const host = frame.current;
     if (!area || !host || !instance.current) return;
-    const compact = host.clientWidth < 600;
+    const compact = host.clientWidth <= 740;
     const sheet = compact ? host.parentElement?.querySelector('.board-inspector')?.getBoundingClientRect() : undefined;
     const heightAboveSheet = sheet ? sheet.top - host.getBoundingClientRect().top : 0;
-    const height = heightAboveSheet > 140 ? heightAboveSheet : host.clientHeight;
-    const viewport = getViewportForBounds(area, host.clientWidth, height, minimumZoom, 1.14, compact ? '28px' : '52px');
+    const top = compact ? 76 : 65;
+    const bottom = heightAboveSheet > 180 ? heightAboveSheet - 10 : host.clientHeight - 67;
+    const height = Math.max(100, bottom - top);
+    const overlay = !compact && items.length === 1 ? host.parentElement?.querySelector('.board-inspector')?.getBoundingClientRect() : undefined;
+    const width = host.clientWidth - (overlay ? overlay.width + 24 : 0);
+    const fitted = getViewportForBounds(area, width, height, minimumZoom, 1.14, compact ? '24px' : '34px');
+    const viewport = { ...fitted, y: alignTop ? top + 36 - area.y * fitted.zoom : fitted.y + top };
     session.viewport.current = viewport;
     setZoom(viewport.zoom);
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -81,16 +113,44 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
 
   useEffect(() => {
     if (ready && !importing && !session.viewport.current && scene.cards.length) {
-      const compact = (frame.current?.clientWidth ?? 0) < 600;
-      fit(compact ? [scene.cards.find(card => card.kind === 'document') ?? scene.cards[0]!] : scene.cards, false);
+      const compact = (frame.current?.clientWidth ?? 0) <= 740;
+      const first = scene.cards.find(card => card.kind === 'document') ?? scene.cards[0]!;
+      const link = scene.links.find(item => item.origin === 'document' && item.source === first.id);
+      const neighbor = link && byId.get(link.target);
+      const adjacent = neighbor && Math.abs(neighbor.placement.y - first.placement.y) < 120;
+      fit(compact ? adjacent ? [first, neighbor] : [first] : scene.cards, false, compact);
     }
   }, [ready, importing, scene.cards.length]);
 
   useEffect(() => {
-    if (!showInspector || !focusAfterInspect.current) return;
-    const card = byId.get(focusAfterInspect.current);
+    if (!presenting) {
+      const previous = editingViewport.current;
+      if (previous && instance.current) void instance.current.setViewport(previous);
+      editingViewport.current = undefined;
+      return;
+    }
+    editingViewport.current = session.viewport.current;
+    setPresentationPath('overview');
+    setPresentationStep(0);
+    chooseTool('select');
+    setOutline(false);
+    setInspectOpen(false);
+    setMenu(false);
+    session.select([]);
+    session.selectLinks([]);
+    fit(scene.cards);
+  }, [presenting]);
+
+  useEffect(() => {
+    if (!showInspector || !selectedCard) return;
+    const host = frame.current;
+    const panel = host?.parentElement?.querySelector('.board-inspector')?.getBoundingClientRect();
+    const object = Array.from(host?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])
+      .find(node => node.dataset.id === selectedCard.id)?.getBoundingClientRect();
+    const covered = panel && object && (object.right > panel.left && object.left < panel.right &&
+      object.bottom > panel.top && object.top < panel.bottom);
+    if (focusAfterInspect.current === selectedCard.id || covered) fit([selectedCard]);
     focusAfterInspect.current = undefined;
-    if (card) fit([card]);
   }, [showInspector, selectedCard?.id]);
 
   useEffect(() => {
@@ -133,21 +193,30 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     const parent = groupId ? byId.get(groupId)?.placement : undefined;
     const position = parent ? { x: x - parent.x, y: y - parent.y } : { x, y };
     return {
-      id: card.id, type: 'card', position, parentId: groupId, width, height, ariaLabel: card.title,
-      selected: session.selected.includes(card.id), draggable: tool === 'select', deletable: false,
-      connectable: tool === 'connect' && card.kind !== 'group', zIndex: card.kind === 'group' ? -1 : 1,
+      id: card.id, type: 'card', position, parentId: groupId, width, height, measured: { width, height }, ariaLabel: card.title,
+      handles: card.kind === 'group' ? undefined : connectionHandles(width, height),
+      selected: session.selected.includes(card.id), draggable: !presenting && tool === 'select', deletable: false,
+      selectable: !presenting, connectable: tool === 'connect' && card.kind !== 'group', zIndex: card.kind === 'group' ? -1 : 1,
       data: { card, emphasized: !!card.concept && highlight.includes(card.concept.id),
-        connecting: connectFrom === card.id, resizeStart: begin, resizeEnd: finish },
+        connecting: connectFrom === card.id, detail: zoom >= 1.25, resizeStart: begin, resizeEnd: finish,
+        presentationContext: presenting && pathSteps.length > 0 && card.id !== pathSteps[presentationStep],
+        preview: !presenting && card.visualization ? () => { selection(card.id); openInspection(); } : undefined },
     };
   });
   const edges: CanvasEdge[] = scene.links.map(link => {
-    const [source, target] = ports(byId.get(link.source)!.placement, byId.get(link.target)!.placement);
+    const [autoSource, autoTarget] = ports(byId.get(link.source)!.placement, byId.get(link.target)!.placement);
+    const source = link.fromSide ?? autoSource;
+    const target = link.toSide ?? autoTarget;
+    const role = link.role ?? (link.origin === 'document' ? 'structural' : link.origin === 'authored' ? 'data' : 'structural');
+    const markerEnd = { type: MarkerType.Arrow, width: 19, height: 19, color: `var(--board-edge-${role})` };
+    const selected = session.selectedLinks.includes(link.id);
     return {
       id: link.id, type: 'relation', source: link.source, target: link.target, deletable: false,
       sourceHandle: `out-${source}`, targetHandle: `in-${target}`, markerEnd,
       ariaLabel: `${byId.get(link.source)!.title} ${link.label} ${byId.get(link.target)!.title}`,
-      className: `board-edge board-edge--${link.origin}`,
-      selected: session.selectedLinks.includes(link.id), data: { link },
+      className: `board-edge board-edge--${link.origin} board-edge--role-${role}`,
+      selected, selectable: !presenting, data: { link, showLabel: role !== 'annotation' && role !== 'structural' &&
+        (session.document.kind === 'engineering' ? zoom >= .55 : zoom >= .86) },
     };
   });
 
@@ -212,13 +281,14 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     if (!validConnection(source, target)) return;
     const id = crypto.randomUUID();
     session.update(board => ({ ...board, authoredLinks: [...board.authoredLinks, {
-      id, source, target, label: 'Related to', origin: 'authored',
+      id, source, target, label: byId.get(source)?.kind === 'annotation' ? 'Points to' : 'Related to', origin: 'authored',
+      role: byId.get(source)?.kind === 'annotation' ? 'annotation' : 'data',
     }] }));
     session.select([]);
     session.selectLinks([id]);
     setConnectFrom(undefined);
     setTool('select');
-    setInspectOpen(true);
+    openInspection();
   }
 
   function selection(id: string) {
@@ -227,7 +297,7 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     ignoreGesture.current = false;
   }
 
-  function add(kind: 'annotation' | 'explanation') {
+  function add(object: NewObject) {
     const host = frame.current?.getBoundingClientRect();
     if (!host || !instance.current) return;
     const top = instance.current.screenToFlowPosition({ x: host.left + 24, y: host.top + 64 });
@@ -235,13 +305,12 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     const placement = placeCard(scene.cards, rect(top.x, top.y, right.x - top.x, right.y - top.y), selectedCard);
     const id = crypto.randomUUID();
     session.update(board => ({ ...board, authoredCards: [...board.authoredCards, {
-      id, kind, title: kind === 'annotation' ? 'New note' : 'New explanation',
-      description: '', placement,
+      ...object, id, placement,
     }] }));
     focusAfterInspect.current = id;
     selection(id);
     setMenu(false);
-    setInspectOpen(true);
+    openInspection();
   }
 
   function group() {
@@ -260,14 +329,30 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     requestAnimationFrame(() => (inspectButton.current ?? frame.current)?.focus());
   }
 
+  function openInspection() {
+    onInspect();
+    setInspectOpen(true);
+  }
+
+  function showPresentation(path: PresentationPath, step = 0) {
+    setPresentationPath(path);
+    setPresentationStep(step);
+    if (path === 'overview') { fit(scene.cards); return; }
+    const steps = engineeringPaths[path];
+    const ids = (frame.current?.clientWidth ?? 0) <= 740 ? steps.slice(step, step + 1) : steps;
+    fit(ids.flatMap(id => byId.get(id) ?? []));
+  }
+
   function removeSelected() {
     session.update(board => removeAuthored(board, session.selected, session.selectedLinks));
   }
 
-  return <section className={`board-layout${showInspector ? ' board-layout--inspecting' : ''}`} aria-label="Canvas workspace">
+  return <section className="board-layout" aria-label="Canvas workspace">
     <div ref={frame} tabIndex={-1} className={`board-frame board-frame--${tool}`} data-board={session.document.kind}
+      data-presentation-path={presenting ? presentationPath : undefined}
       onPointerCancelCapture={() => { ignoreGesture.current = true; session.cancel(); }}
       onKeyDownCapture={event => {
+        if (presenting) return;
         if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]')) return;
         if (event.key === 'Escape') {
           ignoreGesture.current = true;
@@ -288,13 +373,21 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
           removeSelected();
         }
         if (event.key.startsWith('Arrow')) ignoreGesture.current = false;
-        if (event.key === 'Enter' && tool === 'connect' && event.target instanceof Element) {
-          const id = event.target.closest<HTMLElement>('.react-flow__node')?.dataset.id;
-          if (!id || byId.get(id)?.kind === 'group') return;
-          event.preventDefault();
-          event.stopPropagation();
-          if (connectFrom) connect({ source: connectFrom, target: id });
-          else setConnectFrom(id);
+        if (event.key === 'Enter' && event.target instanceof Element && !event.target.closest('button, a')) {
+          const id = event.target.closest('.react-flow__node')?.getAttribute('data-id');
+          const linkId = event.target.closest('.react-flow__edge')?.getAttribute('data-id');
+          if (tool === 'connect' && id && byId.get(id)?.kind !== 'group') {
+            event.preventDefault();
+            event.stopPropagation();
+            if (connectFrom) connect({ source: connectFrom, target: id });
+            else setConnectFrom(id);
+          } else if (tool === 'select' && (id || linkId)) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (id) selection(id);
+            else if (linkId) { session.select([]); session.selectLinks([linkId]); }
+            openInspection();
+          }
         }
       }}>
       <ReactFlow<CanvasNode, CanvasEdge> nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
@@ -302,9 +395,10 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
         defaultViewport={session.viewport.current ?? { x: 0, y: 0, zoom: 1 }}
         onMove={(_, viewport) => { session.viewport.current = viewport; setZoom(viewport.zoom); }}
         minZoom={minimumZoom} maxZoom={maximumZoom} zoomOnDoubleClick={false} zoomOnScroll={false}
+        nodesFocusable={!presenting} edgesFocusable={!presenting}
         zIndexMode="manual" elevateEdgesOnSelect={false}
-        panOnDrag={tool === 'pan' ? true : middleDrag} panActivationKeyCode="Space"
-        selectionOnDrag={tool === 'select'} selectionMode={SelectionMode.Partial}
+        panOnDrag={presenting || tool === 'pan' ? true : middleDrag} panActivationKeyCode="Space"
+        selectionOnDrag={!presenting && tool === 'select'} selectionMode={SelectionMode.Partial}
         multiSelectionKeyCode="Shift" selectionKeyCode="Shift" deleteKeyCode={null}
         connectionMode={ConnectionMode.Loose} nodesConnectable={tool === 'connect'}
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
@@ -315,44 +409,65 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
           if (connectFrom) connect({ source: connectFrom, target: node.id });
           else setConnectFrom(node.id);
         }}
-        onNodeDoubleClick={(_, node) => { if (tool === 'select') { selection(node.id); setInspectOpen(true); } }}
+        onNodeDoubleClick={(_, node) => { if (!presenting && tool === 'select') { selection(node.id); openInspection(); } }}
         onPaneClick={() => { setInspectOpen(false); setConnectFrom(undefined); setMenu(false); }}>
-        <Background variant={BackgroundVariant.Dots} gap={24} size={1.1} color="var(--board-dot)" />
+        <Background variant={BackgroundVariant.Dots} gap={29} size={.8} color="var(--board-dot)" />
       </ReactFlow>
       {!scene.cards.length && empty}
-      <div className="board-outline-anchor">
-        <button type="button" className="board-icon board-raised" title="Find objects" aria-label="Find objects" aria-expanded={outline} onClick={() => setOutline(!outline)}><List size={18} /></button>
-        {outline && <section className="board-outline board-raised" aria-label="Board outline">
+      {!presenting && <div className="board-outline-anchor">
+        <button ref={outlineButton} type="button" className="board-icon board-raised" title="Find objects" aria-label="Find objects" aria-expanded={outline} onClick={() => setOutline(!outline)}><List size={18} /></button>
+        {outline && <section className="board-outline board-raised" aria-label="Board outline" onKeyDown={event => {
+          if (event.key === 'Escape') { setOutline(false); outlineButton.current?.focus(); }
+        }}>
           <div className="board-outline-heading"><h2>Objects</h2><button type="button" className="board-icon" aria-label="Close outline" onClick={() => setOutline(false)}><X size={16} /></button></div>
           <input aria-label="Search objects" placeholder="Search objects" value={query} onChange={event => setQuery(event.target.value)} />
-          <ul>{scene.cards.filter(card => card.title.toLowerCase().includes(query.trim().toLowerCase())).map(card =>
+          {outlineItems.length === 0 && <p role="status" className="board-outline-empty">No matching objects.</p>}
+          <ul>{outlineItems.map(card =>
             <li key={card.id}><button type="button" aria-pressed={session.selected.includes(card.id)} onClick={() => {
               focusAfterInspect.current = card.id;
               selection(card.id);
               setOutline(false);
-              setInspectOpen(true);
+              openInspection();
             }}>{card.title}</button></li>)}</ul>
         </section>}
-      </div>
+      </div>}
       <div className="board-bottom">
-        {tool === 'connect' && <p className="board-tool-hint" role="status">{connectFrom ? 'Choose the destination' : 'Choose the first card'}</p>}
-        <div className="board-toolbar board-raised" role="toolbar" aria-label="Canvas tools">
+        {presenting && <div className="board-presentation" aria-label="Presentation views">
+          <div className="board-raised board-presentation-views" role="group" aria-label="Presentation views">
+            <button type="button" aria-pressed={presentationPath === 'overview'} onClick={() => showPresentation('overview')}>Overview</button>
+            <button type="button" aria-pressed={presentationPath === 'index'} onClick={() => showPresentation('index')}>Index a document</button>
+            <button type="button" aria-pressed={presentationPath === 'answer'} onClick={() => showPresentation('answer')}>Answer with evidence</button>
+          </div>
+          {pathSteps.length > 0 && <div className="board-raised board-presentation-steps" role="group" aria-label="Path steps">
+            <button type="button" className="board-icon" aria-label="Previous step" disabled={presentationStep === 0}
+              onClick={() => showPresentation(presentationPath, presentationStep - 1)}><ChevronLeft size={18} /></button>
+            <span role="status">{byId.get(pathSteps[presentationStep] ?? '')?.title}</span>
+            <button type="button" className="board-icon" aria-label="Next step" disabled={presentationStep >= pathSteps.length - 1}
+              onClick={() => showPresentation(presentationPath, presentationStep + 1)}><ChevronRight size={18} /></button>
+          </div>}
+        </div>}
+        {!presenting && tool === 'connect' && <p className="board-tool-hint" role="status">{connectFrom ? 'Choose the destination' : 'Choose the first object'}</p>}
+        {!presenting && <div className="board-toolbar board-raised" role="toolbar" aria-label="Canvas tools">
           <button type="button" className="board-icon" aria-label="Select" title="Select" aria-pressed={tool === 'select'} onClick={() => chooseTool('select')}><MousePointer2 size={18} /></button>
           <button type="button" className="board-icon" aria-label="Pan" title="Pan" aria-pressed={tool === 'pan'} onClick={() => chooseTool('pan')}><Hand size={18} /></button>
-          <button type="button" className="board-icon" aria-label="Connect cards" title="Connect cards" aria-pressed={tool === 'connect'} disabled={scene.cards.filter(card => card.kind !== 'group').length < 2} onClick={() => chooseTool(tool === 'connect' ? 'select' : 'connect')}><Link2 size={18} /></button>
+          {scene.cards.filter(card => card.kind !== 'group').length > 1 && <button type="button" className="board-icon" aria-label="Connect objects" title="Connect objects" aria-pressed={tool === 'connect'} onClick={() => chooseTool(tool === 'connect' ? 'select' : 'connect')}><Link2 size={18} /></button>}
           <div className="board-add-anchor">
             <button type="button" className="board-icon" aria-label="Add object" title="Add object" aria-expanded={menu} onClick={() => setMenu(!menu)}><Plus size={20} /></button>
             {menu && <div className="board-add-menu board-raised">
-              <button type="button" onClick={() => add('annotation')}>Note</button>
-              <button type="button" onClick={() => add('explanation')}>Explanation</button>
+              <button type="button" onClick={() => add({ kind: 'annotation', title: 'New note', description: '' })}>Note</button>
+              <button type="button" onClick={() => add({ kind: 'text', title: 'New text', description: '' })}>Text</button>
+              <button type="button" onClick={() => add({ kind: 'heading', title: 'New heading', description: '' })}>Heading</button>
+              <button type="button" onClick={() => add({ kind: 'illustration', illustration: 'document', title: 'New illustration', description: '' })}>Illustration</button>
+              <button type="button" onClick={() => add({ kind: 'explanation', title: 'New explanation', description: '' })}>Explanation</button>
             </div>}
           </div>
           <div className="board-tool-separator" />
           <button type="button" className="board-icon" aria-label="Undo" title="Undo" disabled={!session.canUndo} onClick={() => session.restore('undo')}><Undo2 size={17} /></button>
           <button type="button" className="board-icon" aria-label="Redo" title="Redo" disabled={!session.canRedo} onClick={() => session.restore('redo')}><Redo2 size={17} /></button>
           {canGroup && <button type="button" className="board-icon" aria-label="Group selection" title="Group selection" onClick={group}><BoxSelect size={19} /></button>}
-          {selectedItem && <button type="button" ref={inspectButton} className="board-inspect-button" aria-expanded={showInspector} onClick={() => setInspectOpen(!inspectOpen)}>Inspect</button>}
-        </div>
+          {selectedItem && <button type="button" ref={inspectButton} className="board-inspect-button" aria-expanded={showInspector}
+            onClick={() => showInspector ? closeInspector() : openInspection()}>Inspect</button>}
+        </div>}
         <div className="board-zoom board-raised" role="toolbar" aria-label="Canvas view">
           <button type="button" className="board-icon" aria-label="Zoom out" title="Zoom out" onClick={() => void instance.current?.zoomOut()}><Minus size={16} /></button>
           <span aria-label="Zoom level">{Math.round(zoom * 100)}%</span>
@@ -364,6 +479,6 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     </div>
     {showInspector && inspect(selectedCard, selectedLink ? {
       ...selectedLink, sourceTitle: byId.get(selectedLink.source)!.title, targetTitle: byId.get(selectedLink.target)!.title,
-    } : undefined, closeInspector)}
+    } : undefined, closeInspector, add)}
   </section>;
 }

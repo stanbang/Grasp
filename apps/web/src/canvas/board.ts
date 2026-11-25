@@ -1,10 +1,15 @@
-import type { Document, GraphNode, GraphResponse } from '../types/contracts';
+import type { Citation, Document, GraphNode, GraphResponse } from '../types/contracts';
+import type { Illustration } from './TechnicalIllustration';
+import type { SimilarityPlot } from './CanvasVisualization';
 
 export type BoardKind = 'knowledge' | 'engineering';
 export type Point = { x: number; y: number };
 export type Rect = Point & { width: number; height: number };
 export type Placement = Rect & { groupId?: string };
-export type ObjectKind = 'concept' | 'document' | 'component' | 'explanation' | 'annotation' | 'group';
+export type ObjectKind = 'concept' | 'document' | 'component' | 'explanation' | 'annotation' | 'group'
+  | 'heading' | 'text' | 'illustration' | 'evidence' | 'visualization';
+export type NoteStyle = 'plain' | 'underline' | 'callout';
+export type LinkRole = 'structural' | 'data' | 'process' | 'annotation';
 export type Card = {
   id: string;
   kind: ObjectKind;
@@ -15,6 +20,11 @@ export type Card = {
   document?: Document;
   sourcePath?: string;
   message?: string;
+  illustration?: Illustration;
+  noteStyle?: NoteStyle;
+  evidence?: Citation;
+  visualization?: SimilarityPlot;
+  prominence?: 'primary' | 'secondary';
 };
 
 export type BoardLink = {
@@ -25,13 +35,17 @@ export type BoardLink = {
   origin: 'semantic' | 'document' | 'repository' | 'authored';
   canonicalId?: string;
   docIds?: string[];
+  role?: LinkRole;
+  fromSide?: 'left' | 'right' | 'top' | 'bottom';
+  toSide?: 'left' | 'right' | 'top' | 'bottom';
+  routeY?: number;
 };
 
 export type BoardScene = { cards: Card[]; links: BoardLink[] };
-type AuthoredCard = Pick<Card, 'id' | 'title' | 'description' | 'placement'> & {
-  kind: 'explanation' | 'annotation' | 'group';
+export type AuthoredCard = Pick<Card, 'id' | 'title' | 'description' | 'placement' | 'illustration' | 'noteStyle' | 'evidence'> & {
+  kind: 'explanation' | 'annotation' | 'group' | 'heading' | 'text' | 'illustration' | 'evidence';
 };
-type AuthoredLink = Pick<BoardLink, 'id' | 'source' | 'target' | 'label'> & { origin: 'authored' };
+type AuthoredLink = Pick<BoardLink, 'id' | 'source' | 'target' | 'label' | 'role'> & { origin: 'authored' };
 export type BoardDocument = {
   schemaVersion: 1;
   kind: BoardKind;
@@ -43,9 +57,9 @@ export type BoardDocument = {
 
 const cardWidth = 228;
 const cardHeight = 116;
-const conceptColumn = 350;
-const conceptRow = 175;
-const sourceColumn = 328;
+const conceptColumn = 312;
+const conceptRow = 137;
+const sourceColumn = 310;
 
 export const conceptObjectId = (id: string) => `concept:${id}`;
 export const documentObjectId = (id: string) => `document:${id}`;
@@ -136,35 +150,65 @@ function conceptOrder(graph: GraphResponse): GraphNode[] {
 export function knowledgeScene(graph: GraphResponse, documents: readonly Document[]): BoardScene {
   const nodes = conceptOrder(graph);
   const sortedDocuments = [...documents].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
-  const home = sortedDocuments.length ? sourceColumn : 0;
-  const cards: Card[] = nodes.map((concept, index) => {
-    const row = Math.floor(index / 3);
-    const column = row % 2 ? 2 - index % 3 : index % 3;
-    return {
-      id: conceptObjectId(concept.id), kind: 'concept', title: concept.label,
-      description: concept.summary, concept, placement: rect(home + column * conceptColumn, row * conceptRow),
-    };
-  });
+  const knownDocuments = new Set(sortedDocuments.map(document => document.id));
+  const bySource = new Map<string, GraphNode[]>();
+  const shared: GraphNode[] = [];
+  const remaining: GraphNode[] = [];
+  for (const concept of nodes) {
+    const ids = concept.docIds.filter(id => knownDocuments.has(id));
+    if (ids.length > 1) shared.push(concept);
+    else if (ids[0]) {
+      const members = bySource.get(ids[0]) ?? [];
+      members.push(concept);
+      bySource.set(ids[0], members);
+    } else remaining.push(concept);
+  }
+  const related = new Set(graph.edges.filter(edge => !/^appears alongside$/i.test(edge.relationshipLabel.trim()))
+    .flatMap(edge => [edge.source, edge.target]));
+  const cards: Card[] = [];
   const links: BoardLink[] = graph.edges.map(edge => ({
     id: `relation:${edge.id}`, source: conceptObjectId(edge.source), target: conceptObjectId(edge.target),
     label: edge.relationshipLabel, canonicalId: edge.id, origin: 'semantic', docIds: edge.docIds,
+    role: /^appears alongside$/i.test(edge.relationshipLabel.trim()) ? 'structural' : 'data',
   }));
-  sortedDocuments.forEach((document, index) => {
+  let y = 0;
+  function addCluster(members: GraphNode[], x: number) {
+    members.forEach((concept, index) => {
+      const main = index === 0 || related.has(concept.id);
+      cards.push({
+        id: conceptObjectId(concept.id), kind: 'concept', title: concept.label,
+        description: concept.summary, concept, prominence: main ? 'primary' : 'secondary',
+        placement: rect(x + (index % 3) * conceptColumn, y + Math.floor(index / 3) * conceptRow,
+          main ? 246 : 222, main ? 108 : 85),
+      });
+    });
+    y += Math.max(1, Math.ceil(members.length / 3)) * conceptRow + 48;
+  }
+  for (const document of sortedDocuments) {
     const id = documentObjectId(document.id);
-    cards.push({ id, kind: 'document', title: document.name, description: '', document,
-      placement: rect(0, index * conceptRow) });
-    const representative = nodes.find(node => node.docIds.includes(document.id));
+    const members = bySource.get(document.id) ?? [];
+    cards.push({ id, kind: 'document', title: document.name, description: '', document, illustration: 'document',
+      placement: rect(0, y) });
+    const representative = members[0] ?? shared.find(node => node.docIds.includes(document.id));
     if (representative) links.push({
       id: `source:${document.id}`, source: id, target: conceptObjectId(representative.id),
       label: 'source for', origin: 'document', docIds: [document.id],
     });
-  });
+    addCluster(members, sourceColumn);
+  }
+  if (shared.length) {
+    cards.push({ id: 'heading:shared', kind: 'heading', title: 'Shared concepts', description: '', placement: rect(0, y, 245, 42) });
+    addCluster(shared, sourceColumn);
+  }
+  if (remaining.length) addCluster(remaining, sortedDocuments.length ? sourceColumn : 0);
   return { cards, links };
 }
 
 export function projectBoard(seed: BoardScene, board: BoardDocument): BoardScene {
-  const groups = new Set(board.authoredCards.filter(card => card.kind === 'group').map(card => card.id));
-  const cards = [...seed.cards, ...board.authoredCards].map(card => {
+  const liveSources = new Set(seed.cards.flatMap(card => card.document ? [card.document.id] : []));
+  const objects = [...seed.cards, ...board.authoredCards.filter(card => !card.evidence || liveSources.has(card.evidence.docId))];
+  const groups = new Set(objects.filter(card => card.kind === 'group').map(card => card.id));
+  const cards = objects.map(card => {
     const placement = board.placements[card.id] ?? card.placement;
     return placement.groupId && !groups.has(placement.groupId)
       ? { ...card, placement: { ...placement, groupId: undefined } }

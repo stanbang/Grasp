@@ -131,7 +131,9 @@ async function run() {
     await source.click();
     const sourceDialog = desktop.getByRole('dialog', { name: 'Source · page 1' });
     await sourceDialog.locator('blockquote').waitFor();
-    assert.match(await sourceDialog.locator('blockquote').innerText(), /retrieval/i);
+    await sourceDialog.locator('.board-source-name').waitFor();
+    const exactQuote = await sourceDialog.locator('blockquote').textContent();
+    assert.match(exactQuote, /retrieval/i);
     await button(desktop, 'Close dialog').click();
     await inspector.getByRole('button', { name: 'Ask about this concept' }).click();
     const question = desktop.getByRole('textbox', { name: 'Your question' });
@@ -154,30 +156,73 @@ async function run() {
     assert.ok((await retrieval.getAttribute('class')).split(' ').includes('selected'));
     console.log('PASS source inspection, scoped chat and 2D/3D selection round trip');
 
+    await button(desktop, 'Inspect').click();
+    await inspector.getByRole('button', { name: 'Pin passage from page 1' }).first().click();
+    await inspector.getByRole('button', { name: 'Open exact passage' }).waitFor();
+    assert.equal(await inspector.locator('blockquote').textContent(), exactQuote);
+    await inspector.getByRole('button', { name: 'Open exact passage' }).click();
+    assert.equal(await sourceDialog.locator('blockquote').textContent(), exactQuote);
+    await sourceDialog.getByText('Extracted page with highlighted citation').click();
+    assert.equal(await sourceDialog.locator('mark').textContent(), exactQuote);
+    await button(desktop, 'Close dialog').click();
+    await desktop.screenshot({ path: path.join(evidence, 'canvas-evidence.png') });
+    await inspector.getByRole('button', { name: 'Remove from board' }).click();
+    assert.equal(await desktop.locator('.board-card--evidence').count(), 0);
+    console.log('PASS pinning exact evidence, reopening source and removing the pin');
+
     await button(desktop, 'Engineering').click();
     const workspace = card(desktop, 'Study workspace');
     const sqlite = card(desktop, 'SQLite');
     await workspace.waitFor();
+    await desktop.waitForFunction(() => document.querySelectorAll('[data-board="engineering"] .board-edge--repository').length === 14)
+      .catch(async error => {
+        console.error(await desktop.locator('[data-board="engineering"]').evaluate(board => ({
+          nodes: board.querySelectorAll('.react-flow__node').length,
+          edges: [...board.querySelectorAll('.board-edge--repository')].map(edge => edge.getAttribute('data-id')),
+        })));
+        throw error;
+      });
+    await assertBoardFits(desktop);
+    await desktop.evaluate(() => document.fonts.ready);
     await desktop.screenshot({ path: path.join(evidence, 'canvas-engineering.png') });
+    assert.equal(await desktop.locator('.technical-illustration[data-illustration="chroma"]').count(), 1);
+    await button(desktop, 'Why a passage ranks').click();
+    await inspector.getByText('Illustrative 2D coordinates').waitFor();
+    const nearby = await inspector.getByRole('status').textContent();
+    await button(desktop, 'Distant passage').click();
+    assert.notEqual(await inspector.getByRole('status').textContent(), nearby);
+    await desktop.screenshot({ path: path.join(evidence, 'canvas-visualization.png') });
+    await button(desktop, 'Close inspector').click();
+    await button(desktop, 'Present board').click();
+    await button(desktop, 'Exit presentation').waitFor();
+    assert.equal(await desktop.getByRole('toolbar', { name: 'Canvas tools' }).count(), 0);
+    assert.equal(await desktop.getByRole('link', { name: 'React Flow attribution' }).count(), 1);
+    await desktop.screenshot({ path: path.join(evidence, 'canvas-presentation.png') });
+    const overviewZoom = (await camera(desktop)).zoom;
+    const views = desktop.getByRole('group', { name: 'Presentation views' });
+    await views.getByRole('button', { name: 'Answer with evidence' }).click();
+    assert.ok((await camera(desktop)).zoom > overviewZoom, 'A presentation path frames a single flow');
+    await desktop.keyboard.press('Escape');
+    await button(desktop, 'Present board').waitFor();
     await button(desktop, 'Pan').click();
     const still = await camera(desktop);
     await drag(desktop, { x: 86, y: 178 }, { x: 160, y: 214 });
     assert.ok((await camera(desktop)).x > still.x + 60, 'Hand tool pans by dragging the background');
     await button(desktop, 'Select').click();
     await button(desktop, 'Fit board').click();
-    await button(desktop, 'Connect cards').click();
+    await button(desktop, 'Connect objects').click();
     await workspace.click();
     await sqlite.click();
     await desktop.getByRole('textbox', { name: 'Relationship label' }).fill('Reads from');
     await desktop.getByRole('textbox', { name: 'Relationship label' }).press('Tab');
-    await desktop.locator('.board-relation-label').getByText('Reads from', { exact: true }).waitFor();
+    await desktop.locator('.board-relation-label').filter({ hasText: /^Reads from$/ }).waitFor();
     assert.match(await desktop.locator('.board-inspector-endpoints').innerText(), /Study workspace\s+SQLite/);
     await button(desktop, 'Close inspector').click();
     const firstComponent = await workspace.boundingBox();
-    const thirdComponent = await card(desktop, 'Ingestion worker').boundingBox();
+    const thirdComponent = await card(desktop, 'Draft the answer').boundingBox();
     await drag(desktop, { x: firstComponent.x - 16, y: firstComponent.y - 14 },
       { x: thirdComponent.x + thirdComponent.width + 16, y: thirdComponent.y + thirdComponent.height + 14 });
-    assert.equal(await desktop.locator('.react-flow__node.selected').count(), 3, 'Marquee selects all three cards in the top row');
+    assert.equal(await desktop.locator('.react-flow__node.selected').count(), 3, 'Marquee selects the three processing cards');
     await desktop.keyboard.press('Escape');
     await workspace.click();
     await sqlite.click({ modifiers: ['Shift'] });
@@ -191,14 +236,30 @@ async function run() {
     const title = desktop.getByRole('textbox', { name: 'Title' });
     await title.fill('Storage decision');
     await title.press('Tab');
+    await desktop.getByLabel('Annotation style').selectOption('callout');
     const note = card(desktop, 'Storage decision');
     await note.waitFor();
+    assert.equal(await note.locator('.board-card').getAttribute('data-note-style'), 'callout');
     const position = await note.boundingBox();
     for (const component of await desktop.locator('.react-flow__node').filter({ has: desktop.locator('.board-card--component') }).all()) {
       const box = await component.boundingBox();
       assert.ok(position.x + position.width <= box.x || position.x >= box.x + box.width ||
         position.y + position.height <= box.y || position.y >= box.y + box.height, 'New note leaves components visible');
     }
+    await button(desktop, 'Close inspector').click();
+    await button(desktop, 'Fit board').click();
+    await button(desktop, 'Connect objects').click();
+    await note.click();
+    await sqlite.click();
+    assert.equal(await desktop.getByLabel('Connection style').inputValue(), 'annotation');
+    assert.match(await desktop.locator('.board-edge--authored.board-edge--role-annotation .react-flow__edge-path').getAttribute('d'), /C/);
+    await button(desktop, 'Close inspector').click();
+    await button(desktop, 'Add object').click();
+    await button(desktop, 'Illustration').click();
+    const picker = inspector.getByRole('combobox', { name: 'Illustration' });
+    assert.equal(await picker.locator('option').count(), 16);
+    await picker.selectOption('ocr');
+    await card(desktop, 'OCR processing').locator('[data-illustration="ocr"]').waitFor();
     await button(desktop, 'Close inspector').click();
     await button(desktop, 'Fit board').click();
     await button(desktop, 'Use light theme').click();
@@ -209,7 +270,13 @@ async function run() {
     await mobile.goto(base.href);
     await card(mobile, 'memory-and-learning.md').waitFor();
     await button(mobile, 'Find objects').click();
-    await mobile.getByRole('textbox', { name: 'Search objects' }).fill('retrieval practice');
+    const search = mobile.getByRole('textbox', { name: 'Search objects' });
+    await search.fill('missing object');
+    await mobile.getByText('No matching objects.').waitFor();
+    await search.press('Escape');
+    assert.equal(await button(mobile, 'Find objects').getAttribute('aria-expanded'), 'false');
+    await button(mobile, 'Find objects').click();
+    await search.fill('retrieval practice');
     await button(mobile, 'Retrieval practice').click();
     await mobile.getByRole('complementary', { name: 'Object inspector' }).waitFor();
     const dimensions = await mobile.evaluate(() => ({ width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth,
@@ -221,6 +288,17 @@ async function run() {
     const mobileInspector = await mobile.getByRole('complementary', { name: 'Object inspector' }).boundingBox();
     assert.ok(mobileCard.y + mobileCard.height < mobileInspector.y, 'Selected card fits above the narrow inspector');
     await mobile.screenshot({ path: path.join(evidence, 'canvas-mobile.png') });
+    await button(mobile, 'Close inspector').click();
+    await button(mobile, 'Engineering').click();
+    await mobile.getByRole('heading', { name: 'Inside Grasp' }).waitFor();
+    await mobile.screenshot({ path: path.join(evidence, 'canvas-engineering-mobile.png') });
+    await button(mobile, 'Present board').click();
+    await mobile.getByRole('group', { name: 'Presentation views' }).getByRole('button', { name: 'Index a document' }).click();
+    const step = mobile.getByRole('group', { name: 'Path steps' }).getByRole('status');
+    assert.equal(await step.textContent(), 'Source document');
+    await button(mobile, 'Next step').click();
+    assert.equal(await step.textContent(), 'Extracted pages');
+    await mobile.screenshot({ path: path.join(evidence, 'canvas-presentation-mobile.png') });
     console.log('PASS 390×844 reduced-motion outline, inspector and no horizontal overflow');
 
     await button(desktop, 'Knowledge').click();

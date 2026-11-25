@@ -66,6 +66,18 @@ test('layout changes survive a refresh and dangling visual links are hidden', ()
   assert.equal(first.placement.x, initialX);
 });
 
+test('a pinned passage follows the availability of its original document', () => {
+  const [document, replacement] = fixture.documents;
+  const quote = 'An exact source passage';
+  const pin = { id: 'pin', kind: 'evidence', title: document.name, description: quote, placement: rect(0, 0),
+    evidence: { docId: document.id, chunkId: 'source-chunk', page: 1, quote } };
+  const board = { ...emptyBoard('knowledge'), authoredCards: [pin] };
+  const initial = projectBoard(knowledgeScene(fixture.graph, fixture.documents), board);
+  assert.deepEqual(initial.cards.find(card => card.id === pin.id), pin);
+  const afterRemoval = projectBoard(knowledgeScene(fixture.graph, [replacement]), board);
+  assert.ok(!afterRemoval.cards.some(card => card.id === pin.id));
+});
+
 test('new notes stay clear of occupied space, including when the viewport is full', () => {
   const occupied = { id: 'busy', kind: 'component', title: 'API', description: '', placement: rect(0, 0) };
   assert.deepEqual(placeCard([occupied], rect(0, 0, 600, 400), occupied), rect(250, 0));

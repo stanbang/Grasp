@@ -35,8 +35,9 @@ export function Modal({ title, onClose, children }: {
     useEffect(() => { dialog.current?.showModal(); const element = dialog.current; return () => element?.close(); }, []);
     return <dialog ref={dialog} className="workspace-dialog" onCancel={onClose} aria-label={title}><header><h2>{title}</h2><button aria-label="Close dialog" onClick={onClose}><X size={18}/></button></header>{children}</dialog>;
 }
-export function SourceView({ citation, onClose }: {
+export function SourceView({ citation, sourceName, onClose }: {
     citation: Citation;
+  sourceName?: string;
     onClose: () => void;
 }) {
     const [page, setPage] = useState<PageResponse | null>(null);
@@ -53,7 +54,15 @@ export function SourceView({ citation, onClose }: {
     } }).catch(() => { }); return () => { active = false; if (objectUrl)
         URL.revokeObjectURL(objectUrl); }; }, [citation]);
     const index = page?.text.indexOf(citation.quote) ?? -1;
-    return <Modal title={`Source · page ${citation.page}`} onClose={onClose}>{error && <p role="status">{error}</p>}{url && <iframe title="Original PDF page" src={`${url}#page=${citation.page}`} className="source-pdf"/>}<blockquote>{citation.quote}</blockquote>{page && <details><summary>Extracted page with highlighted citation</summary><pre>{index >= 0 ? <>{page.text.slice(0, index)}<mark>{citation.quote}</mark>{page.text.slice(index + citation.quote.length)}</> : page.text}</pre></details>}</Modal>;
+  return <Modal title={`Source · page ${citation.page}`} onClose={onClose}>
+    {sourceName && <p className="board-source-name">{sourceName}</p>}
+    {error && <p role="status">{error}</p>}
+    {url && <iframe title="Original PDF page" src={`${url}#page=${citation.page}`} className="source-pdf" />}
+    <blockquote>{citation.quote}</blockquote>
+    {page && <details><summary>Extracted page with highlighted citation</summary><pre>{index >= 0
+      ? <>{page.text.slice(0, index)}<mark>{citation.quote}</mark>{page.text.slice(index + citation.quote.length)}</>
+      : page.text}</pre></details>}
+  </Modal>;
 }
 function LearningCheck({ onRefresh }: {
     onRefresh: () => Promise<void>;

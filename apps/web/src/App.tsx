@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUp, Box, FilePlus2, FolderOpen, Layers3, MessageSquare, Moon, Settings, Sun, Workflow, X } from 'lucide-react';
+import { ArrowUp, Box, FilePlus2, FolderOpen, Layers3, MessageSquare, Moon, Presentation, Settings, Sun, Workflow, X } from 'lucide-react';
 import { CanvasBoard } from './canvas/CanvasBoard';
 import { CanvasInspector } from './canvas/CanvasInspector';
 import { ExplorerBoundary } from './canvas/ExplorerBoundary';
@@ -20,11 +20,16 @@ function savedConversation(): string | null {
   catch { return null; }
 }
 
+function requestedBoard(): BoardKind {
+  return new URLSearchParams(window.location.search).get('board') === 'engineering' ? 'engineering' : 'knowledge';
+}
+
 export function App() {
   const { graph, documents, setLibrary, upsertDocument } = useStudyGraph();
   const knowledge = useBoard('knowledge');
   const engineering = useBoard('engineering');
-  const [workspace, setWorkspace] = useState<BoardKind>('knowledge');
+  const [workspace, setWorkspace] = useState<BoardKind>(requestedBoard);
+  const [presenting, setPresenting] = useState(false);
   const [render3D, setRender3D] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [question, setQuestion] = useState('');
@@ -50,6 +55,8 @@ export function App() {
   const generation = useRef(0);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const questionButton = useRef<HTMLButtonElement>(null);
+  const presentationButton = useRef<HTMLButtonElement>(null);
+  const exitPresentationButton = useRef<HTMLButtonElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const importLock = useRef(false);
@@ -70,6 +77,11 @@ export function App() {
     }
   }
 
+  function changePresentation(value: boolean) {
+    setPresenting(value);
+    requestAnimationFrame(() => (value ? exitPresentationButton : presentationButton).current?.focus());
+  }
+
   function failure(value: unknown) {
     if (value instanceof ApiError && value.status === 401) setLocked(true);
     setError(value instanceof Error ? value.message : String(value));
@@ -83,15 +95,17 @@ export function App() {
     setProvider(health.llm.provider);
   }
 
-  async function openConversation(id: string) {
+  async function openConversation(id: string, showQuestions = true) {
     generation.current++;
     const result = await api<Turns>(`/conversations/${id}`);
     remember(id);
     setTurns(result.turns);
     setScope([]);
     setScopeEmpty(false);
-    setWorkspace('knowledge');
-    setQuestionOpen(true);
+    if (showQuestions) {
+      setWorkspace('knowledge');
+      setQuestionOpen(true);
+    }
   }
 
   useEffect(() => {
@@ -99,7 +113,7 @@ export function App() {
     void refresh().then(async () => {
       const saved = savedConversation();
       if (!saved) return;
-      try { await openConversation(saved); }
+      try { await openConversation(saved, requestedBoard() === 'knowledge'); }
       catch (issue) {
         if (issue instanceof ApiError && issue.status === 404) remember(null);
         else throw issue;
@@ -283,14 +297,18 @@ export function App() {
     };
   }, [knowledgeSeed, uploads]);
 
-  return <div className="canvas-workspace" data-theme={theme}>
+  return <div className="canvas-workspace" data-theme={theme} data-presenting={presenting}
+    onKeyDown={event => { if (event.key === 'Escape' && presenting) changePresentation(false); }}>
     <header className="canvas-header">
-      <div className="canvas-brand"><Layers3 size={21} aria-hidden /><span>Grasp</span></div>
-      <nav className="canvas-workspaces" aria-label="Workspaces">
-        <button type="button" aria-pressed={workspace === 'knowledge'} onClick={() => changeWorkspace('knowledge')}><Box size={16} /><span>Knowledge</span></button>
-        <button type="button" aria-pressed={workspace === 'engineering'} onClick={() => changeWorkspace('engineering')}><Workflow size={16} /><span>Engineering</span></button>
-      </nav>
+      {!presenting && <div className="canvas-location">
+        <div className="canvas-brand"><Layers3 size={19} aria-hidden /><span>Grasp</span></div>
+        <nav className="canvas-workspaces" aria-label="Workspaces">
+          <button type="button" aria-pressed={workspace === 'knowledge'} onClick={() => changeWorkspace('knowledge')}><Box size={15} /><span>Knowledge</span></button>
+          <button type="button" aria-pressed={workspace === 'engineering'} onClick={() => changeWorkspace('engineering')}><Workflow size={15} /><span>Engineering</span></button>
+        </nav>
+      </div>}
       <div className="canvas-header-actions">
+        {presenting ? <button ref={exitPresentationButton} type="button" className="canvas-text-button" onClick={() => changePresentation(false)}><X size={17} /> Exit presentation</button> : <>
         {workspace === 'knowledge' && <>
           <button type="button" ref={questionButton} className="canvas-text-button" aria-label="Questions" aria-expanded={questionOpen} title="Questions" onClick={() => setQuestionOpen(!questionOpen)}><MessageSquare size={17} /><span>Questions</span></button>
           <button type="button" className="canvas-text-button" aria-label={render3D ? 'Return to 2D canvas' : 'Explore in 3D'} title={render3D ? 'Return to 2D canvas' : 'Explore in 3D'} disabled={!graph.nodes.length} onClick={() => setRender3D(!render3D)}><Box size={17} /><span>{render3D ? '2D' : '3D'}</span></button>
@@ -298,8 +316,10 @@ export function App() {
           {(visibleKnowledge.cards.length > 0 || knowledge.document.authoredCards.length > 0) &&
             <button type="button" className="canvas-add-files" aria-label="Add documents" title="Add documents" disabled={working} onClick={() => fileInput.current?.click()}><FilePlus2 size={17} /><span>Add documents</span></button>}
         </>}
+        {workspace === 'engineering' && <button ref={presentationButton} type="button" className="canvas-text-button" aria-label="Present board" title="Present board" onClick={() => changePresentation(true)}><Presentation size={17} /><span>Present</span></button>}
         <button type="button" className="board-icon" aria-label={theme === 'dark' ? 'Use light theme' : 'Use dark theme'} title={theme === 'dark' ? 'Use light theme' : 'Use dark theme'} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
         <button type="button" className="board-icon" aria-label="Workspace options" title="Workspace options" disabled={working} onClick={() => setSettings(true)}><Settings size={17} /></button>
+        </>}
       </div>
     </header>
     <input ref={fileInput} className="hidden-file" tabIndex={-1} aria-label="Select files" type="file" multiple accept=".pdf,.md,.txt" onChange={event => {
@@ -325,7 +345,8 @@ export function App() {
             </Suspense>
           </ExplorerBoundary>
         </div> : <CanvasBoard key={workspace} seed={workspace === 'knowledge' ? visibleKnowledge : engineeringScene}
-          session={activeBoard} highlight={workspace === 'knowledge' ? highlight : []} theme={theme}
+          session={activeBoard} highlight={workspace === 'knowledge' ? highlight : []} theme={theme} presenting={presenting}
+          onInspect={() => { if (workspace === 'knowledge') setQuestionOpen(false); }}
           importing={workspace === 'knowledge' && (reading || loadingSample)}
           empty={workspace === 'knowledge' && <div className="board-empty">
             <div className="board-empty-symbol"><Layers3 size={28} strokeWidth={1.5} /></div>
@@ -336,9 +357,12 @@ export function App() {
               {provider === 'mock' && <button type="button" disabled={working} onClick={() => void demo()}>{loadingSample ? 'Opening sample…' : 'Open sample'}</button>}
             </div>
           </div>}
-          inspect={(card, link, close) => <CanvasInspector key={card?.id ?? link?.id}
+          inspect={(card, link, close, pin) => <CanvasInspector key={card?.id ?? link?.id}
             card={card} link={card ? undefined : link} session={activeBoard} documents={documents} onClose={close}
-            onSource={setCitation} onAsk={item => { close(); askAbout(item); }} onExplore={explore} />} />}
+            onSource={setCitation} onAsk={item => { close(); askAbout(item); }} onExplore={explore} onPin={source => pin({
+              kind: 'evidence', title: `${documents.find(document => document.id === source.docId)?.name ?? 'Source'} · p${source.page}`,
+              description: source.quote, evidence: source,
+            })} />} />}
 
         {workspace === 'knowledge' && uploads.length > 0 && <section className="canvas-uploads" aria-label="File uploads">
           <header><h2>{reading ? 'Importing documents' : 'Import results'}</h2>{!reading && <button type="button" className="board-icon" aria-label="Dismiss import results" onClick={() => setUploads([])}><X size={14} /></button>}</header>
@@ -382,7 +406,8 @@ export function App() {
     {dragging && <div className="drop-indicator"><FilePlus2 size={32} /><span>Drop to add documents</span></div>}
     {chosenConcept && <ConceptView node={chosenConcept} graph={graph} onSelect={id => { setSelectedConcept(id); explore(id); }}
       onClose={() => setSelectedConcept(null)} onSource={source => { setSelectedConcept(null); setCitation(source); }} />}
-    {citation && <SourceView citation={citation} onClose={() => setCitation(null)} />}
+    {citation && <SourceView citation={citation} sourceName={documents.find(document => document.id === citation.docId)?.name}
+      onClose={() => setCitation(null)} />}
     {settings && <WorkspaceSettings onClose={() => setSettings(false)} onRefresh={refresh} onConversation={openConversation}
       onConversationRemoved={id => {
         if (id === conversation) startConversation();

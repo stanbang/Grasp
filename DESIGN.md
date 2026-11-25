@@ -117,15 +117,15 @@ components:
 
 # Grasp design system
 
-## Canvas direction for review
+## Shared whiteboard
 
-GRASP 2.0 uses a quiet technical whiteboard as the shared workspace. The dark navy, cool white and teal palette carries forward the star-chart character. A sparse grid, open space and legible relationships make room for the user's work. The existing recorded showcase retains its own [surface brief](.impeccable/surfaces/showcase.md).
+GRASP 2.0 uses a warm charcoal technical whiteboard for both workspaces. The canvas fills the viewport. The workspace switcher and task controls float at the top, and editing and camera controls sit along the bottom. Keep open space around the work and use a faint dot grid for orientation. The frontmatter describes the earlier study surfaces. The recorded showcase retains its existing [surface brief](.impeccable/surfaces/showcase.md).
 
 ### Shape
 
-**Knowledge Canvas** serves students in Operate mode. Its first view has a compact workspace switcher and a broad usable board. The empty board offers Add documents and a public sample. A populated board opens at a readable overview of document groups and representative concepts. Search opens an outline or focuses a result. Import feedback sits by its document. The right inspector opens from a card, question or citation. The question composer occupies the inspector or a compact focused tray. A source quote can be opened and closed without losing the selected concept.
+**Knowledge Canvas** serves students in Operate mode. The empty board offers source import and, in offline mock mode, a sample. Document-led bands anchor the generated concepts, with a separate area for concepts shared across sources. At overview scale, document labels and primary concepts lead. Zoom or select an object to see more detail. The searchable outline opens and focuses an object. Questions and inspection are temporary panels. The source viewer opens the exact quote and its page.
 
-**Engineering Canvas** serves the presenter and interviewer in Experience mode. It opens on the architecture overview with a small frame navigator. The eye follows labeled arrows across a short chain. On inspection, the card reveals one explanation, the inputs and outputs, then exact code and evidence references. Presentation mode removes editing tools, gives the diagram more canvas, and reserves room for frame controls. A jump into Knowledge retains the presentation return point. Presenter notes have their own view.
+**Engineering Canvas** serves the presenter and interviewer in Experience mode. It opens on the architecture overview. Follow two paths across the board, from document input to indexing and from a question to a citation. Inspection reveals descriptions, repository references and demonstrations when available. Presentation mode recedes to the camera and exit controls. The diagram, headings, regions and notes share the same world coordinates.
 
 Success is finding a source or explaining one data path with the surrounding board still in view. The shape assumes a desktop-first editor and a projector-ready audience view. On narrow screens, keep a usable board and an outline. Bring one inspector or composer forward as a focused sheet with a back action. Test actual card density and readable zoom levels in Phase 1.
 
@@ -133,21 +133,31 @@ Success is finding a source or explaining one data path with the surrounding boa
 
 | Role | Dark | Light for projection |
 | --- | --- | --- |
-| Canvas | `#0b1119` | `#f1f4f4` |
-| Card and panel | `#101923` | `#ffffff` |
-| Raised control | `#17232e` | `#e5ecee` |
-| Text | `#e7edf1` | `#17242c` |
-| Secondary text | `#a4b3bf` | `#485b65` |
-| Structure | `#263642` | `#c2cfd3` |
-| Focus, active action and link | `#8ddbcf` | `#00685d` |
+| Canvas | `#191714` | `#f5f0e7` |
+| Card | `#24211d` | `#faf5eb` |
+| Panel | `#211e1a` | `#fffbf3` |
+| Raised control | `#302a24` | `#eae0d2` |
+| Text and illustration ink | `#eeeae1` | `#2c251e` |
+| Secondary text | `#beb4a7` | `#62564a` |
+| Quiet border | `#403c35` | `#d2c5b4` |
+| Input boundary | `#7b7064` | `#8a7b6e` |
+| Focus and primary actions | `#e0bc99` | `#805032` |
+| Data flow and evidence | `#91b88a` | `#386742` |
+| Processing | `#e8634b` | `#a63d2c` |
+| Annotation ink | `#d8c3ac` | `#76563e` |
 | Mastery | `#d9b66f` | `#7b541c` |
-| Error | `#f0aba6` | `#a23532` |
+| Error | `#f5a79b` | `#a23532` |
 
-Dark tokens in the frontmatter describe the existing system. The light roles and canvas rules are proposed. Verify contrast on assembled components, including focus outlines against adjacent fills, with the Phase 1 build. Decorative lines use the quiet structure role. Interactive boundaries must remain legible at 3:1. Gold belongs to mastered concepts. Error red and symbols identify failures. Labels and icons carry meaning alongside color.
+Quiet borders and dots provide structure. Input and focus boundaries need at least 3:1 contrast against adjacent fills. Keep normal text at 4.5:1 or higher. Use arrowheads and verbs for direction, gentle curves for annotations and dashed connectors for document adjacency. Show full relationship labels and endpoints in the inspector. Gold belongs to mastered concepts.
 
-Use the system sans-serif stack. Use the local monospace stack for code paths and IDs in the inspector. Aim for 16–18 px card titles, 13–14 px connector/metadata labels at the normal camera zoom, 15–16 px reading text and 28–34 px presentation headings at target projector framing. At distant zoom, show titles or groups. In the inspector, keep the full body and relationship text available regardless of canvas zoom.
+Use Source Serif 4 for board headings, primary concepts and diagram captions. Use the system sans-serif for controls and descriptions, and monospace for source paths. Caveat marks authored annotations. Both display faces ship locally with their [Caveat OFL](apps/web/public/fonts/Caveat-OFL.txt) and [Source Serif 4 OFL](apps/web/public/fonts/SourceSerif4-OFL.txt) notices. Preserve readable text in the inspector at every zoom level.
 
-Use 8 px control corners, calm one-pixel card borders, 12–16 px card insets and at least 24 px between unrelated clusters. Regions use a quiet outline and a visible heading. Architecture components use function icons and input/output labels. Documents have a file icon and status. Concepts have a concept label and mastery marker when present. Notes use a distinct shape and authored label. Evidence has a quote mark, document title and page. Use dark or light neutrals for structure, with a teal focus outline and matching controls.
+### Technical objects and annotations
+
+- Draw with the shared 74 × 64 SVG coordinate space, 1.65-unit strokes and rounded line ends. Start with a distinct silhouette. Add one accent to clarify a technical feature such as overlap, a source span or a query neighbour.
+- Use unboxed figures for artefacts such as pages, chunks and databases. Use captioned processing cards for actions such as embedding or validation. Leave headings and text on the board itself. Use a quiet outlined region for a subsystem.
+- Render notes in handwriting with optional underline or callout treatments. Use curved arrows and an inspectable relation label when a note points to an object. Keep formal captions in serif or sans-serif. Evidence objects show their real source name, page and exact text.
+- For diagrams that accept data, place the visual object on the board and put accessible interactive controls in its inspector. Declare illustrative examples where the values appear. Bind future interactions to checked source records and traces when those are available.
 
 ### Interactions and states
 

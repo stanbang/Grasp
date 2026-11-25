@@ -1,17 +1,21 @@
-import { ArrowRight, ArrowUpRight, FileText, MessageSquare, Ungroup, X } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, FileText, MessageSquare, Pin, Ungroup, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../client';
 import type { ChunksResponse, Citation, Document } from '../types/contracts';
-import { removeAuthored, type Card } from './board';
+import { removeAuthored, type AuthoredCard, type Card } from './board';
+import { CanvasVisualization } from './CanvasVisualization';
+import { illustrationOptions } from './TechnicalIllustration';
 import type { InspectedLink } from './CanvasBoard';
 import type { BoardSession } from './use-board';
 
 const sourceBase = 'https://github.com/stanbang/Grasp/blob/98f8cda/';
+const linkRoles = { structural: 'Context', data: 'Data flow', process: 'Processing', annotation: 'Annotation' };
 
-function Passages({ card, documents, onSource }: {
+function Passages({ card, documents, onSource, onPin }: {
   card: Card;
   documents: Document[];
   onSource: (citation: Citation) => void;
+  onPin: (citation: Citation) => void;
 }) {
   const ids = card.concept?.docIds ?? (card.document?.status === 'done' ? [card.document.id] : []);
   const chunks = card.concept?.sourceChunkIds;
@@ -44,15 +48,19 @@ function Passages({ card, documents, onSource }: {
     {status === 'error' && <p role="alert">Could not load the source passages.</p>}
     {status === 'ready' && !sources.length && <p>No source passages are available.</p>}
     {sources.map(source => <div className="board-passage" key={source.chunkId}>
-      <button type="button" onClick={() => onSource(source)}>
-        <FileText size={15} /><span>{documents.find(doc => doc.id === source.docId)?.name ?? 'Source'} · p{source.page}</span><ArrowUpRight size={14} />
-      </button>
+      <div className="board-passage-actions">
+        <button type="button" onClick={() => onSource(source)}>
+          <FileText size={15} /><span>{documents.find(doc => doc.id === source.docId)?.name ?? 'Source'} · p{source.page}</span><ArrowUpRight size={14} />
+        </button>
+        <button type="button" className="board-icon" aria-label={`Pin passage from page ${source.page}`} title="Pin passage to canvas"
+          onClick={() => onPin(source)}><Pin size={16} /></button>
+      </div>
       <blockquote>{source.quote}</blockquote>
     </div>)}
   </section>;
 }
 
-export function CanvasInspector({ card, link, session, documents, onClose, onSource, onAsk, onExplore }: {
+export function CanvasInspector({ card, link, session, documents, onClose, onSource, onAsk, onExplore, onPin }: {
   card?: Card;
   link?: InspectedLink;
   session: BoardSession;
@@ -61,6 +69,7 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
   onSource: (citation: Citation) => void;
   onAsk: (card: Card) => void;
   onExplore: (id: string) => void;
+  onPin: (citation: Citation) => void;
 }) {
   const conceptId = card?.concept?.id;
   const explored = card?.concept?.masteryState;
@@ -72,10 +81,10 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
   }, [conceptId, explored]);
   useEffect(() => { closeButton.current?.focus({ preventScroll: true }); }, []);
 
-  function editCard(field: 'title' | 'description', value: string) {
-    if (!draft || value === draft[field]) return;
+  function editCard(fields: Partial<Pick<AuthoredCard, 'title' | 'description' | 'illustration' | 'noteStyle'>>) {
+    if (!draft) return;
     session.update(board => ({ ...board, authoredCards: board.authoredCards.map(item =>
-      item.id === draft.id ? { ...item, [field]: value } : item) }));
+      item.id === draft.id ? { ...item, ...fields } : item) }));
   }
 
   function editLink(value: string) {
@@ -97,17 +106,30 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
   }}>
     <header><h2>{card?.title ?? 'Connection'}</h2><button ref={closeButton} className="board-icon" type="button" aria-label="Close inspector" onClick={onClose}><X size={18} /></button></header>
     <div className="board-inspector-body">
-      {draft ? <>
+      {card?.evidence ? <>
+        <button type="button" className="board-inspector-action" onClick={() => onSource(card.evidence!)}><FileText size={16} /> Open exact passage</button>
+        <blockquote className="board-evidence-quote">{card.evidence.quote}</blockquote>
+        <button type="button" className="board-inspector-action" onClick={remove}>Remove from board</button>
+      </> : draft ? <>
         <label>Title<input key={draft.title} defaultValue={draft.title} maxLength={96} onBlur={event => {
           const title = event.target.value.trim();
-          if (title) editCard('title', title);
+          if (title && title !== draft.title) editCard({ title });
           else event.target.value = draft.title;
         }} /></label>
         {draft.kind !== 'group' && <label>Text<textarea key={draft.description} defaultValue={draft.description} maxLength={4000} rows={5}
-          onBlur={event => editCard('description', event.target.value)} /></label>}
-        <button type="button" className="board-inspector-action" onClick={remove}>{draft.kind === 'group' ? <><Ungroup size={16} /> Ungroup</> : 'Remove card'}</button>
+          onBlur={event => { if (event.target.value !== draft.description) editCard({ description: event.target.value }); }} /></label>}
+        {draft.kind === 'annotation' && <label>Annotation style<select value={draft.noteStyle ?? 'plain'} onChange={event => {
+          const style = event.target.value;
+          if (style === 'plain' || style === 'underline' || style === 'callout') editCard({ noteStyle: style });
+        }}><option value="plain">Handwritten</option><option value="underline">Underlined</option><option value="callout">Callout</option></select></label>}
+        {draft.kind === 'illustration' && <label>Illustration<select value={draft.illustration} onChange={event => {
+          const illustration = illustrationOptions.find(option => option.id === event.target.value);
+          if (illustration) editCard({ illustration: illustration.id, ...(draft.title === 'New illustration' ? { title: illustration.label } : {}) });
+        }}>{illustrationOptions.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>}
+        <button type="button" className="board-inspector-action" onClick={remove}>{draft.kind === 'group' ? <><Ungroup size={16} /> Ungroup</> : 'Remove object'}</button>
       </> : card && <>
         {card.description && <p>{card.description}</p>}
+        {card.visualization && <CanvasVisualization plot={card.visualization} />}
         {card.sourcePath && <a className="board-code-link" href={sourceBase + card.sourcePath} target="_blank" rel="noreferrer">
           <code>{card.sourcePath}</code><ArrowUpRight size={15} />
         </a>}
@@ -115,7 +137,7 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
           <button type="button" className="board-inspector-action" onClick={() => onAsk(card)}><MessageSquare size={16} />
             {card.concept ? 'Ask about this concept' : 'Ask this document'}
           </button>
-          <Passages key={card.id} card={card} documents={documents} onSource={onSource} />
+          <Passages key={card.id} card={card} documents={documents} onSource={onSource} onPin={onPin} />
         </>}
       </>}
       {link && !card && <>
@@ -126,9 +148,16 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
               if (event.target.value.trim()) editLink(event.target.value);
               else event.target.value = link.label;
             }} /></label>
+          <label>Connection style<select value={link.role ?? 'data'} onChange={event => {
+            const role = event.target.value;
+            if (role === 'data' || role === 'process' || role === 'annotation') session.update(board => ({
+              ...board, authoredLinks: board.authoredLinks.map(item => item.id === link.id ? { ...item, role } : item),
+            }));
+          }}><option value="data">Data flow</option><option value="process">Processing</option><option value="annotation">Curved annotation arrow</option></select></label>
           <button type="button" className="board-inspector-action" onClick={remove}>Remove connection</button>
         </> : <>
           <p>{link.label}</p>
+          {link.role && <p className="board-connection-role">{linkRoles[link.role]}</p>}
           {!!link.docIds?.length && <ul>{link.docIds.map(id => <li key={id}>{documents.find(doc => doc.id === id)?.name ?? id}</li>)}</ul>}
         </>}
       </>}
