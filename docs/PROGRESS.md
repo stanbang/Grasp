@@ -2,9 +2,12 @@
 
 ## Developer Preview v0.1
 
+- **Phase 0 complete:** Audited four branches, verified the baseline, captured public reference evidence and selected the showcase baseline and React Flow. The [research index](grasp-v2/README.md) points to the branch audit, REA findings and design decisions.
+- **Phase 1 complete:** `dcc8c6a` and `8cd9582` delivered the runnable shared canvas foundation. The owner requested a different visual direction in Phase 1.1, which retained the working interaction and source features. [Checkpoint](grasp-v2/phase-1.md)
 - **25 November 2026, approved:** The owner approved the Phase 1.1 Direction A+ whiteboard. The local feature branch contains the implementation (`ea8e246`) and its review record (`ae76ddb`). The checkpoint passed 72 Python tests, 24 Node tests, contract and TypeScript checks, production build and the disposable Chrome suite. Physical projector and screen-reader review remained unverified. [Checkpoint](grasp-v2/phase-1-1/README.md)
 - **25 November 2026, planning:** Audited reuse for the local developer preview. Proposed one FastAPI board service, additive SQLite project state, thin CLI and Codex MCP adapters, one sandboxed prototype path and a human-approved export. The SDK choice is documented from official sources. Windows compatibility, the adapter handshake and isolation are planned gates. [Specification](grasp-v2/developer-preview.md) · [Architecture](grasp-v2/canvas-architecture.md#developer-preview-service)
-- **Awaiting approval:** Phase 2 starts after approval of the revised plan. The dependency addition needs owner confirmation before installation. The schedule targets the complete slice by 4 December and reserves 5–6 December for integration and rehearsal ahead of the 7 December interview. [Roadmap](grasp-v2/roadmap.md) · [HTX presentation](grasp-v2/storyboard.md)
+- **25 November 2026, handoff prepared:** The plan is at `6301b1c` on `feature/grasp-v2-canvas`. The handoff records approval history, code and contract entry points, the persistence boundary, reuse decisions, and the starting scope for Phases 2 and 3. The mock-mode handoff rerun passed contract drift, 72 Python tests, 24 Node tests and strict TypeScript. [Implementation handover](HANDOVER.md#start-here-for-developer-preview-phases-2-and-3)
+- **Approval boundary:** Phase 2 awaits a separate go on the revised plan. Phase 3 follows Phase 2 review. The MCP dependency needs owner approval before installation. The schedule targets the complete slice by 4 December and reserves 5–6 December for integration and rehearsal ahead of the 7 December interview. [Roadmap](grasp-v2/roadmap.md) · [HTX presentation](grasp-v2/storyboard.md)
 
 ## Showcase history
 
