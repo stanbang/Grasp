@@ -79,7 +79,7 @@ Setup registers the MCP server and skill with Codex and stores separate owner an
 ### Document retrieval and citations
 
 ```mermaid
-flowchart LR
+flowchart TB
     document["PDF, Markdown or text"] --> pages["Extract pages and split into chunks"]
     pages -->|"Text and offsets"| sourceStore[("SQLite")]
     pages -->|"Embed chunks"| vectorIndex[("ChromaDB")]
@@ -96,7 +96,7 @@ GRASP extracts text page by page and can use local OCR for scanned PDFs. It embe
 ### Shared project boards
 
 ```mermaid
-flowchart LR
+flowchart TB
     browser["React and React Flow canvas"] <-->|"Edits and saved revisions"| api["FastAPI"]
     agent["Codex or compatible agent"] <-->|"MCP over stdio"| adapter["Local Python adapter"]
     adapter <-->|"Scoped reads and revision-checked writes"| api
