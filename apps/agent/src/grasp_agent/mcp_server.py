@@ -89,12 +89,15 @@ def create_server(connect: Callable[[], GraspClient]) -> MCPServer:
     def apply_canvas_operations(
         board_id: Identifier, base_revision: Revision, mutation_id: Identifier, operations: Operations,
         expand_from_object_id: Identifier | None = None,
+        auto_layout: bool = False,
     ) -> CallToolResult:
         """Commit a Phase 2 CanvasBatch. Read the board first; use a fresh UUID and retry identical requests with it.
 
         Supported draft operations are addObject, updateObject, placeObject, removeObject, addConnection,
         updateConnection and removeConnection. addObject and updateObject take object with id, kind, title,
         placement (x, y, width, height, optional groupId), and optional description.
+        For new architecture or explanations, set auto_layout=true to size and place additions. In that
+        mode omit placement on new cards or supply only placement.groupId. Saved cards keep their positions.
         Use kind "explanation" for an architecture card and "annotation" for a note. Other kinds include
         "text", "heading", "group", "illustration", "evidence", "requirement", "question" and "prototype".
         Set relatedObjectIds or relatedConnectionIds on notes, questions and requirements to record their target.
@@ -108,6 +111,14 @@ def create_server(connect: Callable[[], GraspClient]) -> MCPServer:
         batch = {"baseRevision": base_revision, "mutationId": mutation_id, "operations": operations}
         if expand_from_object_id is not None:
             batch["expandFromObjectId"] = expand_from_object_id
+        if auto_layout:
+            batch["autoLayout"] = True
+            for operation in operations:
+                item = operation.get("object")
+                if operation.get("type") == "addObject" and isinstance(item, dict):
+                    placement = item.get("placement", {})
+                    if isinstance(placement, dict):
+                        item["placement"] = {"x": 0, "y": 0, "width": 220, "height": 92, **placement}
         return result(lambda: connect().apply(board_id, batch))
 
     @server.tool(annotations=read_only)

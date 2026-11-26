@@ -153,6 +153,50 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(result.is_error)
             self.assertEqual(result.structured_content["error"]["code"], "serviceUnavailable")
 
+    async def test_automatic_layout_sizes_and_places_a_semantic_board_and_local_expansion(self):
+        async with self.connect() as client:
+            created = await client.call_tool("create_board", {"title": "Semantic layout fixture"})
+            board_id = created.structured_content["id"]
+
+            def card(id_, title, kind="explanation", **details):
+                return {"type": "addObject", "object": {"id": id_, "kind": kind, "title": title, **details}}
+
+            def edge(id_, source, target, label):
+                return {"type": "addConnection", "connection": {
+                    "id": id_, "source": source, "target": target, "label": label, "role": "process",
+                }}
+
+            async def apply(revision, operations, **options):
+                result = await client.call_tool("apply_canvas_operations", {
+                    "board_id": board_id, "base_revision": revision, "mutation_id": uuid4().hex,
+                    "operations": operations, "auto_layout": True, **options,
+                })
+                self.assertFalse(result.is_error, result.content)
+                return result.structured_content["board"]
+
+            initial = await apply(0, [
+                card("area", "Analysis", "group"),
+                card("collector", "Collector", placement={"groupId": "area"}),
+                card("index", "Index", description="Validates incoming events and updates the index. " * 14,
+                     placement={"groupId": "area"}),
+                edge("pipeline", "collector", "index", "Sends validated events"),
+            ])
+            short = initial["objects"]["collector"]["placement"]
+            long = initial["objects"]["index"]["placement"]
+            self.assertLess(short["x"] + short["width"], long["x"])
+            self.assertLess(short["height"], long["height"])
+            self.assertEqual(initial["objects"]["index"]["sizing"], "auto")
+            expanded = await apply(1, [
+                card("schema", "Check event schema", description="Reject malformed input and retain the original source."),
+                edge("validates", "collector", "schema", "Checks event structure"),
+            ], expand_from_object_id="collector")
+            self.assertEqual(expanded["objects"]["collector"], initial["objects"]["collector"])
+            self.assertEqual(expanded["objects"]["index"], initial["objects"]["index"])
+            placed = expanded["objects"]["schema"]["placement"]
+            self.assertLess(abs(placed["x"] - short["x"]) + abs(placed["y"] - short["y"]), 800)
+            saved = await client.call_tool("get_board_context", {"board_id": board_id, "since_revision": 1})
+            self.assertEqual(saved.structured_content["board"], expanded)
+
     async def test_iterative_expansion_preserves_owner_route_in_a_fresh_stdio_session(self):
         owner = GraspClient(self.base, OWNER)
         board = owner.create_board("Iterative architecture")

@@ -11,7 +11,7 @@ from .canvas_storage import BoardRevisionRow
 
 HISTORY_PAGE_SIZE = 12
 HISTORY_PAGE_BYTES = 256 * 1024
-VISUAL_FIELDS = {"placement", "noteStyle"}
+VISUAL_FIELDS = {"placement", "noteStyle", "sizing"}
 FEEDBACK_KINDS = {"annotation", "requirement", "question"}
 
 

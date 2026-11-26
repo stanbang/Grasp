@@ -46,6 +46,7 @@ function objectData(card: AuthoredCard, board: BoardDocument): CanvasObjectData 
     illustration: card.illustration ?? null, noteStyle: card.noteStyle ?? null,
     canonicalNodeId: details?.canonicalNodeId ?? null, evidence: details?.evidence ?? [],
     relatedObjectIds: details?.relatedObjectIds ?? [], relatedConnectionIds: details?.relatedConnectionIds ?? [],
+    sizing: details?.sizing ?? null,
     requirement: details?.requirement ?? null,
     question: details?.question ?? null, prototype: details?.prototype ?? null,
   };

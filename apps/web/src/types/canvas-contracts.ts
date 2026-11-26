@@ -51,6 +51,7 @@ export interface CanvasObjectData {
   evidence?: Array<CanvasEvidenceRef>;
   relatedObjectIds?: Array<string>;
   relatedConnectionIds?: Array<string>;
+  sizing?: "auto" | "manual" | null;
   requirement?: CanvasRequirement | null;
   question?: CanvasQuestion | null;
   prototype?: CanvasPrototype | null;
@@ -68,6 +69,7 @@ export interface CanvasObject {
   evidence?: Array<CanvasEvidenceRef>;
   relatedObjectIds?: Array<string>;
   relatedConnectionIds?: Array<string>;
+  sizing?: "auto" | "manual" | null;
   requirement?: CanvasRequirement | null;
   question?: CanvasQuestion | null;
   prototype?: CanvasPrototype | null;
@@ -182,6 +184,7 @@ export interface CanvasBatch {
   mutationId: string;
   operations: Array<AddObject | UpdateObject | PlaceObject | RemoveObject | AddConnection | UpdateConnection | RemoveConnection | AnswerQuestion | RestoreRevision>;
   expandFromObjectId?: string | null;
+  autoLayout?: boolean;
 }
 
 export interface BoardCommit {

@@ -16,7 +16,35 @@ function load(module) {
 
 const { emptyBoard, knowledgeScene, projectBoard, groupCards, removeAuthored, placeCard, rect, zoomAt } = load('canvas/board.ts');
 const { updateUpload } = load('upload-state.ts');
+const { projectRoutes, projectLabels, viewDetail } = load('canvas/canvas-view.ts');
 const fixture = require('../../samples/demo-graph.json');
+
+test('project routes avoid occupied cards and semantic zoom retains a major relationship', () => {
+  const card = (id, placement, kind = 'explanation') => ({ id, title: id, description: '', kind, placement });
+  const source = card('source', rect(0, 100, 190, 90));
+  const target = card('target', rect(650, 100, 190, 90));
+  const obstacle = card('obstacle', rect(275, 50, 220, 226));
+  const relationship = { id: 'rel', source: source.id, target: target.id, label: 'Submits validated events', origin: 'authored', role: 'process' };
+  const scene = { cards: [source, obstacle, target], links: [relationship] };
+  const routes = projectRoutes(scene);
+  const { points } = routes.get(relationship.id);
+  const tip = points.at(-1);
+  const approach = points.at(-2);
+  const targetBox = target.placement;
+  assert.ok(tip.x === targetBox.x && approach.x < tip.x
+    || tip.x === targetBox.x + targetBox.width && approach.x > tip.x
+    || tip.y === targetBox.y && approach.y < tip.y
+    || tip.y === targetBox.y + targetBox.height && approach.y > tip.y);
+  const { x, y, width, height } = obstacle.placement;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i];
+    assert.ok(Math.max(a.x, b.x) <= x || Math.min(a.x, b.x) >= x + width
+      || Math.max(a.y, b.y) <= y || Math.min(a.y, b.y) >= y + height);
+  }
+  assert.deepEqual([1, .55, .15].map(viewDetail), ['full', 'compact', 'overview']);
+  assert.ok(projectLabels(scene, routes, 1).has('rel'));
+  assert.ok(projectLabels(scene, routes, .15).has('rel'));
+});
 
 test('the canvas maps canonical nodes, relations and source scope without changing the graph', () => {
   const scene = knowledgeScene(fixture.graph, fixture.documents);

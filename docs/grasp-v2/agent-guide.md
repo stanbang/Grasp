@@ -24,10 +24,14 @@ Start in a fresh local Codex Desktop chat outside the GRASP checkout. Ask “Hel
 4. Ask “Update the design based on my feedback.” Watch the same board update and check that your note, arrow and placement remain.
 5. Select another component and ask a follow-up. A fresh chat should ask which board you mean if several are actively shared.
 
-The canvas uses Codex’s built-in browser. Codex CLI and other clients without that browser can use the same live board in an external browser. The app keeps its owner unlock for the life of the loaded page. Browser presence expires after 25 seconds without a heartbeat. If the selection isn’t available, focus the board and select the object again. [Browser and split view](https://learn.chatgpt.com/docs/browser#arrange-tabs-and-chat)
+The canvas uses Codex’s built-in browser. Codex CLI and other clients without that browser can use the same live board in an external browser. Enter the workspace owner token once in each browser profile and use the same GRASP address. The browser keeps its own session for 30 days, including across refreshes and service restarts. **Workspace options** can sign out this browser or revoke every browser session. To rotate the owner token, change `ACCESS_TOKEN` in the GRASP `.env`, restart GRASP and unlock with the new owner token. The agent continues to use its separate credential.
+
+Browser selection expires after 25 seconds without a heartbeat. If the selection is unavailable, focus the board and select the item again. [Browser and split view](https://learn.chatgpt.com/docs/browser#arrange-tabs-and-chat)
 
 ## Context and writes
 
 `get_board_context` resolves a single active board with no arguments. It reports no active board or named candidates when it cannot resolve one. The MCP response includes `workspaceUrl` and, for a resolved board, `boardUrl`. Pass `board_id` for a known board and `since_revision` for a previous read of that board. The result includes the saved objects and connections, selection status, annotation and requirement IDs, agent proposal IDs, and a page of revision changes with commit attribution. If it returns `changes.nextSinceRevision`, use that value to continue the history read for the same board. The board snapshot always shows the current saved head.
 
 The existing MCP tools still expose board reads, search and exact source quotes, and revision-checked writes. Ask the agent to review intervening changes if a write conflicts. Owner-authored annotation text, requirement decisions and question answers are protected by the board service. Use approval for consequential edits, and explicitly authorize code implementation when the design is ready. [Canvas operation contract](phase-2.md#http-contract-for-phase-3)
+
+On Project boards, agents can request automatic size and placement for new items by setting `auto_layout: true`. In the overview, **Find objects** searches both component titles and relationship labels and opens their full details. [Pre-Goal 4 acceptance](pre-goal-4.md)

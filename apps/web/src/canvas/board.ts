@@ -27,6 +27,7 @@ export type Card = {
   evidence?: Citation;
   visualization?: SimilarityPlot;
   prominence?: 'primary' | 'secondary';
+  projectObject?: CanvasObject;
 };
 
 export type BoardLink = {

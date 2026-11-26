@@ -84,6 +84,7 @@ class CanvasObjectData(CanvasContract):
     evidence: Annotated[list[CanvasEvidenceRef], Field(max_length=8)] = Field(default_factory=list)
     relatedObjectIds: Annotated[list[CanvasId], Field(max_length=20)] = Field(default_factory=list)
     relatedConnectionIds: Annotated[list[CanvasId], Field(max_length=20)] = Field(default_factory=list)
+    sizing: Literal["auto", "manual"] | None = None
     requirement: CanvasRequirement | None = None
     question: CanvasQuestion | None = None
     prototype: CanvasPrototype | None = None
@@ -210,6 +211,7 @@ class CanvasBatch(CanvasContract):
     mutationId: CanvasId
     operations: Annotated[list[CanvasOperation], Field(min_length=1, max_length=240)]
     expandFromObjectId: CanvasId | None = None
+    autoLayout: bool = Field(default=False, strict=True)
 
 
 class BoardCommit(CanvasContract):

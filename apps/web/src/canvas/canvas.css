@@ -250,6 +250,70 @@
   padding: 11px 15px;
 }
 .board-card--group .board-object-title { font-weight: 600; font-size: 13px; }
+.board-card-contents { display: contents; }
+.board-card-content {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: inherit;
+  overflow: auto;
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+}
+.board-card-content p {
+  flex: none; display: block; overflow: visible; overflow-wrap: anywhere; white-space: pre-wrap; -webkit-line-clamp: unset;
+}
+.board-card--illustration .board-card-content { align-items: center; justify-content: safe center; }
+.board-card[data-view-detail="compact"] .board-card-content p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  font-size: clamp(13px, calc(8px / var(--canvas-zoom)), 21px);
+}
+.board-card:is([data-view-detail="compact"], [data-view-detail="overview"]) .board-object-title {
+  font-size: clamp(16px, calc(10px / var(--canvas-zoom)), 64px);
+}
+.board-card--group[data-view-detail] .board-object-title {
+  color: var(--board-text);
+  font-size: clamp(13px, calc(11px / var(--canvas-zoom)), 180px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.board-card--heading:is([data-view-detail="compact"], [data-view-detail="overview"]) .board-object-title {
+  font-size: clamp(25px, calc(11px / var(--canvas-zoom)), 180px);
+}
+.board-card[data-view-detail="overview"]:not(.board-card--group, .board-card--heading)[data-title-fits="false"] .board-card-content {
+  visibility: hidden;
+}
+.board-card[data-view-detail="overview"] .technical-illustration { display: none; }
+.board-card[data-view-detail="overview"] .board-object-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.board-card[data-view-detail="overview"]:is(.board-card--group, .board-card--heading) .board-object-title { display: block; }
+.board-card--group[data-view-detail="overview"] .board-card-content { overflow: visible; }
+.board-card--group[data-view-detail="overview"] .board-card-heading {
+  position: absolute;
+  inset: auto 12px calc(100% + 4px);
+}
+.board-card .board-decision { color: var(--board-accent); }
+.board-card-more {
+  align-self: start;
+  border: 0;
+  min-height: 24px;
+  padding: 2px 0 0;
+  color: var(--board-accent);
+  font-size: 11px;
+}
+.board-frame .board-overview-outline { display: inline-flex; gap: 7px; padding-inline: 11px; font-size: 12px; }
+.board-outline li small { display: block; color: var(--board-muted); }
+.board-outline h3 { margin: 10px 0 5px; color: var(--board-muted); font-size: 12px; }
 .board-card--emphasized { background: color-mix(in srgb, var(--board-card) 88%, var(--board-accent)); }
 .react-flow__node:focus-visible .board-card, .react-flow__node.selected .board-card, .board-card--connecting {
   outline: 2px solid var(--board-accent);

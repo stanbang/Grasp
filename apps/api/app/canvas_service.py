@@ -15,6 +15,7 @@ from .canvas_contracts import (
     UpdateConnection, UpdateObject,
 )
 from .canvas_expansion import validate_expansion
+from .canvas_layout import auto_layout, size_changed_content
 from .canvas_storage import BoardRevisionRow, ProjectBoardRow
 from .models import ChunkRow, DocumentRow, GraphEdgeRow, GraphNodeRow, SourcePageRow
 
@@ -177,6 +178,8 @@ def put_object(board: ProjectBoard, item: CanvasObjectData, actor: Actor, adding
     existing = board.objects.get(item.id)
     if adding == (existing is not None):
         invalid(f"Object {item.id} already exists." if adding else f"Object {item.id} is not on this board.")
+    if existing and "sizing" not in item.model_fields_set:
+        item = item.model_copy(update={"sizing": existing.sizing})
     check_object_permission(existing, item, actor)
     if existing and existing.kind != item.kind:
         invalid("An object's kind cannot change.")
@@ -197,6 +200,10 @@ def apply_operation(
         put_object(board, operation.object, actor, isinstance(operation, AddObject))
     elif isinstance(operation, PlaceObject):
         item = object_in(board, operation.objectId)
+        if actor == "user" and item.sizing == "auto" and (item.placement.width, item.placement.height) != (
+            operation.placement.width, operation.placement.height,
+        ):
+            item.sizing = "manual"
         item.placement = operation.placement
         item.updatedBy = actor
     elif isinstance(operation, RemoveObject):
@@ -309,13 +316,17 @@ def batch_digest(batch: CanvasBatch) -> str:
     exclude = {}
     if batch.expandFromObjectId is None:
         exclude["expandFromObjectId"] = True
-    without_attachments = {
-        index: {"object": {"relatedConnectionIds"}}
-        for index, operation in enumerate(batch.operations)
-        if isinstance(operation, (AddObject, UpdateObject)) and not operation.object.relatedConnectionIds
-    }
-    if without_attachments:
-        exclude["operations"] = without_attachments
+    if not batch.autoLayout:
+        exclude["autoLayout"] = True
+    object_defaults = {}
+    for index, operation in enumerate(batch.operations):
+        if isinstance(operation, (AddObject, UpdateObject)):
+            omitted = {key for key, empty in (("relatedConnectionIds", not operation.object.relatedConnectionIds),
+                                             ("sizing", operation.object.sizing is None)) if empty}
+            if omitted:
+                object_defaults[index] = {"object": omitted}
+    if object_defaults:
+        exclude["operations"] = object_defaults
     return sha256(batch.model_dump_json(exclude=exclude).encode()).hexdigest()
 
 
@@ -350,6 +361,10 @@ def commit_batch(
         for operation in batch.operations:
             apply_operation(board, operation, actor, now)
     validate_board(session, board, before, bool(restorations), source_scope)
+    if not restorations:
+        if batch.autoLayout:
+            auto_layout(before, board, batch.expandFromObjectId)
+        size_changed_content(before, board)
     validate_expansion(batch, before, board)
     head.revision += 1
     head.updated_at = now

@@ -14,6 +14,8 @@ Commit to a single vertical slice by Dec 4. Run the lightest useful integration 
 
 ## Acceptance criteria
 
+The [pre-Goal 4 remediation](pre-goal-4.md) covers workspace sign-in and canvas readability, including semantic zoom. Goal 4 awaits the owner's desktop and CLI acceptance of that workflow.
+
 | Gate | Pass condition |
 | --- | --- |
 | D1 · One durable state | Compare browser and CLI or Codex snapshots before and after refresh and API restart. Stable object and link IDs, revision, placement, question status and accepted requirement records match. Changing the camera or clearing selection does not change the persisted revision. Existing study tables and generated public contracts remain compatible. |
