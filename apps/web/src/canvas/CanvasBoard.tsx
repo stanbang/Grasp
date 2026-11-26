@@ -7,8 +7,9 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CanvasCard, Relation, sides, type CanvasEdge, type CanvasNode } from './CanvasObjects';
-import { bounds, groupCards, placeCard, projectBoard, rect, removeAuthored, zoomAt, type AuthoredCard, type BoardLink, type BoardScene, type Card, type Placement } from './board';
+import { bounds, groupCards, placeCard, projectBoard, rect, removeAuthored, zoomAt, type AuthoredCard, type AuthoredLink, type BoardLink, type BoardScene, type Card, type Placement } from './board';
 import { engineeringPaths } from './engineering-board';
+import { projectFeedbackObject, type ProjectFeedback } from './project-board';
 import type { BoardSession } from './use-board';
 
 const nodeTypes = { card: CanvasCard };
@@ -17,6 +18,7 @@ const minimumZoom = 0.15;
 const maximumZoom = 3;
 const middleDrag = [1];
 type NewObject = Omit<AuthoredCard, 'id' | 'placement'>;
+export type PinCanvasObject = (object: NewObject, feedback?: ProjectFeedback) => void;
 type Tool = 'select' | 'pan' | 'connect';
 type PresentationPath = 'overview' | keyof typeof engineeringPaths;
 type Instance = ReactFlowInstance<CanvasNode, CanvasEdge>;
@@ -61,7 +63,7 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
   presenting: boolean;
   onInspect: () => void;
   empty?: ReactNode;
-  inspect: (card: Card | undefined, link: InspectedLink | undefined, close: () => void, pin: (object: NewObject) => void) => ReactNode;
+  inspect: (card: Card | undefined, link: InspectedLink | undefined, close: () => void, pin: PinCanvasObject) => ReactNode;
 }) {
   const scene = useMemo(() => projectBoard(seed, session.document), [seed, session.document]);
   const byId = useMemo(() => new Map(scene.cards.map(card => [card.id, card])), [scene.cards]);
@@ -297,16 +299,26 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     ignoreGesture.current = false;
   }
 
-  function add(object: NewObject) {
+  function add(object: NewObject, feedback?: ProjectFeedback) {
     const host = frame.current?.getBoundingClientRect();
     if (!host || !instance.current) return;
     const top = instance.current.screenToFlowPosition({ x: host.left + 24, y: host.top + 64 });
     const right = instance.current.screenToFlowPosition({ x: host.right - 24, y: host.bottom - 98 });
-    const placement = placeCard(scene.cards, rect(top.x, top.y, right.x - top.x, right.y - top.y), selectedCard);
+    const beside = selectedCard ?? (feedback && selectedLink ? byId.get(selectedLink.source) : undefined);
+    const placement = placeCard(scene.cards, rect(top.x, top.y, right.x - top.x, right.y - top.y), beside);
     const id = crypto.randomUUID();
-    session.update(board => ({ ...board, authoredCards: [...board.authoredCards, {
-      ...object, id, placement,
-    }] }));
+    const card: AuthoredCard = { ...object, id, placement };
+    if (feedback) card.projectObject = projectFeedbackObject(card, feedback);
+    const noteLink: AuthoredLink | undefined = feedback && 'objectId' in feedback
+      && selectedCard?.id === feedback.objectId && selectedCard.kind !== 'group' ? {
+        id: crypto.randomUUID(), source: id, target: feedback.objectId,
+        label: feedback.kind === 'requirement' ? 'Applies to' : feedback.kind === 'question' ? 'Asks about' : 'Comments on',
+        role: 'annotation', origin: 'authored',
+      } : undefined;
+    session.update(board => ({
+      ...board, authoredCards: [...board.authoredCards, card],
+      authoredLinks: noteLink ? [...board.authoredLinks, noteLink] : board.authoredLinks,
+    }));
     focusAfterInspect.current = id;
     selection(id);
     setMenu(false);

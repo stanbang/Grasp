@@ -2,12 +2,17 @@ from typing import Annotated, Literal
 
 from pydantic import Field, StringConstraints
 
-from .canvas_contracts import Actor, BoardSummary, CanvasContract, CanvasEvidenceRef, CanvasId, ProjectBoard, Revision
+from .canvas_contracts import (
+    Actor, BoardSummary, CanvasContract, CanvasEvidenceRef, CanvasId, ConnectionRole, ProjectBoard, Revision,
+)
+
+ConnectionIds = Annotated[list[CanvasId], Field(max_length=400)]
 
 
 class BoardSelectionUpdate(CanvasContract):
     baseRevision: Revision
     objectIds: Annotated[list[CanvasId], Field(max_length=200)]
+    connectionIds: ConnectionIds = Field(default_factory=list)
 
 
 class BoardSelection(CanvasContract):
@@ -15,6 +20,7 @@ class BoardSelection(CanvasContract):
     revision: Revision
     available: bool
     objectIds: list[CanvasId]
+    connectionIds: list[CanvasId]
 
 
 class BoardPresenceUpdate(CanvasContract):
@@ -22,11 +28,19 @@ class BoardPresenceUpdate(CanvasContract):
     sequence: Revision
     baseRevision: Revision
     objectIds: Annotated[list[CanvasId], Field(max_length=200)] | None
+    connectionIds: ConnectionIds = Field(default_factory=list)
 
 
 class BoardContextSelection(CanvasContract):
     status: Literal["selected", "empty", "unavailable", "stale", "ambiguous"]
     objectIds: list[CanvasId]
+    connectionIds: list[CanvasId]
+
+
+class BoardFocus(CanvasContract):
+    objectIds: list[CanvasId]
+    connectionIds: list[CanvasId]
+    feedbackIds: list[CanvasId]
 
 
 class BoardItemChange(CanvasContract):
@@ -35,13 +49,28 @@ class BoardItemChange(CanvasContract):
     kind: str
     change: Literal["added", "modified", "removed"]
     fields: list[str]
+    classification: Literal["visual", "semantic", "mixed"]
+
+
+class BoardConnectionState(CanvasContract):
+    source: CanvasId
+    sourceTitle: str
+    target: CanvasId
+    targetTitle: str
+    label: str
+    role: ConnectionRole
+
+
+class BoardConnectionChange(BoardItemChange):
+    before: BoardConnectionState | None
+    after: BoardConnectionState | None
 
 
 class BoardRevisionChanges(CanvasContract):
     revision: Revision
     actor: Actor
     objects: list[BoardItemChange]
-    connections: list[BoardItemChange]
+    connections: list[BoardConnectionChange]
 
 
 class BoardChanges(CanvasContract):
@@ -56,9 +85,11 @@ class BoardContext(CanvasContract):
     candidates: list[BoardSummary]
     board: ProjectBoard | None
     selection: BoardContextSelection | None
+    focus: BoardFocus | None
     annotationIds: list[CanvasId]
     requirementIds: list[CanvasId]
     proposalIds: list[CanvasId]
+    decisionIds: list[CanvasId]
     changes: BoardChanges | None
 
 
@@ -81,6 +112,7 @@ class KnowledgeResults(CanvasContract):
 
 
 AGENT_MODELS = (
-    BoardSelectionUpdate, BoardSelection, BoardPresenceUpdate, BoardContextSelection, BoardItemChange,
+    BoardSelectionUpdate, BoardSelection, BoardPresenceUpdate, BoardContextSelection, BoardFocus,
+    BoardItemChange, BoardConnectionState, BoardConnectionChange,
     BoardRevisionChanges, BoardChanges, BoardContext, KnowledgeSearch, KnowledgeHit, KnowledgeResults,
 )

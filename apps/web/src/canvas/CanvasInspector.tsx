@@ -1,16 +1,19 @@
 import { ArrowRight, ArrowUpRight, FileText, MessageSquare, Pin, Ungroup, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../client';
-import type { CanvasObjectContext } from '../types/canvas-contracts';
+import type { CanvasObject, CanvasObjectContext, CanvasRequirement } from '../types/canvas-contracts';
 import type { ChunksResponse, Citation, Document } from '../types/contracts';
 import { removeAuthored, type AuthoredCard, type Card, type SourceSelection } from './board';
 import { CanvasVisualization } from './CanvasVisualization';
 import { illustrationOptions } from './TechnicalIllustration';
-import type { InspectedLink } from './CanvasBoard';
+import type { InspectedLink, PinCanvasObject } from './CanvasBoard';
+import type { FeedbackTarget, ProjectFeedbackKind } from './project-board';
 import type { BoardSession } from './use-board';
 
 const sourceBase = 'https://github.com/stanbang/Grasp/blob/98f8cda/';
 const linkRoles = { structural: 'Context', data: 'Data flow', process: 'Processing', annotation: 'Annotation' };
+const feedbackNames = { annotation: 'note', question: 'question', requirement: 'requirement' } as const;
+const feedbackKinds: ProjectFeedbackKind[] = ['annotation', 'question', 'requirement'];
 
 function Passages({ card, documents, onSource, onPin }: {
   card: Card;
@@ -115,7 +118,7 @@ function ProjectObjectContext({ boardId, objectId, revision, onSource }: {
 }
 
 export function CanvasInspector({ card, link, session, documents, onClose, onSource, onAsk, onExplore, onPin,
-  projectBoardId, savedRevision }: {
+  projectBoardId, savedRevision, onAddProjectFeedback }: {
   card?: Card;
   link?: InspectedLink;
   session: BoardSession;
@@ -127,11 +130,19 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
   onPin: (citation: Citation) => void;
   projectBoardId?: string;
   savedRevision?: number;
+  onAddProjectFeedback?: PinCanvasObject;
 }) {
   const conceptId = card?.concept?.id;
   const explored = card?.concept?.masteryState;
   const draft = session.document.authoredCards.find(item => item.id === card?.id);
   const ownedLink = link?.origin === 'authored';
+  const { authoredCards, authoredLinks } = session.document;
+  const editEndpoints = projectBoardId && link && ownedLink
+    && !authoredLinks.find(item => item.id === link.id)?.projectConnection?.canonicalEdgeId;
+  const attachedFeedback = link ? authoredCards.filter(item => item.projectObject?.relatedConnectionIds?.includes(link.id)) : [];
+  const availableFeedback = link ? authoredCards.filter(({ projectObject: item }) =>
+    item && feedbackKinds.some(kind => kind === item.kind)
+    && !item.relatedConnectionIds?.includes(link.id) && (item.relatedConnectionIds?.length ?? 0) < 20) : [];
   const closeButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (conceptId && explored === 'unexplored') onExplore(conceptId);
@@ -149,6 +160,38 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
     if (!link || !label || label === link.label) return;
     session.update(board => ({ ...board, authoredLinks: board.authoredLinks.map(item =>
       item.id === link.id ? { ...item, label } : item) }));
+  }
+
+  function reconnect(end: 'source' | 'target', id: string) {
+    if (!link) return;
+    session.update(board => ({ ...board, authoredLinks: board.authoredLinks.map(item =>
+      item.id === link.id ? { ...item, [end]: id } : item) }));
+  }
+
+  function changeFeedback(id: string, changes: Partial<Pick<CanvasObject, 'relatedConnectionIds' | 'requirement'>>) {
+    session.update(board => ({ ...board, authoredCards: board.authoredCards.map(item =>
+      item.id === id && item.projectObject ? { ...item, projectObject: { ...item.projectObject, ...changes } } : item) }));
+  }
+
+  function attachFeedback(id: string) {
+    const item = availableFeedback.find(candidate => candidate.id === id)?.projectObject;
+    if (link && item) changeFeedback(item.id, { relatedConnectionIds: [...(item.relatedConnectionIds ?? []), link.id] });
+  }
+
+  function feedbackActions(target: FeedbackTarget) {
+    return onAddProjectFeedback && <section aria-label="Add feedback">
+      {feedbackKinds.map(kind => <button type="button" key={kind} className="board-inspector-action"
+        onClick={() => onAddProjectFeedback({
+          kind: kind === 'annotation' ? 'annotation' : 'explanation', title: `New ${feedbackNames[kind]}`, description: '',
+        }, { ...target, kind })}>Add {feedbackNames[kind]}</button>)}
+    </section>;
+  }
+
+  function endpointOptions(end: 'source' | 'target', edge: InspectedLink) {
+    const opposite = end === 'source' ? edge.target : edge.source;
+    return authoredCards.filter(item => item.kind !== 'group' && item.id !== opposite
+      && !authoredLinks.some(other => other.id !== edge.id && other[end] === item.id
+        && (end === 'source' ? other.target : other.source) === opposite));
   }
 
   function remove() {
@@ -183,6 +226,22 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
           const illustration = illustrationOptions.find(option => option.id === event.target.value);
           if (illustration) editCard({ illustration: illustration.id, ...(draft.title === 'New illustration' ? { title: illustration.label } : {}) });
         }}>{illustrationOptions.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>}
+        {draft.projectObject?.requirement && <label>Requirement decision
+          <select value={draft.projectObject.requirement.status ?? 'proposed'} onChange={event => changeFeedback(draft.id, {
+            requirement: { ...draft.projectObject?.requirement, status: event.target.value as CanvasRequirement['status'] },
+          })}>
+            <option value="proposed">Proposed</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </label>}
+        {authoredLinks.filter(edge => draft.projectObject?.relatedConnectionIds?.includes(edge.id)).map(edge =>
+          <section key={edge.id}><h3>Attached connection</h3><p>{edge.label}</p>
+            <button type="button" className="board-inspector-action" onClick={() => changeFeedback(draft.id, {
+              relatedConnectionIds: draft.projectObject?.relatedConnectionIds?.filter(id => id !== edge.id) ?? [],
+            })}>Detach feedback</button>
+          </section>)}
+        {feedbackActions({ objectId: draft.id })}
         {projectBoardId && draft.projectObject && savedRevision !== undefined && <ProjectObjectContext
           boardId={projectBoardId} objectId={draft.id} revision={savedRevision} onSource={onSource} />}
         <button type="button" className="board-inspector-action" onClick={remove}>{draft.kind === 'group' ? <><Ungroup size={16} /> Ungroup</> : 'Remove object'}</button>
@@ -202,6 +261,12 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
       {link && !card && <>
         <p className="board-inspector-endpoints"><span>{link.sourceTitle}</span><ArrowRight size={15} aria-label="to" /><span>{link.targetTitle}</span></p>
         {ownedLink ? <>
+          {editEndpoints && (['source', 'target'] as const).map(end => <label key={end}>
+            {end === 'source' ? 'Source object' : 'Target object'}
+            <select value={link[end]} onChange={event => reconnect(end, event.target.value)}>
+              {endpointOptions(end, link).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+            </select>
+          </label>)}
           <label>Relationship label<input key={link.label} defaultValue={link.label} maxLength={96}
             onBlur={event => {
               if (event.target.value.trim()) editLink(event.target.value);
@@ -214,6 +279,17 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
             }));
           }}><option value="data">Data flow</option><option value="process">Processing</option><option value="annotation">Curved annotation arrow</option></select></label>
           <button type="button" className="board-inspector-action" onClick={remove}>Remove connection</button>
+          {attachedFeedback.length > 0 && <section><h3>Attached feedback</h3><ul>
+            {attachedFeedback.map(item => <li key={item.id}><button type="button" className="board-inspector-action"
+              onClick={() => { session.select([item.id]); session.selectLinks([]); }}>{item.title}</button></li>)}
+          </ul></section>}
+          {availableFeedback.length > 0 && <label>Attach existing feedback
+            <select value="" onChange={event => attachFeedback(event.target.value)}>
+              <option value="">Choose feedback</option>
+              {availableFeedback.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+            </select>
+          </label>}
+          {feedbackActions({ connectionId: link.id })}
         </> : <>
           <p>{link.label}</p>
           {link.role && <p className="board-connection-role">{linkRoles[link.role]}</p>}

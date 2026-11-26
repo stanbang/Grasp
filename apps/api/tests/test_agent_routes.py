@@ -52,7 +52,7 @@ def test_selection_is_transient_owner_only_and_matches_board_revision(client, mo
     assert add_object(client, second, "foreign").status_code == 200
     path = f"/boards/{first}/selection"
     assert client.get(path, headers=AGENT).json() == {
-        "available": False, "boardId": first, "revision": 1, "objectIds": [],
+        "available": False, "boardId": first, "revision": 1, "objectIds": [], "connectionIds": [],
     }
     payload = {"baseRevision": 1, "objectIds": ["selected", "selected"]}
     assert client.put(path, headers=AGENT, json=payload).status_code == 403
@@ -60,7 +60,7 @@ def test_selection_is_transient_owner_only_and_matches_board_revision(client, mo
     response = client.put(path, headers=OWNER, json=payload)
     assert response.status_code == 200
     assert client.get(path, headers=AGENT).json() == {
-        "available": True, "boardId": first, "revision": 1, "objectIds": ["selected"],
+        "available": True, "boardId": first, "revision": 1, "objectIds": ["selected"], "connectionIds": [],
     }
     assert client.get(f"/boards/{second}/selection", headers=AGENT).json()["available"] is False
     assert client.get(f"/boards/{first}", headers=AGENT).json()["revision"] == 1
@@ -75,7 +75,7 @@ def test_selection_is_transient_owner_only_and_matches_board_revision(client, mo
     })
     assert edit.status_code == 200
     assert client.get(path, headers=AGENT).json() == {
-        "available": False, "boardId": first, "revision": 2, "objectIds": [],
+        "available": False, "boardId": first, "revision": 2, "objectIds": [], "connectionIds": [],
     }
     assert client.put(path, headers=OWNER, json=payload).json()["detail"]["code"] == "staleRevision"
 
@@ -102,7 +102,7 @@ def test_context_resolves_browsers_without_guessing_and_rejects_late_heartbeats(
     assert share(first, "tab-a", 1, ["selected", "selected"]).status_code == 204
     active = context()
     assert active["board"]["id"] == first
-    assert active["selection"] == {"status": "selected", "objectIds": ["selected"]}
+    assert active["selection"] == {"status": "selected", "objectIds": ["selected"], "connectionIds": []}
     assert client.get(f"/boards/{first}/selection", headers=AGENT).json()["available"]
 
     assert share(second, "tab-b", 1, [], revision=0).status_code == 204
@@ -165,10 +165,13 @@ def test_context_reports_attributed_history_and_keeps_the_selected_revision_cons
     assert value["annotationIds"] == ["note"]
     assert value["requirementIds"] == ["approval"]
     assert value["proposalIds"] == ["card"]
-    assert value["selection"] == {"status": "stale", "objectIds": []}
+    assert value["decisionIds"] == ["approval"]
+    assert value["selection"] == {"status": "stale", "objectIds": [], "connectionIds": []}
+    assert value["focus"] is None
     first, second = value["changes"]["revisions"]
     assert first["actor"] == "user" and second["actor"] == "agent"
-    assert {"id": "card", "kind": "text", "label": "Fixture", "change": "modified", "fields": ["placement"]} in first["objects"]
+    assert {"id": "card", "kind": "text", "label": "Fixture", "change": "modified",
+            "fields": ["placement"], "classification": "visual"} in first["objects"]
     assert first["connections"][0]["change"] == "added"
     assert first["connections"][0]["id"] == "note-to-card"
     assert value["changes"]["nextSinceRevision"] is None
@@ -189,6 +192,77 @@ def test_context_reports_attributed_history_and_keeps_the_selected_revision_cons
     assert second_page["changes"]["revisions"][0]["revision"] == cursor + 1
     assert second_page["changes"]["throughRevision"] == 15
     assert second_page["changes"]["nextSinceRevision"] is None
+
+
+def test_connection_focus_preserves_feedback_across_reroute_and_exposes_removed_endpoints(client):
+    board_id, foreign_id = create_board(client), create_board(client)
+    path = f"/boards/{board_id}"
+
+    def write(base, operations, headers=OWNER):
+        return client.post(path + "/ops", headers=headers, json={
+            "baseRevision": base, "mutationId": f"step-{base}", "operations": operations,
+        })
+
+    def read(since=None):
+        params = {"boardId": board_id}
+        if since is not None:
+            params["sinceRevision"] = since
+        return client.get("/boards/context", headers=AGENT, params=params).json()
+
+    def add(key, title, **data):
+        return {"type": "addObject", "object": {
+            "id": key, "title": title, "kind": "text", "placement": PLACEMENT, **data,
+        }}
+
+    access = {"id": "access", "source": "frontend", "target": "db", "label": "Queries directly", "role": "data"}
+    assert write(0, [
+        add("frontend", "Frontend"), add("api", "Backend API"), add("db", "Database"),
+        {"type": "addConnection", "connection": access},
+        add("note", "Owner correction", kind="annotation", relatedConnectionIds=["access"]),
+        add("decision", "Mediate all database access", kind="requirement",
+            requirement={"status": "accepted"}, relatedConnectionIds=["access"]),
+    ]).status_code == 200
+    assert client.put(f"/boards/{foreign_id}/presence", headers=OWNER, json={
+        "tabId": "other", "sequence": 1, "baseRevision": 0, "objectIds": [], "connectionIds": ["access"],
+    }).status_code == 422
+    assert client.put(path + "/presence", headers=OWNER, json={
+        "tabId": "main", "sequence": 1, "baseRevision": 1, "objectIds": [], "connectionIds": ["access", "access"],
+    }).status_code == 204
+    context = read()
+    assert context["selection"] == {"status": "selected", "objectIds": [], "connectionIds": ["access"]}
+    assert context["focus"] == {
+        "objectIds": ["db", "decision", "frontend", "note"],
+        "connectionIds": ["access"], "feedbackIds": ["decision", "note"],
+    }
+    assert client.get(path + "/selection", headers=AGENT).json()["available"]
+    assert context["decisionIds"] == ["decision"]
+
+    reroute = {**access, "target": "api", "label": "Requests via API"}
+    assert write(1, [
+        {"type": "updateConnection", "connection": reroute},
+        {"type": "updateObject", "object": add("frontend", "Web client", placement={**PLACEMENT, "width": 290})["object"]},
+    ]).status_code == 200
+    context = read(1)
+    assert context["selection"]["status"] == "stale"
+    assert context["board"]["objects"]["note"]["relatedConnectionIds"] == ["access"]
+    delta = context["changes"]["revisions"][0]
+    assert delta["actor"] == "user"
+    assert delta["objects"][0]["classification"] == "mixed"
+    change = delta["connections"][0]
+    assert change["classification"] == "semantic"
+    assert (change["before"]["sourceTitle"], change["before"]["targetTitle"]) == ("Frontend", "Database")
+    assert (change["after"]["sourceTitle"], change["after"]["targetTitle"]) == ("Web client", "Backend API")
+    assert (change["before"]["label"], change["after"]["label"]) == ("Queries directly", "Requests via API")
+
+    removal = {"type": "removeConnection", "connectionId": "access"}
+    assert write(2, [removal], headers=AGENT).status_code == 403
+    assert write(2, [removal]).status_code == 200
+    context = read(2)
+    removed = context["changes"]["revisions"][0]["connections"][0]
+    assert removed["after"] is None and removed["before"]["target"] == "api"
+    assert context["board"]["objects"]["note"]["relatedConnectionIds"] == []
+    assert context["board"]["objects"]["decision"]["decidedBy"] == "user"
+    assert write(3, [add("bad", "Orphan", kind="question", question={}, relatedConnectionIds=["access"])]).status_code == 422
 
 
 def seed_sources():

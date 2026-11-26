@@ -87,17 +87,19 @@ def selection(request: Request, board_id: str) -> BoardSelection:
 
 @router.put("/{board_id}/selection", responses={409: {"model": BoardConflictResponse}})
 def publish_selection(request: Request, board_id: str, payload: BoardSelectionUpdate) -> BoardSelection:
-    verify_selection(request, board_id, payload.baseRevision, payload.objectIds)
+    verify_selection(request, board_id, payload.baseRevision, payload.objectIds, payload.connectionIds)
     return request.app.state.board_selections.publish(
-        board_id, payload.baseRevision, list(dict.fromkeys(payload.objectIds)),
+        board_id, payload.baseRevision, list(dict.fromkeys(payload.objectIds)), list(dict.fromkeys(payload.connectionIds)),
     )
 
 
 @router.put("/{board_id}/presence", status_code=204, responses={409: {"model": BoardConflictResponse}})
 def share_active_board(request: Request, board_id: CanvasId, payload: BoardPresenceUpdate) -> Response:
-    verify_selection(request, board_id, payload.baseRevision, payload.objectIds or [])
+    if payload.objectIds is None and payload.connectionIds:
+        raise HTTPException(422, "An unavailable selection cannot include connections.")
+    verify_selection(request, board_id, payload.baseRevision, payload.objectIds or [], payload.connectionIds)
     request.app.state.board_selections.share(
-        payload.tabId, payload.sequence, board_id, payload.baseRevision, payload.objectIds,
+        payload.tabId, payload.sequence, board_id, payload.baseRevision, payload.objectIds, tuple(payload.connectionIds),
     )
     return Response(status_code=204)
 
@@ -107,12 +109,14 @@ def require_selection_owner(request: Request) -> None:
         raise HTTPException(403, "Only the workspace owner can share a browser selection.")
 
 
-def verify_selection(request: Request, board_id: str, revision: int, object_ids: list[str]) -> None:
+def verify_selection(
+    request: Request, board_id: str, revision: int, object_ids: list[str], connection_ids: list[str],
+) -> None:
     require_selection_owner(request)
     with Session(request.app.state.storage.engine) as session:
         state = read_board(session, board_id)
         assert state is not None
         if state.revision != revision:
             conflict("staleRevision", "The board changed before this selection was shared.", state.revision)
-        if not set(object_ids).issubset(state.objects):
-            raise HTTPException(422, "Select objects on the current board.")
+        if not set(object_ids).issubset(state.objects) or not set(connection_ids).issubset(state.connections):
+            raise HTTPException(422, "Select objects and connections on the current board.")

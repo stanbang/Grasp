@@ -1,6 +1,22 @@
 import type { CanvasBatch, CanvasConnectionData, CanvasObjectData, ProjectBoard } from '../types/canvas-contracts';
 import type { AuthoredCard, AuthoredLink, BoardDocument } from './board';
 
+export type ProjectFeedbackKind = 'annotation' | 'question' | 'requirement';
+export type FeedbackTarget = { objectId: string } | { connectionId: string };
+export type ProjectFeedback = { kind: ProjectFeedbackKind } & FeedbackTarget;
+
+export function projectFeedbackObject(card: AuthoredCard, feedback: ProjectFeedback): NonNullable<AuthoredCard['projectObject']> {
+  return {
+    id: card.id, kind: feedback.kind, title: card.title, description: card.description,
+    placement: { ...card.placement, groupId: card.placement.groupId ?? null },
+    createdBy: 'user', updatedBy: 'user',
+    relatedObjectIds: 'objectId' in feedback ? [feedback.objectId] : [],
+    relatedConnectionIds: 'connectionId' in feedback ? [feedback.connectionId] : [],
+    requirement: feedback.kind === 'requirement' ? { status: 'proposed' } : null,
+    question: feedback.kind === 'question' ? { required: true } : null,
+  };
+}
+
 export function projectDocument(board: ProjectBoard): BoardDocument {
   return {
     kind: 'project', schemaVersion: board.schemaVersion, revision: board.revision, placements: {},
@@ -29,7 +45,8 @@ function objectData(card: AuthoredCard, board: BoardDocument): CanvasObjectData 
     placement: { ...placement, groupId: placement.groupId ?? null },
     illustration: card.illustration ?? null, noteStyle: card.noteStyle ?? null,
     canonicalNodeId: details?.canonicalNodeId ?? null, evidence: details?.evidence ?? [],
-    relatedObjectIds: details?.relatedObjectIds ?? [], requirement: details?.requirement ?? null,
+    relatedObjectIds: details?.relatedObjectIds ?? [], relatedConnectionIds: details?.relatedConnectionIds ?? [],
+    requirement: details?.requirement ?? null,
     question: details?.question ?? null, prototype: details?.prototype ?? null,
   };
 }

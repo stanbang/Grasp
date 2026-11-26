@@ -258,6 +258,44 @@ async function run() {
     const titleBox = await card(page, 'Browser note').getByText('Browser note', { exact: true }).boundingBox();
     assert.ok(titleBox.x >= 0 && titleBox.x + titleBox.width <= 390, 'The note is visible after fitting the narrow canvas');
     await page.screenshot({ path: path.join(evidence, 'project-mobile.png') });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await button(page, 'Fit board').click();
+    const arrow = page.locator('.react-flow__edge[data-id="agent-arrow"]');
+    async function inspectArrow() {
+      await page.keyboard.press('Escape');
+      await arrow.press('Enter');
+      await inspector.getByLabel('Target object').waitFor();
+    }
+    await inspectArrow();
+    const focused = await waitForContext(value => value.selection?.connectionIds?.includes('agent-arrow'));
+    assert.deepEqual(focused.selection.objectIds, []);
+    await inspector.getByLabel('Target object').selectOption('selected-span');
+    await revision(page, 9);
+    const corrected = await waitForContext(value => value.board?.revision === 9
+      && value.selection?.connectionIds?.includes('agent-arrow'));
+    assert.equal(corrected.board.connections['agent-arrow'].target, 'selected-span');
+    assert.equal(corrected.board.connections['agent-arrow'].updatedBy, 'user');
+    await button(page, 'Add requirement').click();
+    await revision(page, 10);
+    await inspector.getByLabel('Title').fill('Require a source span');
+    await inspector.getByLabel('Title').press('Tab');
+    await revision(page, 11);
+    await inspector.getByLabel('Requirement decision').selectOption('accepted');
+    await revision(page, 12);
+    await inspectArrow();
+    await inspector.getByRole('button', { name: 'Require a source span', exact: true }).waitFor();
+    const attached = await waitForContext(value => value.selection?.connectionIds?.includes('agent-arrow')
+      && value.focus?.feedbackIds?.length === 1);
+    const [decisionId] = attached.decisionIds;
+    assert.deepEqual(attached.focus.feedbackIds, [decisionId]);
+    await button(page, 'Remove connection').click();
+    await revision(page, 13);
+    const afterRemoval = await request(board);
+    assert.equal(afterRemoval.objects[decisionId].decidedBy, 'user');
+    assert.deepEqual(afterRemoval.objects[decisionId].relatedConnectionIds, []);
+    assert.ok(!afterRemoval.connections['agent-arrow']);
+    console.log('PASS owner selects and reconnects the same arrow, attaches and decides a requirement, and deletes the arrow without losing the requirement');
     assert.deepEqual(errors, []);
   } finally {
     await browser?.close();

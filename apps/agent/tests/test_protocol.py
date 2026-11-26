@@ -153,6 +153,92 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(result.is_error)
             self.assertEqual(result.structured_content["error"]["code"], "serviceUnavailable")
 
+    async def test_iterative_expansion_preserves_owner_route_in_a_fresh_stdio_session(self):
+        owner = GraspClient(self.base, OWNER)
+        board = owner.create_board("Iterative architecture")
+
+        def add(key, title, x, y=30, **details):
+            return {"type": "addObject", "object": {
+                "id": key, "kind": "explanation", "title": title,
+                "placement": {**OBJECT["placement"], "x": x, "y": y}, **details,
+            }}
+
+        def edge(key, source, target, label, type_="addConnection"):
+            return {"type": type_, "connection": {
+                "id": key, "source": source, "target": target, "label": label, "role": "process",
+            }}
+
+        def owner_write(revision, operations):
+            return owner.apply(board["id"], {"baseRevision": revision, "mutationId": uuid4().hex, "operations": operations})
+
+        owner_write(0, [
+            add("frontend", "Frontend", 0), add("api", "API", 330), add("db", "Database", 660),
+            edge("access", "frontend", "db", "Runs queries directly"),
+        ])
+        context_args = {"board_id": board["id"]}
+        async with self.connect() as client:
+            async def expand(anchor, base, operations):
+                return await client.call_tool("apply_canvas_operations", {
+                    **context_args, "base_revision": base, "mutation_id": uuid4().hex, "operations": operations,
+                    "expand_from_object_id": anchor,
+                })
+
+            current = await client.call_tool("get_board_context", context_args)
+            self.assertEqual(current.structured_content["board"]["revision"], 1)
+            node = add("form-data", "Request validation", 0, 205)
+            for invalid in (
+                [node],
+                [node, edge("validation", "frontend", "form-data", "Related to!")],
+                [add("form-data", "Request validation", 10), edge("validation", "frontend", "form-data", "Validates fields")],
+                [node, edge("validation", "frontend", "form-data", "Validates fields"),
+                 {"type": "removeConnection", "connectionId": "access"}],
+            ):
+                rejected = await expand("frontend", 1, invalid)
+                self.assertTrue(rejected.is_error, rejected.content)
+                self.assertEqual(rejected.structured_content["error"]["code"], "invalidRequest")
+            first = await expand("frontend", 1, [node, edge("validation", "frontend", "form-data", "Validates fields")])
+            self.assertFalse(first.is_error, first.content)
+            checked = await client.call_tool("get_board_context", context_args)
+            self.assertEqual(checked.structured_content["board"]["connections"]["validation"]["label"], "Validates fields")
+
+            correction = owner_write(2, [
+                edge("access", "frontend", "api", "Sends validated requests", "updateConnection"),
+                edge("query", "api", "db", "Executes authorised queries"),
+                add("approval", "Mediate access through the API", 330, 500, kind="requirement",
+                    relatedConnectionIds=["query"], requirement={"status": "accepted"}),
+                {"type": "placeObject", "objectId": "db", "placement": {**OBJECT["placement"], "x": 700, "y": 0}},
+            ])
+            follow_up = [
+                add("policy", "Permission evaluation", 330, 205),
+                edge("policy-check", "api", "policy", "Checks permissions"),
+            ]
+            stale = await expand("api", 2, follow_up)
+            self.assertEqual(stale.structured_content["error"]["code"], "staleRevision")
+            delta = await client.call_tool("get_board_context", {**context_args, "since_revision": 2})
+            changes = delta.structured_content["changes"]["revisions"][0]
+            self.assertEqual(changes["actor"], "user")
+            reroute = changes["connections"][0]
+            self.assertEqual((reroute["before"]["target"], reroute["after"]["target"]), ("db", "api"))
+            self.assertEqual(next(item for item in changes["objects"] if item["id"] == "db")["classification"], "visual")
+            superseded = await expand("api", 3, follow_up + [edge("old-route", "frontend", "db", "Runs queries directly")])
+            self.assertTrue(superseded.is_error)
+            second = await expand("api", 3, follow_up)
+            self.assertFalse(second.is_error, second.content)
+            checked = await client.call_tool("get_board_context", context_args)
+            self.assertEqual(checked.structured_content["board"], second.structured_content["board"])
+
+        async with self.connect() as fresh:
+            result = (await fresh.call_tool("get_board_context", context_args)).structured_content
+            saved = result["board"]
+            self.assertEqual(saved["revision"], 4)
+            self.assertEqual(result["decisionIds"], ["approval"])
+            self.assertEqual(set(result["proposalIds"]), {"form-data", "policy"})
+            self.assertEqual(saved["objects"]["approval"]["relatedConnectionIds"], ["query"])
+            self.assertEqual(saved["objects"]["db"], correction["board"]["objects"]["db"])
+            self.assertEqual(saved["connections"]["access"]["target"], "api")
+            self.assertEqual(saved["connections"]["query"]["target"], "db")
+            self.assertEqual(set(saved["connections"]), {"access", "query", "validation", "policy-check"})
+
     async def test_stdio_uses_project_dotenv_without_shell_exports(self):
         async with self.connect(settings=self.settings) as client:
             self.assertEqual({tool.name for tool in (await client.list_tools()).tools}, TOOLS)

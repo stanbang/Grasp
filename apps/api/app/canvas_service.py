@@ -14,6 +14,7 @@ from .canvas_contracts import (
     CanvasOperation, CanvasRelationshipContext, PlaceObject, ProjectBoard, RemoveConnection, RemoveObject, RestoreRevision,
     UpdateConnection, UpdateObject,
 )
+from .canvas_expansion import validate_expansion
 from .canvas_storage import BoardRevisionRow, ProjectBoardRow
 from .models import ChunkRow, DocumentRow, GraphEdgeRow, GraphNodeRow, SourcePageRow
 
@@ -206,9 +207,10 @@ def apply_operation(
             if item.placement.groupId == existing.id:
                 item.placement.groupId = None
                 item.updatedBy = actor
-        board.connections = {
-            key: edge for key, edge in board.connections.items() if existing.id not in (edge.source, edge.target)
-        }
+        removed = {key for key, edge in board.connections.items() if existing.id in (edge.source, edge.target)}
+        for key in removed:
+            del board.connections[key]
+        detach_feedback(board, actor, removed, existing.id)
     elif isinstance(operation, (AddConnection, UpdateConnection)):
         edge = operation.connection
         existing_connection = board.connections.get(edge.id)
@@ -221,6 +223,7 @@ def apply_operation(
     elif isinstance(operation, RemoveConnection):
         if board.connections.pop(operation.connectionId, None) is None:
             invalid(f"Connection {operation.connectionId} is not on this board.")
+        detach_feedback(board, actor, {operation.connectionId})
     elif isinstance(operation, AnswerQuestion):
         if actor != "user":
             raise HTTPException(403, "Only the workspace owner can answer a question.")
@@ -229,6 +232,16 @@ def apply_operation(
             invalid("Only a question object can be answered.")
         question.answer = CanvasAnswer(text=operation.text, answeredBy="user", answeredAt=now)
         question.updatedBy = actor
+
+
+def detach_feedback(
+    board: ProjectBoard, actor: Actor, connection_ids: set[str], object_id: str | None = None,
+) -> None:
+    for item in board.objects.values():
+        if object_id in item.relatedObjectIds or connection_ids.intersection(item.relatedConnectionIds):
+            check_object_permission(item, None, actor)
+            item.relatedObjectIds = [key for key in item.relatedObjectIds if key != object_id]
+            item.relatedConnectionIds = [key for key in item.relatedConnectionIds if key not in connection_ids]
 
 
 def validate_board(
@@ -246,6 +259,9 @@ def validate_board(
             invalid("Related object IDs must be unique and cannot include the object itself.")
         for key in related:
             object_in(board, key)
+        links = item.relatedConnectionIds
+        if len(set(links)) != len(links) or not set(links).issubset(board.connections):
+            invalid("Feedback connections must be unique and on this board.")
         if item.prototype:
             keys = item.prototype.requirementIds
             if len(set(keys)) != len(keys) or any(object_in(board, key).kind != "requirement" for key in keys):
@@ -288,13 +304,28 @@ def validate_board(
                 require_shared_documents(source_scope, canonical.docIds)
 
 
+def batch_digest(batch: CanvasBatch) -> str:
+    # Keep retries from earlier clients valid when the new optional fields are unused.
+    exclude = {}
+    if batch.expandFromObjectId is None:
+        exclude["expandFromObjectId"] = True
+    without_attachments = {
+        index: {"object": {"relatedConnectionIds"}}
+        for index, operation in enumerate(batch.operations)
+        if isinstance(operation, (AddObject, UpdateObject)) and not operation.object.relatedConnectionIds
+    }
+    if without_attachments:
+        exclude["operations"] = without_attachments
+    return sha256(batch.model_dump_json(exclude=exclude).encode()).hexdigest()
+
+
 def commit_batch(
     session: Session, board_id: str, batch: CanvasBatch, actor: Actor, source_scope: frozenset[str] | None,
 ) -> BoardCommit:
     # Lock before reading the head so two workers cannot both accept the same base revision.
     session.execute(text("BEGIN IMMEDIATE"))
     head = board_row(session, board_id)
-    digest = sha256(batch.model_dump_json().encode()).hexdigest()
+    digest = batch_digest(batch)
     replay = session.exec(select(BoardRevisionRow).where(
         BoardRevisionRow.board_id == board_id, BoardRevisionRow.mutation_id == batch.mutationId,
     )).first()
@@ -319,6 +350,7 @@ def commit_batch(
         for operation in batch.operations:
             apply_operation(board, operation, actor, now)
     validate_board(session, board, before, bool(restorations), source_scope)
+    validate_expansion(batch, before, board)
     head.revision += 1
     head.updated_at = now
     board.revision, board.updatedAt = head.revision, now

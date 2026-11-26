@@ -8,6 +8,7 @@ CanvasTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length
 CanvasText = Annotated[str, StringConstraints(max_length=4000)]
 Revision = Annotated[int, Field(ge=0, strict=True)]
 Actor = Literal["user", "agent"]
+ConnectionRole = Literal["structural", "data", "process", "annotation"]
 Illustration = Literal[
     "document", "pages", "chunks", "embeddings", "similarity", "chroma", "sqlite", "retrieval",
     "generation", "validation", "citation", "graph", "api", "streaming", "evaluation", "ocr",
@@ -82,6 +83,7 @@ class CanvasObjectData(CanvasContract):
     canonicalNodeId: CanvasId | None = None
     evidence: Annotated[list[CanvasEvidenceRef], Field(max_length=8)] = Field(default_factory=list)
     relatedObjectIds: Annotated[list[CanvasId], Field(max_length=20)] = Field(default_factory=list)
+    relatedConnectionIds: Annotated[list[CanvasId], Field(max_length=20)] = Field(default_factory=list)
     requirement: CanvasRequirement | None = None
     question: CanvasQuestion | None = None
     prototype: CanvasPrototype | None = None
@@ -98,6 +100,8 @@ class CanvasObjectData(CanvasContract):
             raise ValueError("Only annotations have a note style.")
         if self.kind == "evidence" and not self.evidence:
             raise ValueError("An evidence object needs a source span.")
+        if self.relatedConnectionIds and self.kind not in ("annotation", "requirement", "question"):
+            raise ValueError("Only notes, requirements and questions can attach to a connection.")
         return self
 
 
@@ -113,7 +117,7 @@ class CanvasConnectionData(CanvasContract):
     source: CanvasId
     target: CanvasId
     label: CanvasTitle
-    role: Literal["structural", "data", "process", "annotation"] = "data"
+    role: ConnectionRole = "data"
     canonicalEdgeId: CanvasId | None = None
 
 
@@ -205,6 +209,7 @@ class CanvasBatch(CanvasContract):
     baseRevision: Revision
     mutationId: CanvasId
     operations: Annotated[list[CanvasOperation], Field(min_length=1, max_length=240)]
+    expandFromObjectId: CanvasId | None = None
 
 
 class BoardCommit(CanvasContract):

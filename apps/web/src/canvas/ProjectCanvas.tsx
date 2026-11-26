@@ -12,8 +12,9 @@ const ignoreProjectAction = () => {};
 let tabId: string | undefined;
 let presenceSequence = 0;
 
-function useSharedSelection(id: string, revision: number, objectIds: string[], saved: boolean) {
+function useSharedSelection(id: string, revision: number, objectIds: string[], connectionIds: string[], saved: boolean) {
   const selectionKey = objectIds.join(',');
+  const connectionsKey = connectionIds.join(',');
   useEffect(() => {
     const tab = tabId ??= crypto.randomUUID();
     function release() {
@@ -35,6 +36,7 @@ function useSharedSelection(id: string, revision: number, objectIds: string[], s
       const selection: BoardPresenceUpdate = {
         tabId: tab, sequence: ++presenceSequence, baseRevision: revision,
         objectIds: saved ? (selectionKey ? selectionKey.split(',') : []) : null,
+        connectionIds: saved && connectionsKey ? connectionsKey.split(',') : [],
       };
       void apiFetch(`/boards/${encodeURIComponent(id)}/presence`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -52,7 +54,7 @@ function useSharedSelection(id: string, revision: number, objectIds: string[], s
       document.removeEventListener('visibilitychange', publish);
       window.removeEventListener('pageshow', publish);
     };
-  }, [id, revision, selectionKey, saved]);
+  }, [id, revision, selectionKey, connectionsKey, saved]);
 }
 
 export function useProjectDirectory(active: boolean, id: string, unlocked: number) {
@@ -146,15 +148,16 @@ export function ProjectCanvas({ initial, theme, documents, onSource }: {
   onSource: (citation: SourceSelection) => void;
 }) {
   const board = useProjectBoard(initial);
-  useSharedSelection(initial.id, board.savedRevision, board.session.selected, !board.saving && !board.issue);
+  const { selected, selectedLinks } = board.session;
+  useSharedSelection(initial.id, board.savedRevision, selected, selectedLinks, !board.saving && !board.issue);
   return <div ref={board.root}>
     <CanvasBoard seed={emptyScene} session={board.session} highlight={[]} theme={theme}
       importing={false} presenting={false} onInspect={ignoreProjectAction}
       empty={<div className="board-empty"><h1>{initial.title}</h1><p>Add an object to start this board.</p></div>}
-      inspect={(card, link, close) => <CanvasInspector key={card?.id ?? link?.id}
+      inspect={(card, link, close, pin) => <CanvasInspector key={card?.id ?? link?.id}
         card={card} link={card ? undefined : link} session={board.session} documents={documents} onClose={close}
         onSource={onSource} onAsk={ignoreProjectAction} onExplore={ignoreProjectAction} onPin={ignoreProjectAction}
-        projectBoardId={initial.id} savedRevision={board.savedRevision} />} />
+        projectBoardId={initial.id} savedRevision={board.savedRevision} onAddProjectFeedback={pin} />} />
     {board.issue ? <section className="canvas-error project-save-error" aria-label="Board save">
       <span role="alert">{board.conflict?.code === 'staleRevision'
         ? `Board changed to revision ${board.conflict.currentRevision}. Your draft is kept.`

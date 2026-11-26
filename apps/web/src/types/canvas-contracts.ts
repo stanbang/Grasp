@@ -50,6 +50,7 @@ export interface CanvasObjectData {
   canonicalNodeId?: string | null;
   evidence?: Array<CanvasEvidenceRef>;
   relatedObjectIds?: Array<string>;
+  relatedConnectionIds?: Array<string>;
   requirement?: CanvasRequirement | null;
   question?: CanvasQuestion | null;
   prototype?: CanvasPrototype | null;
@@ -66,6 +67,7 @@ export interface CanvasObject {
   canonicalNodeId?: string | null;
   evidence?: Array<CanvasEvidenceRef>;
   relatedObjectIds?: Array<string>;
+  relatedConnectionIds?: Array<string>;
   requirement?: CanvasRequirement | null;
   question?: CanvasQuestion | null;
   prototype?: CanvasPrototype | null;
@@ -179,6 +181,7 @@ export interface CanvasBatch {
   baseRevision: number;
   mutationId: string;
   operations: Array<AddObject | UpdateObject | PlaceObject | RemoveObject | AddConnection | UpdateConnection | RemoveConnection | AnswerQuestion | RestoreRevision>;
+  expandFromObjectId?: string | null;
 }
 
 export interface BoardCommit {
@@ -238,6 +241,7 @@ export interface CanvasObjectContext {
 export interface BoardSelectionUpdate {
   baseRevision: number;
   objectIds: Array<string>;
+  connectionIds?: Array<string>;
 }
 
 export interface BoardSelection {
@@ -245,6 +249,7 @@ export interface BoardSelection {
   revision: number;
   available: boolean;
   objectIds: Array<string>;
+  connectionIds: Array<string>;
 }
 
 export interface BoardPresenceUpdate {
@@ -252,11 +257,19 @@ export interface BoardPresenceUpdate {
   sequence: number;
   baseRevision: number;
   objectIds: Array<string> | null;
+  connectionIds?: Array<string>;
 }
 
 export interface BoardContextSelection {
   status: "selected" | "empty" | "unavailable" | "stale" | "ambiguous";
   objectIds: Array<string>;
+  connectionIds: Array<string>;
+}
+
+export interface BoardFocus {
+  objectIds: Array<string>;
+  connectionIds: Array<string>;
+  feedbackIds: Array<string>;
 }
 
 export interface BoardItemChange {
@@ -265,13 +278,34 @@ export interface BoardItemChange {
   kind: string;
   change: "added" | "modified" | "removed";
   fields: Array<string>;
+  classification: "visual" | "semantic" | "mixed";
+}
+
+export interface BoardConnectionState {
+  source: string;
+  sourceTitle: string;
+  target: string;
+  targetTitle: string;
+  label: string;
+  role: "structural" | "data" | "process" | "annotation";
+}
+
+export interface BoardConnectionChange {
+  id: string;
+  label: string;
+  kind: string;
+  change: "added" | "modified" | "removed";
+  fields: Array<string>;
+  classification: "visual" | "semantic" | "mixed";
+  before: BoardConnectionState | null;
+  after: BoardConnectionState | null;
 }
 
 export interface BoardRevisionChanges {
   revision: number;
   actor: "user" | "agent";
   objects: Array<BoardItemChange>;
-  connections: Array<BoardItemChange>;
+  connections: Array<BoardConnectionChange>;
 }
 
 export interface BoardChanges {
@@ -286,9 +320,11 @@ export interface BoardContext {
   candidates: Array<BoardSummary>;
   board: ProjectBoard | null;
   selection: BoardContextSelection | null;
+  focus: BoardFocus | null;
   annotationIds: Array<string>;
   requirementIds: Array<string>;
   proposalIds: Array<string>;
+  decisionIds: Array<string>;
   changes: BoardChanges | null;
 }
 

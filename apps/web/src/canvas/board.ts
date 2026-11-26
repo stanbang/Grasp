@@ -248,7 +248,17 @@ export function removeAuthored(board: BoardDocument, cardIds: readonly string[],
     if (remove.has(id)) delete placements[id];
     else if (placement.groupId && remove.has(placement.groupId)) placements[id] = { ...placement, groupId: undefined };
   }
-  return { ...board, placements, authoredCards: board.authoredCards.filter(card => !remove.has(card.id)), authoredLinks: remainingLinks };
+  const remainingLinkIds = new Set(remainingLinks.map(link => link.id));
+  const authoredCards = board.authoredCards.filter(card => !remove.has(card.id)).map(card => {
+    const details = card.projectObject;
+    if (!details) return card;
+    const relatedObjectIds = details.relatedObjectIds?.filter(id => !remove.has(id));
+    const relatedConnectionIds = details.relatedConnectionIds?.filter(id => remainingLinkIds.has(id));
+    if (relatedObjectIds?.length === details.relatedObjectIds?.length
+      && relatedConnectionIds?.length === details.relatedConnectionIds?.length) return card;
+    return { ...card, projectObject: { ...details, relatedObjectIds, relatedConnectionIds } };
+  });
+  return { ...board, placements, authoredCards, authoredLinks: remainingLinks };
 }
 
 export function zoomAt(viewport: Point & { zoom: number }, anchor: Point, zoom: number) {
