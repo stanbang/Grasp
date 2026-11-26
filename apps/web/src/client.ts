@@ -1,15 +1,13 @@
 import type { IngestionEvent } from './types/contracts';
-let accessToken = '';
-export function setAccessToken(token: string): void { accessToken = token; }
+export const ownerSessionExpired = 'grasp-owner-session-expired';
 export class ApiError extends Error {
     constructor(message: string, public status: number, public detail?: unknown) { super(message); }
 }
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-    const headers = new Headers(options.headers);
-    if (accessToken)
-        headers.set('Authorization', `Bearer ${accessToken}`);
-    const response = await fetch('/api' + path, { ...options, headers });
+    const response = await fetch('/api' + path, { ...options, credentials: 'same-origin' });
     if (!response.ok) {
+        if (response.status === 401 && !path.startsWith('/owner-session'))
+            window.dispatchEvent(new Event(ownerSessionExpired));
         const data = await response.json().catch(() => ({ detail: 'The server could not complete this request.' }));
         const detail: unknown = data.detail;
         const message = typeof detail === 'string' ? detail : 'Please check the submitted values.';

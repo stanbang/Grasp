@@ -211,7 +211,6 @@ async function run() {
     await card(page, 'Unsaved local title').waitFor();
     assert.deepEqual(await request(board), latest.board);
     await page.reload();
-    await unlock(page);
     await conflict.waitFor();
     await card(page, 'Unsaved local title').waitFor();
     await button(page, 'Discard draft').click();
@@ -225,8 +224,8 @@ async function run() {
     server = await startApi(directory);
     assert.deepEqual(await request(board), latest.board);
     await page.reload();
-    await unlock(page);
     await revision(page, 7);
+    assert.equal(await page.getByLabel('Workspace access token').isVisible(), false);
     assert.equal(await card(page, 'Browser note').getAttribute('data-id'), noteId);
     await card(page, agentObject.title).waitFor();
     console.log('PASS API restart and browser reload preserve revision, object IDs, geometry and connection');

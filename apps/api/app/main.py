@@ -11,6 +11,7 @@ from .config import PROJECT_ROOT, get_settings
 from .board_selections import BoardSelections
 from .canvas_routes import router as canvas_router
 from .knowledge_routes import router as knowledge_router
+from .owner_sessions import SESSION_PATH, router as owner_session_router
 from .request_controls import RequestControls, is_agent_path, request_path
 from .llm import provider_check
 from .document_routes import router as document_router
@@ -53,11 +54,15 @@ app.include_router(study_router)
 app.include_router(conversation_router)
 app.include_router(canvas_router)
 app.include_router(knowledge_router)
+app.include_router(owner_session_router)
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(request: Request, error: RequestValidationError):
-    if is_agent_path(request_path(request.scope)):
+    path = request_path(request.scope)
+    if path == SESSION_PATH:
+        return JSONResponse(status_code=422, content={"detail": "Enter the workspace owner token."})
+    if is_agent_path(path):
         # Exclude raw input, which can contain non-JSON values such as NaN.
         return JSONResponse(status_code=422, content={"detail": [
             {"loc": issue["loc"], "msg": issue["msg"], "type": issue["type"]} for issue in error.errors()

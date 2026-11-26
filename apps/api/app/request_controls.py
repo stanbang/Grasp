@@ -3,8 +3,11 @@ import time
 from collections import defaultdict, deque
 from threading import Lock
 from fastapi import HTTPException, Request
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Scope, Receive, Send, Message
+
+from .owner_sessions import SESSION_PATH, browser_owner, workspace_origin
 
 
 def request_path(scope: Scope) -> str:
@@ -42,25 +45,31 @@ class RequestControls:
         path=request_path(scope)
         authorization=headers.get("authorization", "")
         supplied=authorization.removeprefix("Bearer ").encode()
+        settings_owner = bool(settings.access_token and authorization.startswith("Bearer ")
+                              and hmac.compare_digest(supplied, settings.access_token.encode()))
+        request = Request(scope)
+        expensive=scope.get('method') in {'POST','PUT','PATCH','DELETE'}
+        if settings.access_token and not authorization and path not in {"/health", SESSION_PATH}:
+            settings_owner = await run_in_threadpool(browser_owner, request)
+            if settings_owner and expensive and headers.get("origin") != workspace_origin(request):
+                await JSONResponse({"detail": "Open GRASP from its workspace address."}, status_code=403)(scope,receive,send)
+                return
         if is_agent_path(path):
             actor = None
-            if not settings.access_token and not authorization:
+            if settings_owner or (not settings.access_token and not authorization):
                 actor = "user"
             elif authorization.startswith("Bearer "):
-                if settings.access_token and hmac.compare_digest(supplied, settings.access_token.encode()):
-                    actor = "user"
-                elif settings.agent_token and hmac.compare_digest(supplied, settings.agent_token.encode()):
+                if settings.agent_token and hmac.compare_digest(supplied, settings.agent_token.encode()):
                     actor = "agent"
             if actor is None:
                 await JSONResponse({"detail": "Enter a valid GRASP access token."}, status_code=401)(scope,receive,send)
                 return
             scope.setdefault("state", {})["board_actor"] = actor
-        elif settings.access_token and path!='/health':
-            if not hmac.compare_digest(supplied,settings.access_token.encode()):
+        elif settings.access_token and path not in {"/health", SESSION_PATH}:
+            if not settings_owner:
                 await JSONResponse({'detail':'Enter the workspace access token.'},status_code=401)(scope,receive,send)
                 return
         client=str(settings.data_dir)+':'+str(scope.get('client',('unknown',))[0])
-        expensive=scope.get('method') in {'POST','PUT','DELETE'}
         now=time.monotonic()
         if expensive:
             with self.lock:

@@ -8,7 +8,7 @@ import { conceptObjectId, knowledgeScene, type BoardKind, type Card, type Source
 import { engineeringScene } from './canvas/engineering-board';
 import { useBoard } from './canvas/use-board';
 import { ConceptView, SourceView, WorkspaceSettings } from './WorkspaceDialogs';
-import { api, apiFetch, ApiError, documentEvents, setAccessToken } from './client';
+import { api, apiFetch, ApiError, documentEvents, ownerSessionExpired } from './client';
 import { droppedFiles, isSupportedNote, installFileDropHandlers } from './folder-upload';
 import { useStudyGraph } from './study-store';
 import { updateUpload, type UploadState } from './upload-state';
@@ -32,8 +32,9 @@ export function App() {
   const engineering = useBoard('engineering');
   const [workspace, setWorkspace] = useState<BoardKind>(requestedBoard);
   const [projectId, setProjectId] = useState(() => new URLSearchParams(window.location.search).get('projectBoard') ?? '');
+  const [locked, setLocked] = useState(false);
   const [accessVersion, setAccessVersion] = useState(0);
-  const project = useProjectDirectory(workspace === 'project', projectId, accessVersion);
+  const project = useProjectDirectory(workspace === 'project' && !locked, projectId, accessVersion);
   const [presenting, setPresenting] = useState(false);
   const [render3D, setRender3D] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -54,7 +55,8 @@ export function App() {
   const [citation, setCitation] = useState<SourceSelection | null>(null);
   const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
   const [settings, setSettings] = useState(false);
-  const [locked, setLocked] = useState(false);
+  const [accessRequired, setAccessRequired] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
   const [token, setToken] = useState('');
   const [readyCount, setReadyCount] = useState(0);
   const generation = useRef(0);
@@ -93,11 +95,26 @@ export function App() {
   }
 
   async function refresh() {
-    const [data, health, library] = await Promise.all([
+    const [data, health, library, access] = await Promise.all([
       api<GraphResponse>('/graph'), api<HealthResponse>('/health'), api<DocumentsResponse>('/documents'),
+      api<{ required: boolean }>('/owner-session'),
     ]);
     setLibrary(data, library.documents);
     setProvider(health.llm.provider);
+    setAccessRequired(access.required);
+  }
+
+  function lockWorkspace() {
+    setLocked(true);
+    setSettings(false);
+    setCitation(null);
+    setSelectedConcept(null);
+  }
+
+  async function signOut(all: boolean) {
+    await apiFetch(all ? '/owner-session?all=true' : '/owner-session', { method: 'DELETE' });
+    setError('');
+    lockWorkspace();
   }
 
   async function openConversation(id: string, showQuestions = true) {
@@ -115,6 +132,7 @@ export function App() {
 
   useEffect(() => {
     folderInput.current?.setAttribute('webkitdirectory', '');
+    window.addEventListener(ownerSessionExpired, lockWorkspace);
     void refresh().then(async () => {
       const saved = savedConversation();
       if (!saved) return;
@@ -124,7 +142,10 @@ export function App() {
         else throw issue;
       }
     }).catch(failure);
-    return () => controllers.current.forEach(controller => controller.abort());
+    return () => {
+      window.removeEventListener(ownerSessionExpired, lockWorkspace);
+      controllers.current.forEach(controller => controller.abort());
+    };
   }, []);
 
   useEffect(() => {
@@ -311,6 +332,31 @@ export function App() {
     };
   }, [knowledgeSeed, uploads]);
 
+  if (locked) return <div className="access-gate"><form onSubmit={event => {
+    event.preventDefault();
+    if (unlocking) return;
+    setUnlocking(true);
+    setError('');
+    void apiFetch('/owner-session', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }),
+    }).then(async () => {
+      setToken('');
+      await refresh();
+      if (conversation) {
+        try { await openConversation(conversation, workspace === 'knowledge'); }
+        catch (issue) {
+          if (issue instanceof ApiError && issue.status === 404) remember(null);
+          else throw issue;
+        }
+      }
+      setAccessVersion(value => value + 1);
+      setLocked(false);
+    }).catch(failure).finally(() => setUnlocking(false));
+  }}><h2>Open your workspace</h2><label htmlFor="access-token">Workspace access token</label>
+    <input id="access-token" type="password" value={token} onChange={event => setToken(event.target.value)} required />
+    <button disabled={unlocking}>{unlocking ? 'Unlocking…' : 'Unlock'}</button>
+    {error && <p role="alert">{error}</p>}</form></div>;
+
   return <div className="canvas-workspace" data-theme={theme} data-presenting={presenting}
     onKeyDown={event => { if (event.key === 'Escape' && presenting) changePresentation(false); }}>
     <header className="canvas-header">
@@ -443,6 +489,7 @@ export function App() {
     {citation && <SourceView citation={citation} sourceName={documents.find(document => document.id === citation.docId)?.name}
       onClose={() => setCitation(null)} />}
     {settings && <WorkspaceSettings onClose={() => setSettings(false)} onRefresh={refresh} onConversation={openConversation}
+      onSignOut={accessRequired ? signOut : undefined}
       onConversationRemoved={id => {
         if (id === conversation) startConversation();
       }}
@@ -454,17 +501,5 @@ export function App() {
         setScopeEmpty(next.length === 0);
         if (!next.length) setError('The active source was removed. Add notes or start a new conversation.');
       }} />}
-    {locked && <div className="access-gate"><form onSubmit={event => {
-      event.preventDefault();
-      setAccessToken(token);
-      void refresh().then(async () => {
-        if (conversation) await openConversation(conversation, workspace === 'knowledge');
-        setAccessVersion(value => value + 1);
-        setLocked(false);
-        setError('');
-      }).catch(failure);
-    }}><h2>Open your workspace</h2><label htmlFor="access-token">Workspace access token</label>
-      <input id="access-token" type="password" value={token} onChange={event => setToken(event.target.value)} required />
-      <button>Unlock</button>{error && <p role="alert">{error}</p>}</form></div>}
   </div>;
 }
