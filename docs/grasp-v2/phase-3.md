@@ -129,7 +129,11 @@ The 26 November check passed 82 API tests, 24 Node tests, TypeScript and contrac
 
 `grasp setup` now configures and checks the existing local app, MCP entry and skill from one command. The real Codex CLI registered a fresh profile without changing an unrelated entry. A second run left the configuration and credentials byte-for-byte identical. The installed CLI ran setup, doctor and open from outside the checkout.
 
-GRASP provides the board's live URL through MCP. The user-level skill opens that URL in Codex's built-in browser and keeps using the same board. A fresh local Codex chat outside the checkout loaded the skill, saved the video-editor design and queued its browser panel while the chat was hidden. Automatic browser review rejected opening the separate fixture because its review usage limit was reached. Direct selection, owner edits and a follow-up update in the fresh chat remain for acceptance. [Workspace walk-through](agent-guide.md#try-a-collaboration) · [Codex split view](https://learn.chatgpt.com/docs/browser#arrange-tabs-and-chat)
+GRASP provides the board's live URL through MCP. The user-level skill opens it in Codex's built-in Browser. When the chat is hidden, Codex queues the panel until the chat is shown. Codex desktop logs confirmed the AI Video Editor board loaded in the sidebar of **GRASP Phase 3.2 acceptance**, a local chat outside the checkout.
+
+That chat loaded the installed skill and built the design from a natural-language request. The owner selected the rough-cut component and asked for a visual explanation. The agent read the selection through MCP and updated the same board. The owner moved the explanation heading. After the owner switched to **Codex Desktop MCP Verification**, the same chat read the selected stdio server, found the owner's note, connection and position changes, and saved a follow-up while preserving them.
+
+In a separate live check, selecting **GRASP stdio server** in the desktop Browser was reflected in MCP. A scoped MCP edit connected the existing explanation to that component. The same Browser tab showed the new connection without reloading, and readback confirmed the owner note and positions were preserved. The earlier detached explanations motivated Goal 3.3. Its independent acceptance is pending. [Workspace walk-through](agent-guide.md#try-a-collaboration) · [Codex split view](https://learn.chatgpt.com/docs/browser#arrange-tabs-and-chat)
 
 ### Goal 3.3 contextual visual collaboration
 
@@ -160,7 +164,7 @@ Run `python scripts/check.py`, `npm run build`, `.\.venv-mcp\Scripts\python.exe 
 
 Open one board at a time in the built-in Browser alongside a fresh Codex desktop chat. If the tools are cached, first use **Settings → MCP servers → Restart**. Use **Find objects** to locate the test area. Both boards already have agent-created starter architectures in **Goal 3.3 acceptance**. The live MCP readback confirmed that the starter arrows, placements and all earlier board content were preserved.
 
-- [Codex Desktop MCP Verification, starting at revision 11](http://127.0.0.1:5173/?board=project&projectBoard=b24027b7-79f9-4a09-a2b1-82623cecbb1a)
+- [Codex Desktop MCP Verification, starting at revision 12](http://127.0.0.1:5173/?board=project&projectBoard=b24027b7-79f9-4a09-a2b1-82623cecbb1a)
 - [Phase 3.2 Acceptance — AI Video Editor, starting at revision 4](http://127.0.0.1:5173/?board=project&projectBoard=d3ee1326-051e-4277-a6ea-89879b908abc)
 
 Record the owner actions, the agent's readback after each write, and the final plan. In each chat, make the selections and corrections on the canvas and refer to them in chat without retyping their contents.
