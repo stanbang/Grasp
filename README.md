@@ -1,220 +1,138 @@
-<p align="left"><img src="docs/assets/logo.svg" alt="Grasp constellation mark" width="54"></p>
+<p><img src="docs/assets/logo.svg" alt="GRASP constellation mark" width="60"></p>
 
-# Grasp
+# GRASP
 
-Ask questions about your notes, see how concepts connect and open the exact passage behind an answer.
+Retrieval-grounded visual workspace for AI-assisted software design, document understanding and agent collaboration.
 
-[Run the recorded showcase](#run-grasp) · [Interactive walkthrough](#walk-through-rag) · [Evaluation](#4-how-did-i-evaluate-it-and-choose-components) · [Local CLI and Codex MCP](docs/grasp-v2/phase-3.md)
+**Developer preview · Milestone A**
 
-![The Grasp showcase opens a sample note, traces it into a constellation and reveals a cited answer.](docs/assets/showcase.gif)
+[Quick start](#quick-start) · [Screenshots](#workspaces) · [Architecture](#architecture) · [Evaluation](#retrieval-evaluation)
 
-## 1. How did I build Grasp around student needs? Would a plain LLM be better?
+GRASP started with a question about document Q&A. How can a reader see which passage supports an answer? It now brings that same link to evidence into a shared visual workspace where someone can explain a system, sketch a design and revise it with a coding agent.
 
-I designed Grasp for repeated questions across a student's own notes, with a way to check each answer against the original passage. A plain LLM is simpler for general explanations, and pasting a short note is often enough for a one-off question.
+## Workspaces
 
-Retrieval-augmented generation (RAG) looks up relevant passages in an outside knowledge base before asking a language model to answer. In Grasp the knowledge base is the student's notes. The retriever selects passages, and the generator uses those passages as evidence. [Project brief and sources](docs/facts.md#what-the-workspace-does)
-
-| Student need | Design choice | Evidence |
-| --- | --- | --- |
-| Use the terminology from class | **Implemented** Document scope for questions and follow-ups | [Chat route](apps/api/app/study_routes.py) |
-| Check what the note actually says | **Implemented** Exact quote, page and a source view | [Source dialog](apps/web/src/WorkspaceDialogs.tsx) |
-| See related ideas and check understanding | **Implemented** Concept links backed by source chunks and a mastery quiz | [Study routes](apps/api/app/study_routes.py) |
-
-### Why not just ask an LLM?
-
-| Question | Plain LLM | Paste notes into long context | Grasp |
-| --- | --- | --- | --- |
-| Cites your own notes | Needs those notes to be supplied | Can quote text if prompted | Validates quote, page and chunk |
-| Unsupported answers | Can give a plausible answer with no course source | Can overlook or misread supplied text | Can miss evidence; a valid quote can still fail to support a claim |
-| Cost per question | Not measured yet. Cost depends on provider and prompt | Not measured yet. Longer inputs may cost more | Not measured yet. Live use includes a query embedding and generation |
-| Beyond the context window | Lacks access to course notes by itself | Needs a selection or several requests | Searches an index and sends selected passages |
-| Setup effort | Open a chat and ask | Collect and paste the relevant notes | Import and index the notes first |
-| Privacy | Depends on the service and what you share | The selected service may receive the full pasted note | Mock mode stays local. Live mode sends selected document text during indexing, extraction and questions |
-
-The comparison describes workflows. A controlled answer-quality comparison against either baseline is **Considered** and pending. [Design and comparison limits](docs/rag-design.md)
-
-![Five columns from the student need to evidence and lessons.](docs/assets/thought-process.svg)
-
-<details>
-<summary>Thought process as Mermaid</summary>
-
-```mermaid
-flowchart LR
-    A["Student need: ask across notes and find the passage"]
-    B["Prepare the notes: read pages, preserve offsets and index chunks"]
-    C["Answer: retrieve scoped passages, cite, open the source"]
-    D["Engineering decisions: bound context and change one setting at a time"]
-    E["Evidence: compare smaller chunks with term reordering"]
-    A --> B --> C --> D --> E
-```
-
-</details>
-
-## 2. How did I weigh cost, speed and quality?
-
-I kept the workspace on bounded vector retrieval and measured chunk size and reordering separately. The recorded runs show differences in retrieval and evidence size. End-to-end latency and billed cost are not measured yet.
-
-### Parse and chunk
-
-| Technique | Status | Cost and speed | Quality and decision |
-| --- | --- | --- | --- |
-| Local page text and optional OCR | Implemented | OCR adds local CPU work. Time and cost are not measured yet | Page provenance survives. Scans can contain recognition errors |
-| Recursive 900-character target, up to 150 overlap | Implemented | Baseline corpus had 8 chunks. Indexing time and cost are not measured yet | Keep as the workspace default |
-| Shorter 360/60 setting | Measured | Had 18 chunks and smaller evidence bundles in the experiment | Recovered one archived Gemini miss and lost one hit in mock. Retest before adoption |
-
-### Embed and index
-
-| Technique | Status | Cost and speed | Quality and decision |
-| --- | --- | --- | --- |
-| Chroma with configured embeddings and SQLite sources | Implemented | Local index with a live-mode embedding request for queries. Storage growth and provider cost are not measured yet | Keep exact text and offsets in SQLite. Re-index when changing embedding spaces |
-| Offline hash embeddings | Implemented | No provider charges. Local cost is not measured yet | Deterministic wiring checks and recorded demo |
-| Hosted vector database | Considered | Network, hosting and operating cost are not measured yet | Defer until a measured scale or tenancy need justifies it |
-
-### Retrieve and rank
-
-| Technique | Status | Cost and speed | Quality and decision |
-| --- | --- | --- | --- |
-| Vector search, source filter, up to five passages by default | Implemented | Bounded prompt, with final cost not measured yet | Keep as the workspace baseline |
-| Term-overlap reorder | Measured | Sorts the same candidates locally. Adds no model request | Recovered one archived Gemini miss with the default chunk split |
-| Hybrid BM25 plus vectors, learned reranker | Considered | Added work and latency are not measured yet | Test only against known misses on held-out notes |
-
-### Generate
-
-| Technique | Status | Cost and speed | Quality and decision |
-| --- | --- | --- | --- |
-| Structured Gemini or OpenAI generation, one validation retry | Implemented | Retry can add a request. Token use and cost are not measured yet | Require source citations and allow a decline |
-| Agentic retrieval or fine-tuning | Considered | Extra model calls or training. Cost is not measured yet | Defer until there is a measured failure a simpler component change cannot address |
-
-Updating the index lets Grasp answer from new notes and point to the passage it used. Fine-tuning might help with answer format, which Grasp now checks with structured-output validation. Test agentic retrieval if held-out questions show that some answers need several search decisions. [Generation tradeoffs](docs/tradeoffs.md)
-
-### Verify
-
-| Technique | Status | Cost and speed | Quality and decision |
-| --- | --- | --- | --- |
-| Exact source membership, quote and page checks | Implemented | Runs locally. Verification time is not measured yet | Keep provenance checks before displaying a citation |
-| Review whether each answer claim follows from its quote | Considered | Reviewer time and optional judge cost are not measured yet | Build a held-out claim-support set before reporting a rate |
-
-[Component tradeoffs and measurement plan](docs/tradeoffs.md) · [Facts behind the numbers](docs/facts.md#measured-results)
-
-## 3. What framework makes this system adaptable?
-
-I keep parsing, splitting, embeddings, retrieval, generation and citation validation at separate code boundaries. To change one, I state a hypothesis, run the same cases, compare the results and record why the change stays or goes.
-
-The knowledge base combines SQLite page and chunk records with the Chroma vector index. The retriever returns committed chunks. The LangChain adapter asks the chosen model for a structured answer. With a new embedding model, build an isolated index and keep the questions, labels and chunk policy fixed. The experiments below show the same discipline with the chunking and order choices. [Module map and swap example](docs/rag-design.md#change-one-component)
-
-### Architecture at a glance
-
-<img src="docs/assets/grasp-architecture.png" width="520" alt="Grasp accepts PDF, Markdown and UTF-8 text. Parsing, optional OCR and chunking produce page-aware spans. Chroma indexes embeddings. Concept extraction stores nodes, relationships and source links in SQLite. Scoped vector search feeds a model prompt. React shows the answer, checked citations and the 3D concept map.">
-
-The diagram comes from the [shared Grasp course review](https://chatgpt.com/share/6b04afc4-939c-83ec-99ab-1b58f98d5dba). Question answering searches text chunks in Chroma and loads their stored source spans. The concept graph helps readers browse those sources. It stays outside the retrieval path. [Retriever](apps/api/app/retrieval.py) · [Chat route](apps/api/app/study_routes.py)
-
-![Pipeline stages and the decision loop for making a retrieval change.](docs/assets/framework.svg)
-
-<details>
-<summary>Adaptation framework as Mermaid</summary>
-
-```mermaid
-flowchart TD
-    subgraph Pipeline
-        A["Read pages"] --> B["Split text"] --> C["Embed"] --> D["Index"]
-        D --> E["Retrieve"] --> F["Optional reordering: measured"]
-        E --> G["Generate from evidence"]
-        F -. experiment .-> G
-        G --> H["Verify citations"] --> I["Show answer and source"]
-    end
-    H --> N["Evaluate retrieval and complete answers"]
-    X["State a hypothesis"] --> Y["Change one component"] --> N
-    N --> Z["Compare quality, latency and cost"]
-    Z --> R["Keep or reject and log the decision"] --> X
-```
-
-</details>
-
-## 4. How did I evaluate it and choose components?
-
-I separated pipeline and citation checks from retrieval experiments and a small end-to-end acceptance run. Reordering and shorter chunks each improved archived live Hit@3, so I kept the workspace defaults until either change is tested on unseen notes.
-
-The exploratory set has **20 labelled questions across four notes**. A hit requires the expected document and an exact passage in the returned chunks. The runner compares the top three results, with both ranking variants sharing up to eight candidates per query. [Labels](apps/api/eval/portfolio-questions.json) · [Evaluator](apps/api/eval/portfolio.py)
-
-| Recorded mode | Target / overlap | Order | Chunks | Hit@1 | Hit@3 | MRR@3 |
-| --- | --- | --- | ---: | ---: | ---: | ---: |
-| Gemini embeddings | 900 / 150 | Vector | 8 | 0.70 | 19/20 | 0.817 |
-| Gemini embeddings | 900 / 150 | Vector then terms | 8 | 0.85 | 20/20 | 0.917 |
-| Gemini embeddings | 360 / 60 | Vector | 18 | 0.80 | 20/20 | 0.900 |
-| Gemini embeddings | 360 / 60 | Vector then terms | 18 | 0.85 | 20/20 | 0.925 |
-| Mock fixture | 900 / 150 | Vector | 8 | 0.70 | 20/20 | 0.842 |
-| Mock fixture | 900 / 150 | Vector then terms | 8 | 0.90 | 20/20 | 0.950 |
-| Mock fixture | 360 / 60 | Vector | 18 | 0.90 | 19/20 | 0.925 |
-| Mock fixture | 360 / 60 | Vector then terms | 18 | 0.85 | 19/20 | 0.900 |
-
-Hit@3 is the number of questions with evidence in the first three results. MRR@3 gives earlier matches more weight and counts misses as zero. All rows are **Measured**. The mock retriever additionally filters by exact term overlap. [Live report](docs/evaluation-portfolio-live.json) · [Mock report](docs/evaluation-portfolio-mock.json)
-
-- **Components.** Tests cover parsing and exact offsets, storage, merging, document scope, structured-output retries and quiz grading. The older one-note Hit@5 run checks wiring.
-- **End to end.** The archived Gemini acceptance script verified two cited answers including a follow-up, an unsupported response without citations and a graded three-question quiz. A separate container run recorded OCR, a cited answer and an inline original PDF. [Live check](docs/live-verification.json) · [Container check](docs/production-verification.json)
-- **Limits.** The author wrote the small case set and used it to inspect configurations. The baseline sits near the ceiling. Citation validation verifies source provenance. Claim support, end-to-end latency, billed cost and learner outcomes are not measured yet.
-- **Next experiment.** Label unseen questions, including unanswerable ones. Compare the current retriever and each variant before measuring answer support with the same generator.
-
-```sh
-python apps/api/eval/run.py --output work/original-mock.json
-python apps/api/eval/portfolio.py --output work/portfolio-mock.json
-```
-
-[Evaluation method, timings and limits](docs/evaluation.md)
-
-## 5. What exists for production, and what is missing?
-
-Grasp has a single-owner deployment with loopback defaults, an optional owner token and local request limits. It still needs production monitoring, measured latency and cost, and separate tenancy before serving multiple owners.
-
-| Concern | Exists | Still needed |
-| --- | --- | --- |
-| Monitoring | Uvicorn logs, a health check and saved ingestion events | Stage metrics, error dashboards and alerts |
-| Latency and cost | Bounded passage count and recorded retrieval times for the experiment | Cold and warm end-to-end percentiles, tokens per route and a provider usage budget |
-| Security | Local storage, non-root container, owner token, body limits and mutation rate limits | HTTPS at the host, backups, tenant isolation for a shared service and a deliberate security review |
-| Data disclosure | Local OCR and keyless mock mode. Live providers receive text for embeddings and extraction, and passages and context for generation | Review retention and account policies before using private notes |
-
-The showcase replays bundled samples in a browser. Its drop listener never reads real file names or contents. It uses recorded starter answers and finds matching excerpts for typed questions on the device. The showcase runs locally while GitHub Pages publication is pending. [Deployment](docs/deployment.md) · [Drop test](scripts/tests/showcase.test.cjs)
-
-## Course-topic map
-
-The topics follow the DeepLearning.AI RAG syllabus. The walkthrough applies selected lessons on retrieval, prompt building, evaluation and production to examples from Grasp. [Course syllabus](https://www.coursera.org/learn/retrieval-augmented-generation-rag/) · [Lesson sources and exercises](docs/course-walkthrough.md)
-
-| Course module | Grasp |
+| Workspace | What you can do |
 | --- | --- |
-| RAG Overview | **Implemented** First pipeline with a model, notes and a retriever |
-| Information Retrieval and Search Foundations | **Implemented** Vector search and metadata scope. **Measured** Hit@1, Hit@3 and MRR@3. **Considered** BM25 and fusion |
-| Information Retrieval with Vector Databases | **Implemented** Chroma, overlapping chunks and bounded follow-up context. **Measured** Split and reordering. **Considered** Learned query parsing |
-| LLMs and Text Generation | **Implemented** Evidence prompts, structured citations and an unsupported path. **Considered** Claim support scoring, agentic RAG and fine-tuning |
-| RAG Systems in Production | **Implemented** Local health, owner token and request limits. **Measured** Archived acceptance runs. **Considered** Per-stage metrics and tenancy |
+| **Knowledge** | Import PDF, Markdown or UTF-8 text, ask scoped questions and open exact source passages. Explore related concepts in 2D or 3D. |
+| **Engineering** | Walk through GRASP’s own indexing, retrieval and citation pipeline. Open an example that shows how vector similarity affects the order of passages. |
+| **Projects** | Create persistent boards with components, connections and notes. Import images and documents as board objects. Let a local coding agent read selection context and propose or apply edits over MCP. |
 
-## Run Grasp
+![GRASP Engineering workspace showing the document indexing and question-answering flows, from extracted pages to source citation.](docs/assets/preview-engineering.webp)
 
-Use Python 3.11 and Node.js 20.19+, 22.12+ or a newer supported version. Start in offline mode from the repository root.
+*Engineering follows both paths through the same pipeline. Page text and offsets stay in SQLite, and ChromaDB indexes the chunk vectors.*
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/assets/preview-knowledge.webp"><img src="docs/assets/preview-knowledge.webp" alt="Knowledge workspace with a question about retrieval practice and an exact passage highlighted in its sample source."></a></td>
+    <td width="50%"><a href="docs/assets/preview-project.webp"><img src="docs/assets/preview-project.webp" alt="Project canvas with a synthetic software diagram, imported image and PDF cards, and a saved annotation from a local MCP session."></a></td>
+  </tr>
+  <tr>
+    <td><strong>Knowledge.</strong> A cited answer and its source in the bundled sample.</td>
+    <td><strong>Projects.</strong> A synthetic design board with imported files and a saved agent annotation.</td>
+  </tr>
+</table>
+
+All three screenshots come from the running app with bundled or synthetic data. The Projects example used a local MCP test client to create the diagram and save the annotation.
+
+<details>
+<summary>Recorded RAG walkthrough</summary>
+
+![Recorded GRASP walkthrough showing an example note, the ingestion replay and a cited answer.](docs/assets/showcase.gif)
+
+The browser-only showcase replays bundled example traces. Run it locally at [`/showcase/`](http://127.0.0.1:5173/showcase/) or open the [RAG guide](http://127.0.0.1:5173/showcase/?view=guide).
+
+</details>
+
+## Quick start
+
+Install Git, Python 3.11 and Node.js 22.12 or newer. Setup downloads dependencies. The default workspace runs locally without model API keys.
 
 ```sh
+git clone https://github.com/stanbang/Grasp.git
+cd Grasp
 python scripts/dev.py --setup
 ```
 
-Open [the showcase](http://127.0.0.1:5173/showcase/) or [the local workspace](http://127.0.0.1:5173/). Later runs use `python scripts/dev.py`. The showcase also works with just the Vite server after installing the web dependencies. To use the real workspace with a provider, follow [the deployment guide](docs/deployment.md). Keep keys in the ignored `.env`.
+On Windows, use `py -3.11 scripts/dev.py --setup` if `python` resolves to a different version. Open [GRASP on port 5173](http://127.0.0.1:5173/) while the command runs. Later starts use `python scripts/dev.py`. Press Ctrl+C to stop both servers. If a port is in use, edit `WEB_PORT` and `API_PORT` in the checkout’s `.env` and use the addresses printed at startup.
+
+1. In **Knowledge**, select **Open sample**, then **Questions**. Ask “What is retrieval practice?” and open **Source 1** to check the quoted passage.
+2. In **Engineering**, follow the indexing and answering paths. Select **Why a passage ranks** to explore the similarity example.
+3. In **Projects**, enter a board name and select **Create board**. Add a component or note, connect it to another item and use **Import files** to place an image or document. Reload to see the saved board.
+
+The default `MOCK_LLM=1` uses deterministic local embeddings and returns retrieved excerpts. To try live generation and embeddings with OpenAI or Gemini, configure the ignored root `.env`. Live mode sends document text to the configured provider for embedding and generation. Optional OCR for scanned PDFs uses local Tesseract and Poppler. [Configuration template](.env.example) · [Deployment and OCR](docs/deployment.md)
+
+### Connect Codex
+
+Install the local Python adapter and run `grasp setup --agent codex` from the checkout. Setup registers the MCP server and skill with Codex and stores separate owner and agent credentials locally. Start GRASP and open a fresh local Codex chat. Ask it to help sketch a system on a GRASP board, select an item in the browser, then ask it to explain the selection or add a related note. [Adapter installation and walkthrough](docs/grasp-v2/agent-guide.md)
+
+## Architecture
+
+### Document retrieval and citations
+
+```mermaid
+flowchart LR
+    document["PDF, Markdown or text"] --> pages["Extract pages and split into chunks"]
+    pages -->|"Text and offsets"| sourceStore[("SQLite")]
+    pages -->|"Embed chunks"| vectorIndex[("ChromaDB")]
+    question["Scoped question"] --> retrieve["Rank passages"]
+    vectorIndex -->|"Matching chunk IDs"| retrieve
+    sourceStore -->|"Canonical passage text"| retrieve
+    retrieve --> answer["Model answer or mock excerpt"]
+    answer --> validate["Check citation page and exact quote"]
+    validate --> sourceView["Answer and source view"]
+```
+
+The retriever searches text chunks. The concept map uses links to those chunks so readers can explore related ideas. The API checks cited quotes against the stored passage. When retrieval finds no supporting passage, the API can decline to answer. [RAG design and code map](docs/rag-design.md)
+
+### Shared project boards
+
+```mermaid
+flowchart LR
+    browser["React and React Flow canvas"] <-->|"Edits and saved revisions"| api["FastAPI"]
+    agent["Codex or compatible agent"] <-->|"MCP over stdio"| adapter["Local Python adapter"]
+    adapter <-->|"Scoped reads and revision-checked writes"| api
+    api -->|"Board snapshots and mutation receipts"| database[("SQLite")]
+    api -->|"Imported originals and image previews"| assets[("Local files")]
+```
+
+Both clients work on the same saved board. An edit batch identifies its base revision and mutation ID. The API detects stale writes and recognizes retries. The browser keeps the user’s draft when a write conflicts. The API checks source and board asset access using a separate agent credential. [Canvas service and contracts](docs/grasp-v2/phase-2.md) · [Asset storage and sharing](docs/grasp-v2/milestone-a-assets.md)
+
+The client uses React, TypeScript, Vite, Tailwind CSS, React Flow and Three.js. The backend uses Python, FastAPI, Pydantic, SQLModel, SQLite, ChromaDB and LangChain.
+
+## Retrieval evaluation
+
+In the archived Gemini embedding run, vector search ranked the labelled evidence first for **14 of 20 questions**. Reordering the same candidates by term overlap raised that to **17 of 20**. The questions cover four notes. This small experiment measured retrieval ranking. Generated answer quality still needs a separate evaluation. The workspace uses the baseline retriever. [Method, results and limitations](docs/evaluation.md)
+
+## Verify locally
+
+After setup, run the contract, API, frontend and build checks from the repository root.
 
 ```sh
 python scripts/check.py
 npm run build
 ```
 
-### Walk through RAG
+The [Milestone A acceptance guide](docs/grasp-v2/milestone-a-assets.md) covers browser import, PDF page links, access grants, and the optional Codex CLI check.
 
-Start the web app, then select **How Grasp works** on the showcase. Follow one networking question through the source pipeline. Compare what the model sees with and without retrieved notes, change the recorded retrieval settings, and test whether a quote supports a claim. Open the example to inspect its source on the star map. [Open the local walkthrough](http://127.0.0.1:5173/showcase/?view=guide)
+## Preview scope
+
+This is a single-owner workspace. Images can be placed, previewed and shared as board assets. The agent can see authorized image metadata. Image interpretation and visual retrieval are future work. See the [Milestone A details](docs/grasp-v2/milestone-a-assets.md) and [roadmap](docs/grasp-v2/roadmap.md).
 
 ## Demo script
 
-1. **First minute** · Open `/showcase/` and select **How Grasp works**. Show how notes enter the index and how a question reaches its source. Return to the replay and select or drag **Computer networks**.
-2. **Second minute** · Pause on **Find passage boundaries**. Show the offsets and overlap, then resume through indexing and the links.
-3. **Third minute** · Orbit or zoom the map. Select a star or open **Concepts** and follow a connection.
-4. **Fourth minute** · Ask **What does a router do?** Watch the linked stars and open **Page 1** to check the exact quote.
-5. **Fifth minute** · Open the [evaluation](docs/evaluation.md), compare the baseline and alternatives, and explain the held-out test you would run before changing defaults.
+1. Open [the recorded showcase](http://127.0.0.1:5173/showcase/) and select **How Grasp works**. Follow one networking question through the pipeline.
+2. Return to the replay and select **Computer networks**. Pause on **Find passage boundaries** to show offsets and overlap, then finish the replay.
+3. Ask “What does a router do?” and open **Page 1** to check the excerpt. Compare the baseline and the term-overlap experiment in the [evaluation](docs/evaluation.md).
 
 ## Repository guide
 
-- [RAG design](docs/rag-design.md), [evaluation](docs/evaluation.md), [tradeoffs](docs/tradeoffs.md) and [decision records](docs/decisions/) explain the implementation and experiments.
-- [Interview talk track](docs/interview-talk-track.md), [portfolio About copy](docs/about-snippet.md) and [facts](docs/facts.md) support the walkthrough.
-- [Architecture](docs/architecture.md), [data contracts](docs/schemas.md) and [deployment](docs/deployment.md) cover the original workspace.
+| Path | Contents |
+| --- | --- |
+| [`apps/web`](apps/web/) | Browser workspaces and recorded showcase |
+| [`apps/api`](apps/api/) | Ingestion, retrieval, source citations, project storage and tests |
+| [`apps/agent`](apps/agent/) | Local CLI and MCP adapter |
+| [`samples`](samples/) | Bundled demo notes |
+| [`docs`](docs/) | Design decisions, experiments and acceptance notes |
+
+[Course walkthrough](docs/course-walkthrough.md) · [Retrieval tradeoffs](docs/tradeoffs.md) · [Interview talk track](docs/interview-talk-track.md)
