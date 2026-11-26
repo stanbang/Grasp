@@ -10,6 +10,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
 from .config import Settings
+from .canvas_storage import CANVAS_TABLES, migrate_canvas
 from .llm import build_embedder
 from .models import ProgressRow
 
@@ -28,7 +29,10 @@ def create_sqlite_engine(data_dir: Path) -> Engine:
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.close()
 
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(engine, tables=[
+        table for table in SQLModel.metadata.sorted_tables if table not in CANVAS_TABLES
+    ])
+    migrate_canvas(engine)
     with Session(engine) as session:
         if session.get(ProgressRow, 1) is None:
             session.add(ProgressRow())
@@ -40,6 +44,7 @@ class Storage:
     def __init__(self, settings: Settings):
         self.settings = settings
         self.upload_lock = Lock()
+        self.asset_upload_lock = Lock()
         self.engine = create_sqlite_engine(settings.data_dir)
         self.chroma = chromadb.PersistentClient(
             path=str(settings.data_dir / "chroma"),

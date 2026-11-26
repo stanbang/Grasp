@@ -1,0 +1,88 @@
+{
+  "live": {
+    "documents": 4,
+    "questions": 20,
+    "topK": 3,
+    "runs": [
+      {
+        "id": "900-vector",
+        "chunkSize": 900,
+        "overlap": 150,
+        "ranking": "vector",
+        "chunks": 8,
+        "meanContextChars": 1814,
+        "hits": 19
+      },
+      {
+        "id": "900-vector_then_terms",
+        "chunkSize": 900,
+        "overlap": 150,
+        "ranking": "vector_then_terms",
+        "chunks": 8,
+        "meanContextChars": 1786,
+        "hits": 20
+      },
+      {
+        "id": "360-vector",
+        "chunkSize": 360,
+        "overlap": 60,
+        "ranking": "vector",
+        "chunks": 18,
+        "meanContextChars": 805,
+        "hits": 20
+      },
+      {
+        "id": "360-vector_then_terms",
+        "chunkSize": 360,
+        "overlap": 60,
+        "ranking": "vector_then_terms",
+        "chunks": 18,
+        "meanContextChars": 796,
+        "hits": 20
+      }
+    ]
+  },
+  "mock": {
+    "documents": 4,
+    "questions": 20,
+    "topK": 3,
+    "runs": [
+      {
+        "id": "900-vector",
+        "chunkSize": 900,
+        "overlap": 150,
+        "ranking": "vector",
+        "chunks": 8,
+        "meanContextChars": 1653,
+        "hits": 20
+      },
+      {
+        "id": "900-vector_then_terms",
+        "chunkSize": 900,
+        "overlap": 150,
+        "ranking": "vector_then_terms",
+        "chunks": 8,
+        "meanContextChars": 1630,
+        "hits": 20
+      },
+      {
+        "id": "360-vector",
+        "chunkSize": 360,
+        "overlap": 60,
+        "ranking": "vector",
+        "chunks": 18,
+        "meanContextChars": 631,
+        "hits": 19
+      },
+      {
+        "id": "360-vector_then_terms",
+        "chunkSize": 360,
+        "overlap": 60,
+        "ranking": "vector_then_terms",
+        "chunks": 18,
+        "meanContextChars": 629,
+        "hits": 19
+      }
+    ]
+  }
+}

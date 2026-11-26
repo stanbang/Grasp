@@ -18,7 +18,10 @@ def main() -> None:
     node = shutil.which("node")
     if node is None:
         raise SystemExit("Install Node.js to run folder and frontend checks.")
-    subprocess.run([node, "--test", "scripts/tests/folder-upload.test.cjs"], cwd=ROOT, check=True)
+    subprocess.run([
+        node, "--test", "scripts/tests/canvas.test.cjs", "scripts/tests/folder-upload.test.cjs",
+        "scripts/tests/showcase.test.cjs",
+    ], cwd=ROOT, check=True)
     npm = shutil.which("npm.cmd" if os.name == "nt" else "npm")
     if npm is None:
         raise SystemExit("Install Node.js to run the frontend checks.")

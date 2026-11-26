@@ -8,42 +8,44 @@ web
 
 ## Stack
 
-Vite, React 18, strict TypeScript, Tailwind CSS, Zustand, Lucide and react-force-graph-3d/Three.js. Python 3.11, FastAPI, Pydantic v2, LangChain, persistent local ChromaDB and SQLite through SQLModel. Providers are Gemini or OpenAI. A deterministic mock mode works without a key.
+Vite, React 18, strict TypeScript, Tailwind CSS, Zustand, Lucide, React Flow for the 2D canvas and react-force-graph-3d/Three.js on demand. Python 3.11, FastAPI, Pydantic v2, LangChain, persistent local ChromaDB and SQLite through SQLModel. Gemini and OpenAI are supported providers. A deterministic mock mode works without a key. A local CLI and stdio MCP adapter are proposed for Developer Preview v0.1. [Canvas decision](docs/grasp-v2/references.md#canvas-library-decision) · [Preview specification](docs/grasp-v2/developer-preview.md)
 
 ## Users
 
-Students studying their own PDF, Markdown and text notes. Portfolio visitors also need to understand the project through a lightweight runnable preview.
+Developers and project owners shaping an idea with an external coding agent. Students can still study PDF, Markdown and text notes. Interviewers can review the design work and the evidence behind the existing RAG implementation.
 
 ## Product Purpose
 
-Help students understand how concepts connect, ask questions with exact source citations and check their understanding with grounded quizzes.
+Give the user an editable visual proposal before implementation. Work through questions and requirements on the canvas, try the prototype and approve a versioned specification the coding agent can pick up. [Vision](VISION.md)
 
 ## Positioning
 
-The same source chunks support the knowledge graph, answer citations and mastery checks. A student can trace a concept or an answer back to its source passage.
+GRASP owns the shared board, evidence, feedback and approval record. Codex or another MCP-capable coding agent does the implementation. Indexed sources can inform a proposal and expose exact quotes. Questions, decisions and visual feedback remain useful for projects without documents.
 
 ## Operating Context
 
-The repository is named Grasp. The user wants quiet naming and an attractive workspace, not a branding-heavy landing page. The opening headline is "drop folder to get started". Importing notes reveals a document mindmap, with Q&A as the primary panel. Local development is the initial delivery target. Public hosting and portfolio embedding are later deployment decisions.
+The preview adds persistent **Project boards** to the approved whiteboard. The **Knowledge Canvas** remains available for import, scoped questions, exact source inspection and 3D graph exploration. The **Engineering Canvas** presents the existing pipeline using repository-backed objects and its presentation views.
+
+The initial target is a local single-owner workspace and a five-minute HTX demonstration on 7 December 2026. Use an isolated demo library and project board. Label live agent calls, local mock processing, simulated prototype behavior and recorded replay where they occur. The public static showcase retains its offline route.
 
 ## Capabilities and Constraints
 
-The user authorized completion of all six phases. The app includes ingestion, the interactive map, cited conversational Q&A, mastery quizzes, retrieval evaluation and self-hosting controls. Dropping a file reveals the question box on the same page, with the graph behind it. Source lists, saved conversations and quizzes belong in explicitly opened dialogs.
+Preserve file and folder import, graph exploration, cited Q&A, source lifecycle, saved conversations, quizzes, retrieval evaluation and self-hosting controls. Preview delivery adds typed board operations, durable questions and decisions, one isolated prototype workflow and a versioned approval export. Each phase requires the owner's go. [Baseline](docs/grasp-v2/baseline.md) · [Roadmap](docs/grasp-v2/roadmap.md)
 
-The final Progress schema has masteredCount, exploredCount, totalNodes, coveragePercent and crossDocLinks. XP, levels, streaks and bonuses are excluded. Node positions are computed on the client and never stored. Every node retains source chunk IDs. Real document text stays local in mock mode; live mode sends selected text to the configured provider.
+Progress retains `masteredCount`, `exploredCount`, `totalNodes`, `coveragePercent` and `crossDocLinks`. Mastery remains grounded in quizzes. Keep canonical concepts, document provenance and exact source spans intact. Persist 2D board geometry independently. 3D force positions stay transient. Documents stay local in mock mode. Live mode sends selected text to the configured provider. Collaboration, tenant isolation and public hosting are outside this plan.
 
 ## Brand Commitments
 
-Dark, calm, scientific star-chart feel. One cool accent for selected content and actions. Gold is reserved for mastered concepts. Plain copy. No generic metric-card dashboard. The first preview must remain lightweight.
+Direction A+ uses warm charcoal, editorial titles, drawn technical figures, handwritten annotations and restrained semantic color. Gold marks mastery in the knowledge view. Keep inspectors contextual, camera motion purposeful and the whiteboard visible throughout the workflow. [Approved design](DESIGN.md#shared-whiteboard)
 
 ## Evidence on Hand
 
-The user's supplied specification establishes the behavior and schemas. Two original notes demonstrate cross-document merging. Automated tests verify provenance, conversations, lifecycle and mastery. The 20-question retrieval check uses only three sample chunks, so it measures pipeline behavior rather than broad semantic quality. There are no user-study results to claim.
+The existing notes, reports and recorded traces support the presentation. The fresh baseline verifies all four branch snapshots and a local mock import-to-citation flow. Archived evaluations report retrieval relevance on authored examples. Learning outcomes and held-out factual answer quality remain unmeasured. [Evidence register](docs/facts.md) · [Phase 0 review](docs/grasp-v2/README.md)
 
 ## Product Principles
 
-- Show the source behind an answer.
-- Make document questions the primary activity, with the graph providing source context.
-- Keep mastery separate from activity counts.
-- Keep mock data and live results distinguishable.
-- Ship a runnable checkpoint before expanding scope.
+- Put clarifying questions next to the objects and steps they affect.
+- Distinguish proposals, assumptions, user decisions and source evidence.
+- Let the user choose the revision they approve. Keep the approved specification readable after later edits.
+- Use real events for demonstrations and identify mock, simulated and recorded behavior.
+- Verify complete journeys at each runnable checkpoint.

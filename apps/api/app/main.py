@@ -2,10 +2,18 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI, Request
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from sqlmodel import Session
 
+from .asset_routes import cleanup_expired_assets, router as asset_router
 from .config import PROJECT_ROOT, get_settings
-from .request_controls import RequestControls
+from .board_selections import BoardSelections
+from .canvas_routes import router as canvas_router
+from .knowledge_routes import router as knowledge_router
+from .owner_sessions import SESSION_PATH, router as owner_session_router
+from .request_controls import RequestControls, is_agent_path, request_path
 from .llm import provider_check
 from .document_routes import router as document_router
 from .study_routes import router as study_router
@@ -23,11 +31,13 @@ from .storage import Storage
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.storage = Storage(get_settings())
+    app.state.board_selections = BoardSelections()
     app.state.ingestion = IngestionQueue(app.state.storage)
     app.state.ingestion.recover_interrupted()
     from .document_lifecycle import backfill_digests, retry_pending_cleanup
     backfill_digests(app.state.storage)
     retry_pending_cleanup(app.state.storage)
+    cleanup_expired_assets(app.state.storage)
     try:
         yield
     finally:
@@ -37,13 +47,30 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="Grasp API", version="0.6.0",
-    description="Local document questions, exact source citations and a 3D knowledge map.",
+    description="Local project boards, document questions, exact source citations and a 3D knowledge map.",
     lifespan=lifespan,
 )
 app.add_middleware(RequestControls)
 app.include_router(document_router)
 app.include_router(study_router)
 app.include_router(conversation_router)
+app.include_router(canvas_router)
+app.include_router(asset_router)
+app.include_router(knowledge_router)
+app.include_router(owner_session_router)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, error: RequestValidationError):
+    path = request_path(request.scope)
+    if path == SESSION_PATH:
+        return JSONResponse(status_code=422, content={"detail": "Enter the workspace owner token."})
+    if is_agent_path(path):
+        # Exclude raw input, which can contain non-JSON values such as NaN.
+        return JSONResponse(status_code=422, content={"detail": [
+            {"loc": issue["loc"], "msg": issue["msg"], "type": issue["type"]} for issue in error.errors()
+        ]})
+    return await request_validation_exception_handler(request, error)
 
 
 @app.get("/health", response_model=HealthResponse)

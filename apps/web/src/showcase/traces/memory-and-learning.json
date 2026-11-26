@@ -1,0 +1,465 @@
+{
+  "version": 1,
+  "mode": "mock",
+  "id": "memory-and-learning",
+  "title": "Memory and learning",
+  "fileName": "memory-and-learning.md",
+  "sourcePath": "samples/memory-and-learning.md",
+  "sourceSha256": "7665d8df640d7aa256a4ad40f3131200dc82864c7e7b2ee84eb0c8543eea4bd7",
+  "embeddingIdentity": "mock-sha256-256-v1",
+  "chunkSize": 520,
+  "chunkOverlap": 130,
+  "pages": [
+    {
+      "docId": "memory-and-learning",
+      "page": 1,
+      "text": "# Memory and learning\n\nThese short notes are original demonstration material for this project. They are not a research review.\n\n## Working memory\n\nWorking memory holds information briefly while a person uses it. Keeping several unfamiliar ideas active at once can make a task difficult. Breaking a task into smaller steps can reduce that demand.\n\n## Long-term memory\n\nLong-term memory stores knowledge beyond the current task. A useful concept is easier to revisit when it has a clear name, a short explanation and an example. New knowledge can connect to something the learner already knows.\n\n## Retrieval practice\n\nRetrieval practice means trying to recall an idea before looking at the answer. A learner can write a question, close the notes and explain the answer from memory. Checking the source afterward helps identify missing or mistaken details.\n\n## Spaced practice\n\nSpaced practice separates study sessions over time. The learner returns to an idea after a gap instead of repeating it only within one session. A later session can begin with retrieval practice.\n\n## Feedback\n\nFeedback compares a response with the source material. Specific feedback identifies what was correct and which part needs revision. A learner can use that information to choose the next concept to study.\n\n## Concept maps\n\nA concept map represents ideas as nodes and relationships as labelled connections. One node can link to several passages or documents. A connection can show that one idea supports, limits or provides an example of another idea.\n\n## Checking understanding\n\nReading a passage and answering a question are different activities. In this app, exploring a concept records that it was visited. Mastery requires a separate quiz. The mastery state does not prove long-term retention.\n\n## Source references\n\nAn exact citation identifies a document, a page and the passage used in an answer. Character offsets identify where a chunk begins and ends in the extracted page text. For Markdown and text notes, the whole document is page 1. End offsets are exclusive.\n"
+    }
+  ],
+  "chunks": [
+    {
+      "id": "memory-and-learning:p1:0-366",
+      "docId": "memory-and-learning",
+      "page": 1,
+      "text": "# Memory and learning\n\nThese short notes are original demonstration material for this project. They are not a research review.\n\n## Working memory\n\nWorking memory holds information briefly while a person uses it. Keeping several unfamiliar ideas active at once can make a task difficult. Breaking a task into smaller steps can reduce that demand.\n\n## Long-term memory",
+      "charStart": 0,
+      "charEnd": 366
+    },
+    {
+      "id": "memory-and-learning:p1:345-854",
+      "docId": "memory-and-learning",
+      "page": 1,
+      "text": "\n\n## Long-term memory\n\nLong-term memory stores knowledge beyond the current task. A useful concept is easier to revisit when it has a clear name, a short explanation and an example. New knowledge can connect to something the learner already knows.\n\n## Retrieval practice\n\nRetrieval practice means trying to recall an idea before looking at the answer. A learner can write a question, close the notes and explain the answer from memory. Checking the source afterward helps identify missing or mistaken details.",
+      "charStart": 345,
+      "charEnd": 854
+    },
+    {
+      "id": "memory-and-learning:p1:854-1305",
+      "docId": "memory-and-learning",
+      "page": 1,
+      "text": "\n\n## Spaced practice\n\nSpaced practice separates study sessions over time. The learner returns to an idea after a gap instead of repeating it only within one session. A later session can begin with retrieval practice.\n\n## Feedback\n\nFeedback compares a response with the source material. Specific feedback identifies what was correct and which part needs revision. A learner can use that information to choose the next concept to study.\n\n## Concept maps",
+      "charStart": 854,
+      "charEnd": 1305
+    },
+    {
+      "id": "memory-and-learning:p1:1288-1803",
+      "docId": "memory-and-learning",
+      "page": 1,
+      "text": "\n\n## Concept maps\n\nA concept map represents ideas as nodes and relationships as labelled connections. One node can link to several passages or documents. A connection can show that one idea supports, limits or provides an example of another idea.\n\n## Checking understanding\n\nReading a passage and answering a question are different activities. In this app, exploring a concept records that it was visited. Mastery requires a separate quiz. The mastery state does not prove long-term retention.\n\n## Source references",
+      "charStart": 1288,
+      "charEnd": 1803
+    },
+    {
+      "id": "memory-and-learning:p1:1781-2059",
+      "docId": "memory-and-learning",
+      "page": 1,
+      "text": "\n\n## Source references\n\nAn exact citation identifies a document, a page and the passage used in an answer. Character offsets identify where a chunk begins and ends in the extracted page text. For Markdown and text notes, the whole document is page 1. End offsets are exclusive.\n",
+      "charStart": 1781,
+      "charEnd": 2059
+    }
+  ],
+  "chunkPositions": [
+    {
+      "id": "memory-and-learning:p1:0-366",
+      "xyz": [
+        -1.0,
+        -1.0,
+        1.0
+      ]
+    },
+    {
+      "id": "memory-and-learning:p1:345-854",
+      "xyz": [
+        1.0,
+        1.0,
+        0.08291
+      ]
+    },
+    {
+      "id": "memory-and-learning:p1:854-1305",
+      "xyz": [
+        0.9874,
+        0.63544,
+        -1.0
+      ]
+    },
+    {
+      "id": "memory-and-learning:p1:1288-1803",
+      "xyz": [
+        0.19926,
+        0.85095,
+        -0.19607
+      ]
+    },
+    {
+      "id": "memory-and-learning:p1:1781-2059",
+      "xyz": [
+        -0.86193,
+        0.21078,
+        0.48119
+      ]
+    }
+  ],
+  "conceptPositions": [
+    {
+      "id": "2130f31b-7181-555e-ab3a-db1ad319fd9b",
+      "xyz": [
+        -0.80965,
+        0.8065,
+        -0.90652
+      ]
+    },
+    {
+      "id": "4a4a8f1a-f821-5cfd-817a-ca5c9566cdac",
+      "xyz": [
+        -0.77717,
+        -1.0,
+        -0.48543
+      ]
+    },
+    {
+      "id": "5f2ca936-7747-5fe2-a163-972070b0e46c",
+      "xyz": [
+        -0.14728,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "id": "8150a008-f641-56aa-a1bd-152340a3090a",
+      "xyz": [
+        -0.68529,
+        -0.21799,
+        -0.70584
+      ]
+    },
+    {
+      "id": "8677e1b7-a4ec-50fb-8d7c-9476f1ebc9a6",
+      "xyz": [
+        1.0,
+        -0.47253,
+        -1.0
+      ]
+    },
+    {
+      "id": "c100f49a-b6c1-50af-8f81-80c887e9fb6e",
+      "xyz": [
+        0.5606,
+        0.79253,
+        -0.21201
+      ]
+    },
+    {
+      "id": "e91750ab-8e31-57c6-ba98-60838ed42464",
+      "xyz": [
+        -1.0,
+        -0.12792,
+        -0.46361
+      ]
+    },
+    {
+      "id": "eb9f4668-6a14-5e8a-bc3b-f4df58a605c7",
+      "xyz": [
+        -0.28576,
+        -0.06073,
+        0.17964
+      ]
+    },
+    {
+      "id": "f4399297-6324-5d47-97a6-a7025f94639d",
+      "xyz": [
+        0.41382,
+        0.96292,
+        -0.27671
+      ]
+    }
+  ],
+  "graph": {
+    "nodes": [
+      {
+        "id": "2130f31b-7181-555e-ab3a-db1ad319fd9b",
+        "label": "Spaced practice",
+        "summary": "Spaced practice separates study sessions over time. The learner returns to an idea after a gap instead of repeating it only within one session. A later session can begin with retrieval practice.",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:854-1305"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "4a4a8f1a-f821-5cfd-817a-ca5c9566cdac",
+        "label": "Working memory",
+        "summary": "Working memory holds information briefly while a person uses it. Keeping several unfamiliar ideas active at once can make a task difficult. Breaking a task into smaller steps can reduce that demand.",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:0-366"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "5f2ca936-7747-5fe2-a163-972070b0e46c",
+        "label": "Long-term memory",
+        "summary": "Long-term memory",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:0-366",
+          "memory-and-learning:p1:345-854"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "8150a008-f641-56aa-a1bd-152340a3090a",
+        "label": "Concept maps",
+        "summary": "Concept maps",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:854-1305",
+          "memory-and-learning:p1:1288-1803"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "8677e1b7-a4ec-50fb-8d7c-9476f1ebc9a6",
+        "label": "Feedback",
+        "summary": "Feedback compares a response with the source material. Specific feedback identifies what was correct and which part needs revision. A learner can use that information to choose the next concept to study.",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:854-1305"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "c100f49a-b6c1-50af-8f81-80c887e9fb6e",
+        "label": "Source references",
+        "summary": "Source references",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:1288-1803",
+          "memory-and-learning:p1:1781-2059"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "e91750ab-8e31-57c6-ba98-60838ed42464",
+        "label": "Checking understanding",
+        "summary": "Reading a passage and answering a question are different activities. In this app, exploring a concept records that it was visited. Mastery requires a separate quiz. The mastery state does not prove long-term retention.",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:1288-1803"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "eb9f4668-6a14-5e8a-bc3b-f4df58a605c7",
+        "label": "Memory and learning",
+        "summary": "These short notes are original demonstration material for this project. They are not a research review.",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:0-366"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "f4399297-6324-5d47-97a6-a7025f94639d",
+        "label": "Retrieval practice",
+        "summary": "Retrieval practice means trying to recall an idea before looking at the answer. A learner can write a question, close the notes and explain the answer from memory. Checking the source afterward helps identify missing or mistaken details.",
+        "docIds": [
+          "memory-and-learning"
+        ],
+        "sourceChunkIds": [
+          "memory-and-learning:p1:345-854"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "0f89adfd-1723-5398-b4f1-2874f1d5dd3b",
+        "source": "e91750ab-8e31-57c6-ba98-60838ed42464",
+        "target": "c100f49a-b6c1-50af-8f81-80c887e9fb6e",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "memory-and-learning"
+        ]
+      },
+      {
+        "id": "1a3f4dd1-fd54-5557-9cf8-77d87ddd7718",
+        "source": "8150a008-f641-56aa-a1bd-152340a3090a",
+        "target": "e91750ab-8e31-57c6-ba98-60838ed42464",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "memory-and-learning"
+        ]
+      },
+      {
+        "id": "696d8113-5199-5277-96e1-40f8c67eae56",
+        "source": "5f2ca936-7747-5fe2-a163-972070b0e46c",
+        "target": "f4399297-6324-5d47-97a6-a7025f94639d",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "memory-and-learning"
+        ]
+      },
+      {
+        "id": "99b7df5b-2218-5f7a-8c72-77a5d768d5c4",
+        "source": "f4399297-6324-5d47-97a6-a7025f94639d",
+        "target": "2130f31b-7181-555e-ab3a-db1ad319fd9b",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "memory-and-learning"
+        ]
+      },
+      {
+        "id": "9ef1ccbc-8e8a-5807-ba67-59ad72d13a4b",
+        "source": "4a4a8f1a-f821-5cfd-817a-ca5c9566cdac",
+        "target": "5f2ca936-7747-5fe2-a163-972070b0e46c",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "memory-and-learning"
+        ]
+      },
+      {
+        "id": "a3643ed8-2124-5450-82bb-83a3872fe277",
+        "source": "8677e1b7-a4ec-50fb-8d7c-9476f1ebc9a6",
+        "target": "8150a008-f641-56aa-a1bd-152340a3090a",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "memory-and-learning"
+        ]
+      },
+      {
+        "id": "c3d653d5-f5f7-545e-9a81-79724fe4daea",
+        "source": "eb9f4668-6a14-5e8a-bc3b-f4df58a605c7",
+        "target": "4a4a8f1a-f821-5cfd-817a-ca5c9566cdac",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "memory-and-learning"
+        ]
+      },
+      {
+        "id": "f2a63605-e3f0-5944-8bb8-3df39f7e44fd",
+        "source": "2130f31b-7181-555e-ab3a-db1ad319fd9b",
+        "target": "8677e1b7-a4ec-50fb-8d7c-9476f1ebc9a6",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "memory-and-learning"
+        ]
+      }
+    ]
+  },
+  "stages": [
+    {
+      "kind": "pages",
+      "lines": [
+        "Reading source pages and locating chunks."
+      ],
+      "durationMs": 1.407
+    },
+    {
+      "kind": "text",
+      "lines": [
+        "Show the extracted text from the recorded pages."
+      ],
+      "durationMs": null
+    },
+    {
+      "kind": "chunks",
+      "lines": [
+        "Located 5 passages with page-local offsets."
+      ],
+      "durationMs": 0.14
+    },
+    {
+      "kind": "embeddings",
+      "lines": [
+        "Indexed 5 passages with deterministic mock embeddings."
+      ],
+      "durationMs": 56.467
+    },
+    {
+      "kind": "concepts",
+      "lines": [
+        "Extracted a source batch."
+      ],
+      "durationMs": 0.69
+    },
+    {
+      "kind": "links",
+      "lines": [
+        "Committed 9 concepts and 8 links."
+      ],
+      "durationMs": 19.419
+    },
+    {
+      "kind": "ready",
+      "lines": [
+        "Document is ready."
+      ],
+      "durationMs": null
+    }
+  ],
+  "prompts": [
+    {
+      "question": "What is retrieval practice?",
+      "answer": {
+        "answer": "Retrieval practice means trying to recall an idea before looking at the answer.",
+        "citations": [
+          {
+            "chunkId": "memory-and-learning:p1:345-854",
+            "docId": "memory-and-learning",
+            "page": 1,
+            "quote": "Retrieval practice means trying to recall an idea before looking at the answer."
+          }
+        ],
+        "referencedNodeIds": [
+          "5f2ca936-7747-5fe2-a163-972070b0e46c",
+          "f4399297-6324-5d47-97a6-a7025f94639d"
+        ]
+      }
+    },
+    {
+      "question": "What does working memory do?",
+      "answer": {
+        "answer": "Working memory holds information briefly while a person uses it.",
+        "citations": [
+          {
+            "chunkId": "memory-and-learning:p1:0-366",
+            "docId": "memory-and-learning",
+            "page": 1,
+            "quote": "Working memory holds information briefly while a person uses it."
+          }
+        ],
+        "referencedNodeIds": [
+          "4a4a8f1a-f821-5cfd-817a-ca5c9566cdac",
+          "5f2ca936-7747-5fe2-a163-972070b0e46c",
+          "eb9f4668-6a14-5e8a-bc3b-f4df58a605c7"
+        ]
+      }
+    }
+  ]
+}

@@ -9,6 +9,7 @@ from .workspace_models import FileDigestRow, PendingCleanupRow
 from .quiz_models import QuizAttemptRow
 from .graph_repository import refresh_progress
 from .storage import Storage
+from .asset_storage import ProjectDocumentRow
 
 
 def uploaded_path(storage: Storage, document: DocumentRow) -> Path:
@@ -16,11 +17,24 @@ def uploaded_path(storage: Storage, document: DocumentRow) -> Path:
     return storage.settings.data_dir/'uploads'/f'{document.id}{suffix}'
 
 
-def find_duplicate(storage: Storage, digest: str) -> DocumentRow | None:
+def find_duplicate(storage: Storage, digest: str, project_source: bool = False) -> DocumentRow | None:
     with Session(storage.engine) as session:
-        row=session.exec(select(FileDigestRow).where(FileDigestRow.digest==digest)).first()
-        document=session.get(DocumentRow,row.docId) if row else None
-        return document if document and document.status!='failed' else None
+        query = select(DocumentRow).join(FileDigestRow).outerjoin(
+            ProjectDocumentRow, ProjectDocumentRow.document_id == DocumentRow.id,
+        ).where(FileDigestRow.digest == digest)
+        if project_source:
+            query = query.where(ProjectDocumentRow.document_id.is_not(None))
+        else:
+            query = query.where(ProjectDocumentRow.document_id.is_(None), DocumentRow.status != "failed")
+        for document in session.exec(query.order_by(DocumentRow.uploadedAt, DocumentRow.id)):
+            if uploaded_path(storage, document).is_file():
+                return document
+        return None
+
+
+def is_project_source(storage: Storage, document_id: str) -> bool:
+    with Session(storage.engine) as session:
+        return session.get(ProjectDocumentRow, document_id) is not None
 
 
 def backfill_digests(storage: Storage) -> None:

@@ -115,113 +115,60 @@ components:
     width: "100%"
 ---
 
-# Design System: Grasp
+# Grasp design system
 
-## Overview
+## Shared whiteboard
 
-**Creative North Star: "The Quiet Star Chart"**
+GRASP 2.0 uses a warm charcoal technical whiteboard for both workspaces. The canvas fills the viewport. The workspace switcher and task controls float at the top, and editing and camera controls sit along the bottom. Keep open space around the work and use a faint dot grid for orientation. The frontmatter describes the earlier study surfaces. The recorded showcase retains its existing [surface brief](.impeccable/surfaces/showcase.md).
 
-Dark navy surfaces and a sparse star field give the study workspace a calm, scientific character. Pale teal draws attention to actions and source links. Small labels and familiar controls keep the canvas prominent.
+### Shape
 
-The interface uses local fonts, CSS geometry and Lucide line icons. Naming stays quiet: the app presents a study space, with little branding. The portfolio preview remains lightweight and makes its current phase clear.
+**Knowledge Canvas** serves students in Operate mode. The empty board offers source import and, in offline mock mode, a sample. Document-led bands anchor the generated concepts, with a separate area for concepts shared across sources. At overview scale, document labels and primary concepts lead. Zoom or select an object to see more detail. The searchable outline opens and focuses an object. Questions and inspection are temporary panels. The source viewer opens the exact quote and its page.
 
-**Key Characteristics:**
+**Engineering Canvas** serves the presenter and interviewer in Experience mode. It opens on the architecture overview. Follow two paths across the board, from document input to indexing and from a question to a citation. Inspection reveals descriptions, repository references and demonstrations when available. Presentation mode recedes to the camera and exit controls. The diagram, headings, regions and notes share the same world coordinates.
 
-- A dark canvas with restrained celestial geometry.
-- One cool accent; gold reserved for mastery.
-- Flat, bordered panels and readable source passages.
+Success is finding a source or explaining one data path with the surrounding board still in view. The shape assumes a desktop-first editor and a projector-ready audience view. On narrow screens, keep a usable board and an outline. Bring one inspector or composer forward as a focused sheet with a back action. Test actual card density and readable zoom levels in Phase 1.
 
-## Colors
+### Color, text and structure
 
-The palette combines blue-grey neutrals with pale teal.
+| Role | Dark | Light for projection |
+| --- | --- | --- |
+| Canvas | `#191714` | `#f5f0e7` |
+| Card | `#24211d` | `#faf5eb` |
+| Panel | `#211e1a` | `#fffbf3` |
+| Raised control | `#302a24` | `#eae0d2` |
+| Text and illustration ink | `#eeeae1` | `#2c251e` |
+| Secondary text | `#beb4a7` | `#62564a` |
+| Quiet border | `#403c35` | `#d2c5b4` |
+| Input boundary | `#7b7064` | `#8a7b6e` |
+| Focus and primary actions | `#e0bc99` | `#805032` |
+| Data flow and evidence | `#91b88a` | `#386742` |
+| Processing | `#e8634b` | `#a63d2c` |
+| Annotation ink | `#d8c3ac` | `#76563e` |
+| Mastery | `#d9b66f` | `#7b541c` |
+| Error | `#f5a79b` | `#a23532` |
 
-### Primary
+Quiet borders and dots provide structure. Input and focus boundaries need at least 3:1 contrast against adjacent fills. Keep normal text at 4.5:1 or higher. Use arrowheads and verbs for direction, gentle curves for annotations and dashed connectors for document adjacency. Show full relationship labels and endpoints in the inspector. Gold belongs to mastered concepts.
 
-The accent is pale teal for primary actions, links, connected status and focus outlines. Accent ink gives filled actions dark, readable labels. Primary hover is a lighter teal.
+Use Source Serif 4 for board headings, primary concepts and diagram captions. Use the system sans-serif for controls and descriptions, and monospace for source paths. Caveat marks authored annotations. Both display faces ship locally with their [Caveat OFL](apps/web/public/fonts/Caveat-OFL.txt) and [Source Serif 4 OFL](apps/web/public/fonts/SourceSerif4-OFL.txt) notices. Preserve readable text in the inspector at every zoom level.
 
-### Neutral
+### Technical objects and annotations
 
-Background is the deepest navy. Surface separates the top bar, source rail, footer and reader from the canvas. Raised marks hover and selection; secondary hover deepens a filled secondary control. Line draws quiet boundaries.
+- Draw with the shared 74 × 64 SVG coordinate space, 1.65-unit strokes and rounded line ends. Start with a distinct silhouette. Add one accent to clarify a technical feature such as overlap, a source span or a query neighbour.
+- Use unboxed figures for artefacts such as pages, chunks and databases. Use captioned processing cards for actions such as embedding or validation. Leave headings and text on the board itself. Use a quiet outlined region for a subsystem.
+- Render notes in handwriting with optional underline or callout treatments. Use curved arrows and an inspectable relation label when a note points to an object. Keep formal captions in serif or sans-serif. Evidence objects show their real source name, page and exact text.
+- For diagrams that accept data, place the visual object on the board and put accessible interactive controls in its inspector. Declare illustrative examples where the values appear. Bind future interactions to checked source records and traces when those are available.
 
-Text is cool white. Secondary carries reading paragraphs and supporting copy; quiet carries metadata and status labels. Use these roles deliberately rather than lowering the opacity of content.
+### Interactions and states
 
-Gold is reserved for mastered concepts. The mastered token is present but unused in Phase 1. Error is a muted warm red for failed requests and configuration messages.
+| State or action | Feedback and controls |
+| --- | --- |
+| Empty, loading or importing | Show a single primary import action or the first available frame. Keep real progress, waiting and errors tied to the corresponding source. Label local mock and recorded replay where the viewer can see the mode. |
+| Pan and zoom | Space-drag and middle-drag pan. Trackpad two-finger movement pans, pinch zooms at the gesture point, and mouse wheel zooms at the cursor when the board owns the event. Keep Fit board, Fit selection and zoom buttons reachable by keyboard. Scroll inside source and text fields without moving the board. |
+| Select and edit | Single-click focuses the card, Shift adds to selection and an empty-canvas marquee selects multiple. Selection has an outline, optional resize handles and a short action menu. Edits use explicit text focus and can cancel with Escape. An accessible outline exposes the same target and actions. |
+| Routes and pointers | The board shows the whole relation route with labels where readable. Select an edge to reveal its full label and provenance. Context actions work with the keyboard as well as a pointer. Search, focus and opening evidence preserve navigation context. |
+| Failure, stale or unsupported | Provide an actionable message by the affected object or operation. Keep the quote visible if an original PDF preview is unavailable. A failed board save preserves the draft. Unsupported Q&A leaves the user able to change scope or inspect sources. |
+| Camera and presentation | Camera moves orient the audience and settle before reading. Start with 280–420 ms for a frame hop and 120–160 ms for small state feedback. Cancel on direct gesture, jump under reduced motion, and keep tabs and stroke samples free of ambient animation. |
+| Narrow and projected | On phones prioritize board navigation, source reading and questions. Provide keyboard/focus alternatives to precision gestures. On projectors increase evidence title and edge label legibility and test at 1280 × 720 and 1920 × 1080. |
 
-**The One Accent Rule.** Use teal for actions and attention. Reserve gold for mastered concepts.
-
-## Typography
-
-Use the local sans-serif stack for the interface and source reader. The inherited Tailwind monospace stack is used for JSON schemas. Neither needs a font download.
-
-The type ramp is compact and role-specific. Source paragraphs use the body token; it is not a global size for every interface element.
-
-- Display is the canvas invitation. Its desktop size is in the frontmatter; at widths up to (1100px) it becomes (26px), then (28px) at widths up to (640px).
-- Source heading uses the source-heading token. Source section headings are (14px), weight (600).
-- Panel and document titles use the title token. The rail heading is (13px), weight (550); the workspace name is (14px), weight (500), becoming (13px) on mobile.
-- Source paragraphs use body with preserved line breaks. Status and contract explanations use supporting.
-- Canvas supporting copy is (13px) with line height (1.8), becoming (12px) on mobile.
-- Actions and navigation usually use label; metadata uses label or small. Mobile navigation is (11px) and footer copy is (10px).
-- JSON uses code and horizontal scrolling for long lines.
-
-General inherited line height is (1.5). There is no uniform global (14px) body rule and no fixed-ratio heading scale.
-
-## Layout
-
-The workspace fills (100dvh), with a minimum height of (550px), reduced to (520px) on mobile. A top bar (60px) and footer frame a flexible horizontal work area. The footer has a minimum height of (33px); its project link has a minimum height of (44px), so the rendered footer can be taller.
-
-Desktop uses a source rail (224px), a flexible canvas and an optional reader/status panel (360px). The reader body scrolls independently, with (24px) padding. Canvas edge labels sit (28px) from the sides. Spacing uses compact gaps around controls and larger pauses between reading sections.
-
-At widths up to (1100px), the rail becomes (200px) and the side panel (330px). Secondary canvas edge labels disappear while a panel is open. At widths up to (900px), the rail is hidden and a compact Status button appears in the top bar.
-
-At widths up to (640px), the top bar is (57px) high; collection details are hidden. An open panel takes the available work area and hides the canvas. Its close control reads "Back to canvas." At widths up to (380px), the workspace name is hidden while the orbit symbol remains. The supported minimum viewport width is (320px).
-
-## Elevation & Depth
-
-There are no box shadows. Tonal surfaces and single-pixel borders separate regions. The static canvas combines small radial-gradient stars, faint concentric rings and cross axes. These marks provide depth without representing graph data. The rings remain part of the star-chart language; they are not a general container pattern.
-
-## Shapes
-
-Controls have gently rounded corners: the action radius is used for the primary button and document row, and the control radius for navigation, secondary buttons and the selector. Panels remain rectangular and meet their neighbours at straight borders.
-
-The canvas orbit symbol has a rounded square enclosure (70px square, 22px radius). The file symbol is (32px by 38px, 7px radius). Small status dots are circular. These distinctive symbols do not establish a general card style.
-
-## Components
-
-### Buttons
-
-Primary actions use a teal fill, dark ink, a label at weight (600), and a height of (44px). Secondary actions use a raised neutral fill and a single-pixel line border. Text actions use secondary text and turn teal on hover. Secondary and text actions have a minimum height of (44px).
-
-Buttons, links and selects transition background colour and text colour over (160ms), with the browser's default ease timing. Disabled buttons use opacity (0.6) and a wait cursor. Focus-visible controls and the scrollable schema receive a teal outline (2px) with an offset of (3px). Reduced-motion preference removes transitions.
-
-### Navigation and document row
-
-Navigation uses compact icon-and-text buttons. Hover and active states share a raised background and primary text; there is no active underline. The source row uses a raised background on hover or selection and primary text when selected. Its title and file metadata remain separate in size and colour.
-
-### Source, contracts and status panels
-
-Only one panel is open at a time. Panels mount and unmount immediately; there is no sliding or panel transition. Opening a panel focuses its heading. Closing it with the back/close button or Escape restores focus to the original opener.
-
-The source reader presents the original API sample and a Markdown download. The contracts panel has a native selector with a raised fill, line border and minimum height of (44px), followed by a focusable, scrollable JSON block. There is no text-input or chip pattern in the current preview.
-
-Status uses simple divided rows. Loading shows static raised placeholder lines. Request failures use the error colour with a retry action. Health and configuration copy come from the running API.
-
-### Canvas
-
-The canvas has a centred invitation, a primary sample action and a quiet contracts action. Its stars, rings and axes remain static. Real graph nodes, camera controls and force motion are outside Phase 1. Future motion should stay slow and purposeful and respect reduced-motion preferences.
-
-## Do's and Don'ts
-
-### Do:
-
-- Do keep the canvas visually prominent and naming quiet.
-- Do use teal for actions, source links, focus and connected status.
-- Do keep source paragraphs at the body reading size on narrow screens.
-- Do preserve visible keyboard focus and the explicit mobile back action.
-- Do distinguish source content, live API status and preview decoration.
-
-### Don't:
-
-- Don't use gold for decoration or ordinary activity.
-- Don't turn the workspace into a generic grid of metric cards.
-- Don't animate the Phase 1 star field or imply that it contains graph data.
-- Don't add remote font or image dependencies to the lightweight preview.
+The 3D explorer loads on request and respects the same semantic selection. Keep the first canvas load lightweight using local fonts and a deferred 3D bundle. Use original GRASP shapes and wording. See the [reference findings](docs/grasp-v2/references.md) and [acceptance gates](docs/grasp-v2/roadmap.md#acceptance-criteria).

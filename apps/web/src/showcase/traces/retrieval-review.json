@@ -1,0 +1,265 @@
+{
+  "version": 1,
+  "mode": "mock",
+  "id": "retrieval-review",
+  "title": "Retrieval review",
+  "fileName": "retrieval-review.md",
+  "sourcePath": "samples/retrieval-review.md",
+  "sourceSha256": "73e1f0147ff2ff860d53941571743bc43ac2b4f048017ee03dd69c21b57132e9",
+  "embeddingIdentity": "mock-sha256-256-v1",
+  "chunkSize": 520,
+  "chunkOverlap": 130,
+  "pages": [
+    {
+      "docId": "retrieval-review",
+      "page": 1,
+      "text": "# Memory and learning\n\nThese original demonstration notes supplement the first sample. Shared concept names let the ingestion demo show how two documents retain their sources on one node.\n\n## Retrieval practice\n\nClose the notes and explain an idea before checking the source. Compare the recalled answer with the passage and write down any missing detail.\n\n## Feedback\n\nFeedback identifies which part of a response needs revision. Use the source passage to make that correction specific.\n\n## Worked examples\n\nA worked example shows the steps used to solve a task. After reading the example, try explaining why each step was chosen.\n"
+    }
+  ],
+  "chunks": [
+    {
+      "id": "retrieval-review:p1:0-507",
+      "docId": "retrieval-review",
+      "page": 1,
+      "text": "# Memory and learning\n\nThese original demonstration notes supplement the first sample. Shared concept names let the ingestion demo show how two documents retain their sources on one node.\n\n## Retrieval practice\n\nClose the notes and explain an idea before checking the source. Compare the recalled answer with the passage and write down any missing detail.\n\n## Feedback\n\nFeedback identifies which part of a response needs revision. Use the source passage to make that correction specific.\n\n## Worked examples",
+      "charStart": 0,
+      "charEnd": 507
+    },
+    {
+      "id": "retrieval-review:p1:487-632",
+      "docId": "retrieval-review",
+      "page": 1,
+      "text": "\n\n## Worked examples\n\nA worked example shows the steps used to solve a task. After reading the example, try explaining why each step was chosen.\n",
+      "charStart": 487,
+      "charEnd": 632
+    }
+  ],
+  "chunkPositions": [
+    {
+      "id": "retrieval-review:p1:0-507",
+      "xyz": [
+        1.0,
+        1.0,
+        -1.0
+      ]
+    },
+    {
+      "id": "retrieval-review:p1:487-632",
+      "xyz": [
+        -1.0,
+        -1.0,
+        1.0
+      ]
+    }
+  ],
+  "conceptPositions": [
+    {
+      "id": "094cf058-c735-59cc-8591-46f2f9ead9ae",
+      "xyz": [
+        -1.0,
+        -1.0,
+        0.5304
+      ]
+    },
+    {
+      "id": "2f5ed23a-9dfb-542c-80aa-8d5b63ec18de",
+      "xyz": [
+        1.0,
+        -0.11511,
+        -1.0
+      ]
+    },
+    {
+      "id": "7d748d8c-1d94-58a5-9825-896d23c58f2c",
+      "xyz": [
+        -0.10439,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "id": "a80f37b7-6068-5401-b622-d86145ba8b1e",
+      "xyz": [
+        -0.52822,
+        -0.66691,
+        -0.21488
+      ]
+    }
+  ],
+  "graph": {
+    "nodes": [
+      {
+        "id": "094cf058-c735-59cc-8591-46f2f9ead9ae",
+        "label": "Worked examples",
+        "summary": "Worked examples",
+        "docIds": [
+          "retrieval-review"
+        ],
+        "sourceChunkIds": [
+          "retrieval-review:p1:0-507",
+          "retrieval-review:p1:487-632"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "2f5ed23a-9dfb-542c-80aa-8d5b63ec18de",
+        "label": "Feedback",
+        "summary": "Feedback identifies which part of a response needs revision. Use the source passage to make that correction specific.",
+        "docIds": [
+          "retrieval-review"
+        ],
+        "sourceChunkIds": [
+          "retrieval-review:p1:0-507"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "7d748d8c-1d94-58a5-9825-896d23c58f2c",
+        "label": "Retrieval practice",
+        "summary": "Close the notes and explain an idea before checking the source. Compare the recalled answer with the passage and write down any missing detail.",
+        "docIds": [
+          "retrieval-review"
+        ],
+        "sourceChunkIds": [
+          "retrieval-review:p1:0-507"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      },
+      {
+        "id": "a80f37b7-6068-5401-b622-d86145ba8b1e",
+        "label": "Memory and learning",
+        "summary": "These original demonstration notes supplement the first sample. Shared concept names let the ingestion demo show how two documents retain their sources on one node.",
+        "docIds": [
+          "retrieval-review"
+        ],
+        "sourceChunkIds": [
+          "retrieval-review:p1:0-507"
+        ],
+        "masteryState": "unexplored",
+        "quiz": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "4d230fab-71ba-5b3e-b5a1-97bd85e0960a",
+        "source": "7d748d8c-1d94-58a5-9825-896d23c58f2c",
+        "target": "2f5ed23a-9dfb-542c-80aa-8d5b63ec18de",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "retrieval-review"
+        ]
+      },
+      {
+        "id": "6accb854-0700-53af-ab94-be20558a7ed5",
+        "source": "a80f37b7-6068-5401-b622-d86145ba8b1e",
+        "target": "7d748d8c-1d94-58a5-9825-896d23c58f2c",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "retrieval-review"
+        ]
+      },
+      {
+        "id": "a98f520d-b263-596b-9cde-50935c57e0e4",
+        "source": "2f5ed23a-9dfb-542c-80aa-8d5b63ec18de",
+        "target": "094cf058-c735-59cc-8591-46f2f9ead9ae",
+        "relationshipLabel": "appears alongside",
+        "docIds": [
+          "retrieval-review"
+        ]
+      }
+    ]
+  },
+  "stages": [
+    {
+      "kind": "pages",
+      "lines": [
+        "Reading source pages and locating chunks."
+      ],
+      "durationMs": 0.677
+    },
+    {
+      "kind": "text",
+      "lines": [
+        "Show the extracted text from the recorded pages."
+      ],
+      "durationMs": null
+    },
+    {
+      "kind": "chunks",
+      "lines": [
+        "Located 2 passages with page-local offsets."
+      ],
+      "durationMs": 0.066
+    },
+    {
+      "kind": "embeddings",
+      "lines": [
+        "Indexed 2 passages with deterministic mock embeddings."
+      ],
+      "durationMs": 53.193
+    },
+    {
+      "kind": "concepts",
+      "lines": [
+        "Extracted a source batch."
+      ],
+      "durationMs": 0.66
+    },
+    {
+      "kind": "links",
+      "lines": [
+        "Committed 4 concepts and 3 links."
+      ],
+      "durationMs": 11.555
+    },
+    {
+      "kind": "ready",
+      "lines": [
+        "Document is ready."
+      ],
+      "durationMs": null
+    }
+  ],
+  "prompts": [
+    {
+      "question": "What is a worked example?",
+      "answer": {
+        "answer": "A worked example shows the steps used to solve a task.",
+        "citations": [
+          {
+            "chunkId": "retrieval-review:p1:487-632",
+            "docId": "retrieval-review",
+            "page": 1,
+            "quote": "A worked example shows the steps used to solve a task."
+          }
+        ],
+        "referencedNodeIds": [
+          "094cf058-c735-59cc-8591-46f2f9ead9ae"
+        ]
+      }
+    },
+    {
+      "question": "How do I make a correction specific?",
+      "answer": {
+        "answer": "Use the source passage to make that correction specific.",
+        "citations": [
+          {
+            "chunkId": "retrieval-review:p1:0-507",
+            "docId": "retrieval-review",
+            "page": 1,
+            "quote": "Use the source passage to make that correction specific."
+          }
+        ],
+        "referencedNodeIds": [
+          "094cf058-c735-59cc-8591-46f2f9ead9ae",
+          "2f5ed23a-9dfb-542c-80aa-8d5b63ec18de",
+          "7d748d8c-1d94-58a5-9825-896d23c58f2c",
+          "a80f37b7-6068-5401-b622-d86145ba8b1e"
+        ]
+      }
+    }
+  ]
+}

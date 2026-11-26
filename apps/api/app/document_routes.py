@@ -15,7 +15,8 @@ from .schemas import Chunk, ChunksResponse, Document, DocumentsResponse, PageRes
 from .storage import Storage
 from .ingestion import IngestionQueue
 from .parsing import ALLOWED_EXTENSIONS
-from .document_lifecycle import find_duplicate, remove_document, uploaded_path
+from .document_lifecycle import find_duplicate, is_project_source, remove_document, uploaded_path
+from .asset_storage import ProjectDocumentRow
 from .workspace_models import FileDigestRow
 import hashlib
 from fastapi.responses import FileResponse
@@ -27,27 +28,38 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 async def upload_document(request: Request, file: Annotated[UploadFile, File()]) -> Document:
     storage: Storage = request.app.state.storage
     queue: IngestionQueue = request.app.state.ingestion
-    name = FilePath((file.filename or "").replace("\\", "/")).name
-    extension = FilePath(name).suffix.lower()
-    try:
-        if extension not in ALLOWED_EXTENSIONS:
-            raise HTTPException(status_code=415, detail="Upload a PDF, Markdown (.md) or UTF-8 text (.txt) file.")
-        if len(name) > 200 or any(ord(character) < 32 for character in name):
-            raise HTTPException(status_code=400, detail="Use a filename under 201 characters without control characters.")
-        content = await file.read(storage.settings.max_upload_bytes + 1)
-        if not content:
-            raise HTTPException(status_code=400, detail="The uploaded file is empty.")
-        if len(content) > storage.settings.max_upload_bytes:
-            raise HTTPException(status_code=413, detail=f"Upload a file no larger than {storage.settings.max_upload_bytes:,} bytes.")
-    finally:
-        await file.close()
+    name, extension, content = await read_file_upload(file, storage.settings.max_upload_bytes, ALLOWED_EXTENSIONS)
     return await run_in_threadpool(create_upload, storage, queue, name, extension, content)
 
 
-def create_upload(storage: Storage, queue: IngestionQueue, name: str, extension: str, content: bytes, reuse_duplicates: bool = True) -> Document:
+async def read_file_upload(
+    file: UploadFile, limit: int, extensions: set[str],
+    format_message: str = "Upload a PDF, Markdown (.md) or UTF-8 text (.txt) file.",
+) -> tuple[str, str, bytes]:
+    name = FilePath((file.filename or "").replace("\\", "/")).name
+    extension = FilePath(name).suffix.lower()
+    try:
+        if extension not in extensions:
+            raise HTTPException(status_code=415, detail=format_message)
+        if len(name) > 200 or any(ord(character) < 32 or ord(character) == 127 for character in name):
+            raise HTTPException(status_code=400, detail="Use a filename under 201 characters without control characters.")
+        content = await file.read(limit + 1)
+        if not content:
+            raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+        if len(content) > limit:
+            raise HTTPException(status_code=413, detail=f"Upload a file no larger than {limit:,} bytes.")
+    finally:
+        await file.close()
+    return name, extension, content
+
+
+def create_upload(
+    storage: Storage, queue: IngestionQueue, name: str, extension: str, content: bytes,
+    reuse_duplicates: bool = True, *, project_source: bool = False,
+) -> Document:
     with storage.upload_lock:
         digest=hashlib.sha256(content).hexdigest()
-        duplicate=find_duplicate(storage,digest) if reuse_duplicates else None
+        duplicate = find_duplicate(storage, digest, project_source) if reuse_duplicates else None
         if duplicate: return Document.model_validate(duplicate.model_dump())
         doc_id = str(uuid4())
         upload_dir = storage.settings.data_dir / "uploads"
@@ -58,6 +70,8 @@ def create_upload(storage: Storage, queue: IngestionQueue, name: str, extension:
         try:
             with Session(storage.engine) as session:
                 session.add(document)
+                if project_source:
+                    session.add(ProjectDocumentRow(document_id=doc_id))
                 append_event(session, document, "status", message="Queued for processing.")
                 session.add(FileDigestRow(docId=doc_id,digest=digest))
                 response = Document.model_validate(document.model_dump())
@@ -153,7 +167,10 @@ def reindex_document(request: Request,doc_id: UUID) -> Document:
     path=uploaded_path(storage,document)
     if not path.is_file():raise HTTPException(409,'The original file is unavailable. Upload it again.')
     content=path.read_bytes()
-    result=create_upload(storage,request.app.state.ingestion,document.name,FilePath(document.name).suffix.lower(),content,reuse_duplicates=False)
+    result=create_upload(
+        storage,request.app.state.ingestion,document.name,FilePath(document.name).suffix.lower(),content,
+        reuse_duplicates=False, project_source=is_project_source(storage, str(doc_id)),
+    )
     def finish() -> None:
         with Session(storage.engine) as session:
             replacement=session.get(DocumentRow,result.id)
@@ -167,7 +184,11 @@ async def replace_document(request: Request,doc_id: UUID,file: Annotated[UploadF
     storage=request.app.state.storage
     original=require_document(storage,str(doc_id))
     if original.status in {'queued','chunking','extracting'}:raise HTTPException(409,'Wait for processing before replacing.')
-    replacement=await upload_document(request,file)
+    name, extension, content = await read_file_upload(file, storage.settings.max_upload_bytes, ALLOWED_EXTENSIONS)
+    project_source = is_project_source(storage, str(doc_id))
+    replacement = await run_in_threadpool(
+        create_upload, storage, request.app.state.ingestion, name, extension, content, project_source=project_source,
+    )
     if replacement.id==str(doc_id):return replacement
     def finish() -> None:
         with Session(storage.engine) as session:

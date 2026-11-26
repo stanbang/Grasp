@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { api, apiFetch, remove } from './client';
+import type { SourceSelection } from './canvas/board';
 import type { Citation, PageResponse, DocumentsResponse, GraphResponse, GraphNode, Chunk, ChunksResponse, QuizResponse, GradeResponse } from './types/contracts';
 
 export function ConceptView({ node, graph, onSelect, onSource, onClose }: {
@@ -35,8 +36,9 @@ export function Modal({ title, onClose, children }: {
     useEffect(() => { dialog.current?.showModal(); const element = dialog.current; return () => element?.close(); }, []);
     return <dialog ref={dialog} className="workspace-dialog" onCancel={onClose} aria-label={title}><header><h2>{title}</h2><button aria-label="Close dialog" onClick={onClose}><X size={18}/></button></header>{children}</dialog>;
 }
-export function SourceView({ citation, onClose }: {
-    citation: Citation;
+export function SourceView({ citation, sourceName, onClose }: {
+    citation: SourceSelection;
+  sourceName?: string;
     onClose: () => void;
 }) {
     const [page, setPage] = useState<PageResponse | null>(null);
@@ -44,7 +46,7 @@ export function SourceView({ citation, onClose }: {
     const [error, setError] = useState('');
     useEffect(() => { let active = true; let objectUrl = ''; void api<PageResponse>(`/documents/${citation.docId}/pages/${citation.page}`).then(value => { if (active)
         setPage(value); }).catch(() => { if (active)
-        setError('The source has been removed. The cited quote below is preserved with the conversation.'); }); void apiFetch(`/documents/${citation.docId}/original`).then(async (response) => { if (response.headers.get('content-type')?.includes('pdf')) {
+        setError('The original source is unavailable. The saved quote is shown below.'); }); void apiFetch(`/documents/${citation.docId}/original`).then(async (response) => { if (response.headers.get('content-type')?.includes('pdf')) {
         objectUrl = URL.createObjectURL(await response.blob());
         if (active)
             setUrl(objectUrl);
@@ -52,8 +54,22 @@ export function SourceView({ citation, onClose }: {
             URL.revokeObjectURL(objectUrl);
     } }).catch(() => { }); return () => { active = false; if (objectUrl)
         URL.revokeObjectURL(objectUrl); }; }, [citation]);
-    const index = page?.text.indexOf(citation.quote) ?? -1;
-    return <Modal title={`Source · page ${citation.page}`} onClose={onClose}>{error && <p role="status">{error}</p>}{url && <iframe title="Original PDF page" src={`${url}#page=${citation.page}`} className="source-pdf"/>}<blockquote>{citation.quote}</blockquote>{page && <details><summary>Extracted page with highlighted citation</summary><pre>{index >= 0 ? <>{page.text.slice(0, index)}<mark>{citation.quote}</mark>{page.text.slice(index + citation.quote.length)}</> : page.text}</pre></details>}</Modal>;
+    let index = page?.text.indexOf(citation.quote) ?? -1;
+    if (page && citation.sourceSpan) {
+        const { charStart, charEnd } = citation.sourceSpan;
+        const characters = Array.from(page.text);
+        index = characters.slice(charStart, charEnd).join('') === citation.quote
+            ? characters.slice(0, charStart).join('').length : -1;
+    }
+  return <Modal title={`Source · page ${citation.page}`} onClose={onClose}>
+    {sourceName && <p className="board-source-name">{sourceName}</p>}
+    {error && <p role="status">{error}</p>}
+    {url && <iframe title="Original PDF page" src={`${url}#page=${citation.page}`} className="source-pdf" />}
+    <blockquote>{citation.quote}</blockquote>
+    {page && <details><summary>Extracted page with highlighted citation</summary><pre>{index >= 0
+      ? <>{page.text.slice(0, index)}<mark>{citation.quote}</mark>{page.text.slice(index + citation.quote.length)}</>
+      : page.text}</pre></details>}
+  </Modal>;
 }
 function LearningCheck({ onRefresh }: {
     onRefresh: () => Promise<void>;
@@ -90,12 +106,13 @@ function LearningCheck({ onRefresh }: {
     } }
     return <details><summary>Check understanding</summary><label htmlFor="quiz-concept">Concept</label><select id="quiz-concept" value={selected} onChange={e => { setSelected(e.target.value); setQuiz(null); setResult(null); }}><option value="">Choose a concept</option>{nodes.map(node => <option key={node.id} value={node.id}>{node.label}</option>)}</select><button disabled={!selected || busy} onClick={() => void generate()}>Start three questions</button>{error && <p role="alert">{error}</p>}{quiz && <form onSubmit={e => { e.preventDefault(); void submit(); }}>{quiz.questions.map((question, i) => <fieldset key={i}><legend>{question.question}</legend>{question.options.map((option, j) => <label className="quiz-option" key={j}><input type="radio" name={'answer' + i} checked={answers[i] === j} disabled={!!result} onChange={() => setAnswers(previous => previous.map((old, k) => k === i ? j : old))}/>{option}</label>)}{result && <p>Correct answer: {question.options[result.correctAnswers[i]!]}</p>}</fieldset>)}<button disabled={busy || answers.includes(-1) || !!result}>Submit</button>{result && <p role="status">{result.score}/3 · {result.passed ? 'Mastered' : 'Keep learning and try again'}</p>}</form>}</details>;
 }
-export function WorkspaceSettings({ onClose, onRefresh, onConversation, onConversationRemoved, onDocumentChanged }: {
+export function WorkspaceSettings({ onClose, onRefresh, onConversation, onConversationRemoved, onDocumentChanged, onSignOut }: {
     onClose: () => void;
     onRefresh: () => Promise<void>;
     onConversation: (id: string) => Promise<void>;
     onConversationRemoved: (id: string) => void;
     onDocumentChanged: (oldId: string, newId?: string) => void;
+    onSignOut?: (all: boolean) => Promise<void>;
 }) {
     const [documents, setDocuments] = useState<DocumentsResponse['documents']>([]);
     const [sessions, setSessions] = useState<{
@@ -105,6 +122,12 @@ export function WorkspaceSettings({ onClose, onRefresh, onConversation, onConver
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
     const [confirm, setConfirm] = useState<string | null>(null);
+    const [confirmSignOut, setConfirmSignOut] = useState(false);
+    function lock(all: boolean) {
+        if (!onSignOut) return;
+        setBusy(true);
+        void onSignOut(all).catch(issue => setError(issue.message)).finally(() => setBusy(false));
+    }
     async function load() { const [docs, conversations] = await Promise.all([api<DocumentsResponse>('/documents'), api<{
             conversations: {
                 id: string;
@@ -123,7 +146,15 @@ export function WorkspaceSettings({ onClose, onRefresh, onConversation, onConver
     finally {
         setBusy(false);
     } }
-    return <Modal title="Workspace options" onClose={onClose}>{error && <p role="alert">{error}</p>}<LearningCheck onRefresh={onRefresh}/><h3>Saved conversations</h3>{sessions.map(session => <div className="management-row" key={session.id}><button disabled={busy} onClick={() => void action(async () => { await onConversation(session.id); onClose(); })}>{session.title}</button><button disabled={busy} onClick={() => setConfirm('conversation:' + session.id)}>Remove</button></div>)}<h3>Source management</h3>{documents.map(doc => <div className="management-row" key={doc.id}><span>{doc.name}<small>{doc.status}</small></span><div><button disabled={busy || !['done', 'failed'].includes(doc.status)} onClick={() => void action(async () => { const replacement = await api<DocumentsResponse['documents'][number]>(`/documents/${doc.id}/reindex`, {}); if (replacement.status === 'failed')
+    return <Modal title="Workspace options" onClose={onClose}>{error && <p role="alert">{error}</p>}{onSignOut && <section aria-label="Workspace access">
+        <h3>Workspace access</h3>
+        <button disabled={busy} onClick={() => lock(false)}>Sign out of this browser</button>
+        {confirmSignOut ? <div className="confirmation">
+            <p>Every browser will need the workspace owner token again.</p>
+            <button disabled={busy} onClick={() => lock(true)}>Confirm sign out everywhere</button>
+            <button onClick={() => setConfirmSignOut(false)}>Cancel</button>
+        </div> : <button disabled={busy} onClick={() => setConfirmSignOut(true)}>Sign out everywhere</button>}
+    </section>}<LearningCheck onRefresh={onRefresh}/><h3>Saved conversations</h3>{sessions.map(session => <div className="management-row" key={session.id}><button disabled={busy} onClick={() => void action(async () => { await onConversation(session.id); onClose(); })}>{session.title}</button><button disabled={busy} onClick={() => setConfirm('conversation:' + session.id)}>Remove</button></div>)}<h3>Source management</h3>{documents.map(doc => <div className="management-row" key={doc.id}><span>{doc.name}<small>{doc.status}</small></span><div><button disabled={busy || !['done', 'failed'].includes(doc.status)} onClick={() => void action(async () => { const replacement = await api<DocumentsResponse['documents'][number]>(`/documents/${doc.id}/reindex`, {}); if (replacement.status === 'failed')
         throw new Error('Re-indexing failed; the original document was kept.'); onDocumentChanged(doc.id, replacement.id); })}>Re-index</button><label className="file-action">Replace<input type="file" accept=".pdf,.md,.txt" disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file)
         void action(async () => { const form = new FormData(); form.append('file', file); const response = await apiFetch(`/documents/${doc.id}`, { method: 'PUT', body: form }); const replacement = await response.json() as DocumentsResponse['documents'][number]; if (replacement.status === 'failed')
             throw new Error('Replacement failed; the original document was kept.'); onDocumentChanged(doc.id, replacement.id); }); }}/></label><button disabled={busy || !['done', 'failed'].includes(doc.status)} onClick={() => setConfirm('document:' + doc.id)}>Remove</button></div></div>)}{confirm && <section className="confirmation"><p>Remove this {confirm.startsWith('document:') ? 'document and its indexed passages' : 'saved conversation'}? This cannot be undone.</p><button disabled={busy} onClick={() => void action(async () => { const [kind, id] = confirm.split(':'); const removed = await remove(kind === 'document' ? `/documents/${id}` : `/conversations/${id}`); if (id) {

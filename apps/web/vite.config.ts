@@ -5,6 +5,15 @@ export default defineConfig(({ mode, command }) => {
   const root = fileURLToPath(new URL("../../", import.meta.url));
   const env = loadEnv(mode, root, "");
   return {
+    plugins: [{
+      name: "showcase-entry",
+      configureServer(server) {
+        server.middlewares.use((request, response, next) => {
+          if (request.url !== "/showcase") return next();
+          response.writeHead(308, { Location: "/showcase/" }).end();
+        });
+      },
+    }],
     define: {
       "import.meta.env.VITE_API_REFERENCE_URL": JSON.stringify(
         env.VITE_API_REFERENCE_URL || (command === "serve"
@@ -22,6 +31,15 @@ export default defineConfig(({ mode, command }) => {
         },
       },
     },
-    build: { target: "es2022", sourcemap: true },
+    build: {
+      target: "es2022",
+      sourcemap: true,
+      rollupOptions: {
+        input: {
+          workspace: fileURLToPath(new URL("./index.html", import.meta.url)),
+          showcase: fileURLToPath(new URL("./showcase/index.html", import.meta.url)),
+        },
+      },
+    },
   };
 });

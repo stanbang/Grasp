@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="575" viewBox="0 0 1280 575" role="img" aria-labelledby="title description" font-family="Segoe UI, system-ui, sans-serif">
+  <title id="title">Grasp adaptation framework</title>
+  <desc id="description">The modular ingestion and answering stages feed a decision loop from hypothesis through evaluation to the decision record.</desc>
+  <rect x="0" y="0" width="1280" height="575" rx="0" fill="#0b1119" stroke="#0b1119"/>
+  <text x="40" y="65" fill="#e7edf1" font-size="35" font-weight="650">How Grasp tests a change</text>
+  <text x="40" y="102" fill="#a4b3bf" font-size="17" font-weight="400">Change one part of the pipeline and keep the evidence needed to revisit the decision.</text>
+  <text x="40" y="145" fill="#e7edf1" font-size="19" font-weight="650">Pipeline</text>
+  <rect x="40" y="165" width="136" height="86" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="51" y="196" fill="#e7edf1" font-size="13.5" font-weight="650">Read pages</text>
+  <text x="51" y="227" fill="#a4b3bf" font-size="13" font-weight="400">Implemented</text>
+  <path d="M178 209L190 209" stroke="#8ddbcf" fill="none"/>
+  <path d="M185 205l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="192" y="165" width="136" height="86" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="203" y="196" fill="#e7edf1" font-size="13.5" font-weight="650">Split text</text>
+  <text x="203" y="227" fill="#a4b3bf" font-size="13" font-weight="400">Implemented</text>
+  <path d="M330 209L342 209" stroke="#8ddbcf" fill="none"/>
+  <path d="M337 205l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="344" y="165" width="136" height="86" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="355" y="196" fill="#e7edf1" font-size="13.5" font-weight="650">Embed</text>
+  <text x="355" y="227" fill="#a4b3bf" font-size="13" font-weight="400">Implemented</text>
+  <path d="M482 209L494 209" stroke="#8ddbcf" fill="none"/>
+  <path d="M489 205l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="496" y="165" width="136" height="86" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="507" y="196" fill="#e7edf1" font-size="13.5" font-weight="650">Index chunks</text>
+  <text x="507" y="227" fill="#a4b3bf" font-size="13" font-weight="400">Implemented</text>
+  <path d="M634 209L646 209" stroke="#8ddbcf" fill="none"/>
+  <path d="M641 205l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="648" y="165" width="136" height="86" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="659" y="196" fill="#e7edf1" font-size="13.5" font-weight="650">Retrieve</text>
+  <text x="659" y="227" fill="#a4b3bf" font-size="13" font-weight="400">Implemented</text>
+  <path d="M786 209L798 209" stroke="#8ddbcf" fill="none"/>
+  <path d="M793 205l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="800" y="165" width="136" height="86" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="811" y="196" fill="#e7edf1" font-size="13.5" font-weight="650">Reorder candidates</text>
+  <text x="811" y="227" fill="#8ddbcf" font-size="13" font-weight="400">Measured</text>
+  <path d="M938 209L950 209" stroke="#8ddbcf" fill="none"/>
+  <path d="M945 205l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="952" y="165" width="136" height="86" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="963" y="196" fill="#e7edf1" font-size="13.5" font-weight="650">Generate</text>
+  <text x="963" y="227" fill="#a4b3bf" font-size="13" font-weight="400">Implemented</text>
+  <path d="M1090 209L1102 209" stroke="#8ddbcf" fill="none"/>
+  <path d="M1097 205l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="1104" y="165" width="136" height="86" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="1115" y="196" fill="#e7edf1" font-size="13.5" font-weight="650">Check citations</text>
+  <text x="1115" y="227" fill="#a4b3bf" font-size="13" font-weight="400">Implemented</text>
+  <text x="40" y="302" fill="#e7edf1" font-size="19" font-weight="650">Decision loop</text>
+  <rect x="40" y="322" width="280" height="88" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="55" y="354" fill="#8ddbcf" font-size="17" font-weight="650">State a hypothesis</text>
+  <text x="55" y="381" fill="#a4b3bf" font-size="15" font-weight="400">Try narrower chunks.</text>
+  <path d="M324 365L340 365" stroke="#8ddbcf" fill="none"/>
+  <path d="M335 361l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="346" y="322" width="280" height="88" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="361" y="354" fill="#8ddbcf" font-size="17" font-weight="650">Change one part</text>
+  <text x="361" y="381" fill="#a4b3bf" font-size="15" font-weight="400">Fix query set and model.</text>
+  <path d="M630 365L646 365" stroke="#8ddbcf" fill="none"/>
+  <path d="M641 361l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="652" y="322" width="280" height="88" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="667" y="354" fill="#8ddbcf" font-size="17" font-weight="650">Evaluate</text>
+  <text x="667" y="381" fill="#a4b3bf" font-size="15" font-weight="400">Replay retrieval and check chat.</text>
+  <path d="M936 365L952 365" stroke="#8ddbcf" fill="none"/>
+  <path d="M947 361l5 4-5 4" fill="none" stroke="#8ddbcf"/>
+  <rect x="958" y="322" width="280" height="88" rx="9" fill="#101923" stroke="#263642"/>
+  <text x="973" y="354" fill="#8ddbcf" font-size="17" font-weight="650">Compare and record</text>
+  <text x="973" y="381" fill="#a4b3bf" font-size="15" font-weight="400">Keep or reject using evidence.</text>
+  <path d="M1097 411v26H179v-24m-5 6 5-6 5 6" stroke="#263642" stroke-width="1.5" fill="none"/>
+  <text x="40" y="483" fill="#8ddbcf" font-size="17" font-weight="650">Worked example</text>
+  <text x="40" y="514" fill="#e7edf1" font-size="16" font-weight="400">Shorter chunks and term reordering each recovered one archived live miss. Retest on unseen notes before changing defaults.</text>
+  <text x="40" y="543" fill="#a4b3bf" font-size="15" font-weight="400">Measure claim support, complete request time and provider usage separately.</text>
+</svg>

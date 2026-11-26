@@ -1,0 +1,52 @@
+# HTX presentation storyboard
+
+**7 December 2026 · Developer Preview v0.1.** Show one collaboration cycle on a GRASP project board. Run it through an isolated library and board. Keep the approved Engineering Canvas ready for a RAG follow-up. [Preview scope](developer-preview.md) · [Delivery gates](roadmap.md#acceptance-criteria)
+
+## Five-minute Developer Preview
+
+| Time | Show on screen | Evidence and narration |
+| --- | --- | --- |
+| 0:00–0:40 | Ask Codex to plan an AI video editor and clarify the brief before building. Show the linked board Codex creates with its first diagram and open questions. | Explain that the board shows the proposal and decisions the agent shares. Point to a real `boardId` or tool receipt. |
+| 0:40–1:25 | Answer two consequential questions on the board. Require approval before publishing and make captions editable. Let Codex read the answers and update the user journey. | Show the persisted requirements next to the relevant objects. Explain how the same saved revision is visible to the CLI, agent and browser. |
+| 1:25–2:00 | If using the bundled editing brief, open one source-backed format or caption detail in its exact passage. | RAG supplies relevant context when a project has sources. Show the scope and page reference. If time is short, keep this to one quote. |
+| 2:00–3:05 | Open the registered prototype and play the bundled clip. Select a timeline range, simulate a cut and change one caption. | Explain which interactions work in the browser and label simulated AI and Instagram. Use a registered or pre-staged revision for the short run. The rehearsal includes a full agent-authored registration from the original prompt. |
+| 3:05–4:15 | Mark the caption or publishing control with visual feedback. Have Codex read it and register one revised prototype. Compare the changed area with revision 1. | Show the feedback target and exact revision ID. Keep the change small enough to verify live. Use the recorded exchange if the agent exceeds the allotted time. |
+| 4:15–5:00 | Approve the current board revision and show its exported JSON. | Point to two accepted requirements, the prototype digest and a measurable acceptance criterion. Close with how a coding agent can use the export. |
+
+Ask the agent to clarify silence removal or highlight detection, caption treatment and editability, supported formats, publishing approval, and local versus remote processing. Decide only what the demo needs. Use a board note to capture remaining questions. The simulated video pipeline can use a bundled sample, with local interactions for playback, timeline, captions and export settings. Keep publishing in simulated approval throughout.
+
+### Rehearsal and recovery
+
+- By Dec 4 verify one full run from a clean, disposable workspace, including initial agent creation of the prototype and the later edit. Save sanitized tool receipts, both asset revisions, the approved export and a short capture of the agent exchange. Identify prebuilt assets and recorded steps in the short presentation.
+- On Dec 5 test the actual Windows Codex configuration, launch the app from a restart, check the target Chrome profile and rehearse switching to the local recording. Verify the fallback from a copied board and library. Use exact keys, paths and committed fixture versions in the rehearsal record.
+- On Dec 6 complete two 4:30–5:30 runs. Practice with keyboard and reduced motion, and verify the actual projector when available. Align zoom to the whiteboard. Keep the [Engineering Canvas](phase-1-1/README.md) and original [retrieval evaluation](../evaluation.md) ready to open.
+- Use separate labels for **live Codex**, **local mock RAG**, **simulated video processing/publishing** and **recorded agent exchange**. If the agent is slow or offline, identify the recording and show the corresponding verified board state. If iframe isolation or media playback is unavailable, show the labeled recording and continue to the last verified local approval state. Do not represent a restored result as a live tool call.
+- Keep install, reset and optional provider checks away from the audience. Reset only the named rehearsal data and registered sample assets, with confirmation. In the demo, show one exact source quote and one evidence-backed limitation when asked about quality.
+
+### RAG and engineering follow-up
+
+Use the approved Engineering Canvas to follow page extraction, chunk offsets, indexed embeddings, scoped retrieval, SQLite resolution and exact citation validation. Open the existing playback for richer stage evidence. For evaluation, distinguish archived live-provider and mock results, explain why rank relevance and answer support require separate checks, and disclose that the corpus and labels are authored. Keep [retrieval decisions](../decisions/ADR-002-retrieval-baseline.md), [exact-source decisions](../decisions/ADR-001-source-provenance.md) and the [interview talk track](../interview-talk-track.md) within reach.
+
+## Earlier RAG walkthrough route
+
+The original five-minute storyboard below is retained as an engineering follow-up or study-workspace fallback. Its seven frames are a presentation outline. The approved Engineering Canvas has its own verified overview and focus modes.
+
+| Time | Frame and audience action | Presenter notes and implementation evidence |
+| --- | --- | --- |
+| 0:00–0:30 | **1 · Problem and motivation.** Show several notes, a question and a concept linked to one source passage. Open the passage. | “I want the student to see how concepts connect and check what their notes actually say.” Explain when pasted context is enough and why repeated, scoped questions across notes benefit from retrieval. [Talk track](../interview-talk-track.md) |
+| 0:30–1:15 | **2 · System architecture.** Zoom to React/FastAPI, follow the arrows to parsing and the dual stores, then select the citation validator. | Explain generated contracts, local parsing, LangChain adapters, SQLite's authoritative records, Chroma vectors, SSE, graph projections and the on-demand 3D view. Select a card to see inputs, outputs, a decision, a limitation and source path. [Architecture inventory](baseline.md#implementation-inventory) |
+| 1:15–2:00 | **3 · Ingestion.** Import a bundled document in the disposable library. Expand the page-to-chunk step. | Show the durable events and exact stored offsets. Explain bytes/digest dedupe, optional OCR, batch embeddings, extraction validation, merge and transactional graph publication. Display stage times only when captured. If the provider is unavailable, use labeled offline processing or replay. [Ingestion source](../../apps/api/app/ingestion.py) · [SSE](../../apps/api/app/events.py) |
+| 2:00–2:50 | **4 · Retrieval.** Ask a scoped question, inspect the ranked chunks and open the resulting quote. | Draw query → embed/search → committed rows → context → structured answer → validation. Point out that a relevant rank, exact citation and factual conclusion require different checks. Demonstrate an unrelated question if time permits. [Retrieval](../../apps/api/app/retrieval.py) · [Chat and quiz routes](../../apps/api/app/study_routes.py) |
+| 2:50–3:45 | **5 · Knowledge Canvas.** Open the same disposable library, move a concept, expand a neighbor, inspect its source, add a note and briefly open 3D. Return to the presentation. | Share the actual ingestion and retrieval paths. Show how two representations can point to one concept ID. If visual suggestions pass Phase 5, preview and undo one suggested explanation. Skip the optional action if a live request is slow. [Design and data boundaries](canvas-architecture.md) |
+| 3:45–4:30 | **6 · Reliability.** Show a successful test, one recorded failure path and a comparison from the archived four-note experiment. | Explain one validation retry, exact provenance, hash deduplication and durable cleanup. Twenty labels and five scoped cases give a bounded signal. Separate archived Gemini evaluation from the new mock rerun. [Evaluation](../evaluation.md) · [Decision record](../decisions/ADR-002-retrieval-baseline.md) |
+| 4:30–5:00 | **7 · Limits and next experiments.** Close on a short limitations frame with optional source links. | Discuss OCR recognition, independent held-out relevance/claim-support tests, quotas, concurrency, local single-owner storage and missing tenant controls. Mention options such as reranking only as future experiments. [Facts and limits](../facts.md) |
+
+### Earlier rehearsal notes
+
+Use the existing public [memory and learning note](../../samples/memory-and-learning.md) and [recorded trace](../../apps/web/src/showcase/traces/memory-and-learning.json) until the fictional scenario is implemented. In the fresh Phase 0 mock smoke, “What is retrieval practice?” returned exact page-one citations, and “How does mitochondrial chemiosmosis work?” returned no citations under the same document scope. The exact scoped result remains testable with the repository fixture. For multi-document exploration use the existing [benchmark questions](../../apps/api/eval/portfolio-questions.json) and the recorded result labels.
+
+Phase 6 proposes an original fictional community-centre drill with three short notes covering coordination roles, a radio checklist and an exercise debrief. Mark all three as fictional. Plan questions such as “Who records the all-clear?”, “What is shared between the radio checklist and debrief?” and “What approval code unlocks the centre?” for support, relation and abstention checks. Final wording, quotes, page IDs and scoped expectations must be generated from the actual authored fixtures and checked after ingestion. This scenario describes a portfolio demonstration. Real public-sector use would require data governance, a security review, access controls and stronger evaluation.
+
+Select the mode before presenting. **Live provider** shows genuine processing and errors. **Offline processing** uses a running local API and deterministic fixtures. **Recorded replay** opens a pre-validated capture and recorded excerpts with no API. If live fails, switch visibly, keep the frame, disclose the active mode and continue with the matching verified example. Reset only the disposable workspace after confirmation.
+
+For follow-up questions, jump from the diagram to the code for merge thresholds and source unions, Chroma collection identity, provider schema adaptation, SSE commit/replay, or quiz key handling. Each deep dive returns to the originating frame.

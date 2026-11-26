@@ -1,0 +1,14 @@
+# RAG tradeoffs
+
+Grasp uses a local index for repeated questions and preserves page spans so a reader can check the evidence. The cost, speed and quality effects below distinguish code behavior from measured outcomes. [Evidence and reproduction](facts.md)
+
+| Part | Implemented or measured | Considered and why it stayed out | What to measure |
+| --- | --- | --- | --- |
+| Parse | Local text extraction with optional OCR. OCR preserves access to scans and adds CPU work. | Cloud OCR would send more material to another provider. The current container handles the verified fixture locally. | Extracted text accuracy against transcriptions, time by page type and local compute cost. |
+| Split | Recursive splitting preserves overlap and source spans. The shorter measured setting used 18 chunks versus 8 and lowered mean returned characters. | Layout-aware or semantic splitting could help difficult sources. The existing comparison does not show when the extra work pays off. | Index growth, expected-passage recall near boundaries, context tokens and answer support. |
+| Embed and store | Local SQLite and Chroma. Deterministic mock and configured provider vectors occupy different index identities. | Managed vector search would add deployment and operating cost. There is no measured capacity limit that justifies it yet. | Indexing time, disk, memory and cold and warm query time as the corpus grows. |
+| Retrieve | Vector similarity with metadata scope and a bounded result set. The term-overlap reorder was measured on stored candidates. | BM25 and fusion can help exact terms. Learned reranking or query rewriting can add model work. Defer until the baseline's misses are clear. | Fixed-corpus Hit@k and MRR, indexing time, context volume and route latency. |
+| Generate | Structured Gemini or OpenAI generation with one retry on invalid output. Mock mode returns evidence locally. | Agentic searching introduces more decisions and calls. Fine-tuning could improve format, but the current adapter already validates it and source updates remain an index operation. | Answer accuracy and claim support, abstention, tokens, retry rates and end-to-end latency. |
+| Verify | Local exact quote, page and chunk checking. | A claim-support model may catch true provenance paired with unrelated conclusions, and needs validation against human labels. | Claim-level support, reviewer agreement and secondary judge cost. |
+
+End-to-end time and cost are **not measured yet**. Log parsing, embedding, retrieval, optional reordering, generation and verification separately. Report cold and warm percentiles and count retries. Use the provider's current input and output token prices. Track ingestion separately from questions so a large first import does not hide the cost of asking another question. [Proposed measurements and cost](facts.md#proposed-measurements-and-cost)
