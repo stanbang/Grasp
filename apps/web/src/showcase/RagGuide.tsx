@@ -12,7 +12,7 @@ type Topic = typeof guideTopics[number]["id"];
 type TraceState = { status: "loading" | "unavailable" } | { status: "ready"; prompt: ShowcasePrompt };
 
 function CodeLink({ path, children }: { path: string; children: string }) {
-  return <a className="guide-link" href={`${repository}/blob/showcase-overhaul/${path}`}>{children}<ExternalLink size={14}/></a>;
+  return <a className="guide-link" href={`${repository}/blob/main/${path}`}>{children}<ExternalLink size={14}/></a>;
 }
 
 function Choices<Key extends string>({ label, options, active, choose }: {
