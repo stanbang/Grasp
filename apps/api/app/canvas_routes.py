@@ -5,6 +5,7 @@ from sqlmodel import Session
 from sqlalchemy import text
 
 from .agent_contracts import BoardContext, BoardPresenceUpdate, BoardSelection, BoardSelectionUpdate
+from .asset_access import shared_assets, visible_board
 from .board_context import read_board_context
 from .canvas_contracts import (
     BoardCommit, BoardConflictResponse, BoardList, CanvasBatch, CanvasId, CanvasObjectContext, CreateBoard, ProjectBoard,
@@ -36,7 +37,10 @@ def board_context(
 ) -> BoardContext:
     with Session(request.app.state.storage.engine) as session:
         session.execute(text("BEGIN"))
-        return read_board_context(session, request.app.state.board_selections.active_tabs(), boardId, sinceRevision)
+        return read_board_context(
+            session, request.app.state.board_selections.active_tabs(), boardId, sinceRevision,
+            request.state.board_actor == "agent",
+        )
 
 
 @router.delete("/active/{tab_id}", status_code=204)
@@ -52,14 +56,19 @@ def board(
 ) -> ProjectBoard | Response:
     with Session(request.app.state.storage.engine) as session:
         state = read_board(session, board_id, afterRevision)
-        return state if state else Response(status_code=204)
+        return project_board_view(request, session, state) if state else Response(status_code=204)
 
 
 @router.get("/{board_id}/revisions/{revision}")
 def board_revision(request: Request, board_id: str, revision: int) -> ProjectBoard:
     with Session(request.app.state.storage.engine) as session:
         board_row(session, board_id)
-        return ProjectBoard.model_validate_json(revision_row(session, board_id, revision).snapshot)
+        state = ProjectBoard.model_validate_json(revision_row(session, board_id, revision).snapshot)
+        return project_board_view(request, session, state)
+
+
+def project_board_view(request: Request, session: Session, state: ProjectBoard) -> ProjectBoard:
+    return visible_board(state, shared_assets(session, state.id)) if request.state.board_actor == "agent" else state
 
 
 @router.get("/{board_id}/objects/{object_id}/context")
@@ -68,7 +77,7 @@ def context(request: Request, board_id: str, object_id: str) -> CanvasObjectCont
         session.execute(text("BEGIN"))
         state = read_board(session, board_id)
         assert state is not None
-        return object_context(session, state, object_id, agent_source_scope(request))
+        return object_context(session, project_board_view(request, session, state), object_id, agent_source_scope(request))
 
 
 @router.post("/{board_id}/ops", responses={409: {"model": BoardConflictResponse}})

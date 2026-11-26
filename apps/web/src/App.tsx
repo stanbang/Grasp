@@ -166,7 +166,8 @@ export function App() {
     thread.current?.scrollTo({ top: Math.max(0, top - 16), behavior: 'instant' });
   }, [turns, workspace, questionOpen]);
 
-  useEffect(() => installFileDropHandlers(window, transfer => { void latestDrop.current(transfer); }, setDragging), []);
+  useEffect(() => installFileDropHandlers(window, transfer => { void latestDrop.current(transfer); }, setDragging,
+    event => !(event.target instanceof Element && event.target.closest('[data-project-file-drop]'))), []);
 
   function changeUpload(index: number, update: (upload: UploadState) => UploadState) {
     setUploads(items => items.map((item, itemIndex) => itemIndex === index ? update(item) : item));
@@ -310,6 +311,7 @@ export function App() {
   function changeWorkspace(value: BoardKind) {
     setWorkspace(value);
     setRender3D(false);
+    if (workspace === 'project' && value === 'knowledge') void refresh().catch(failure);
   }
 
   function explore(id: string) {

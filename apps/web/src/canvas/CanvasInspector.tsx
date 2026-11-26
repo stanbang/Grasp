@@ -8,6 +8,7 @@ import { CanvasVisualization } from './CanvasVisualization';
 import { illustrationOptions } from './TechnicalIllustration';
 import type { InspectedLink, PinCanvasObject } from './CanvasBoard';
 import type { FeedbackTarget, ProjectFeedbackKind } from './project-board';
+import { ProjectAssetDetails } from './ProjectAssetDetails';
 import type { BoardSession } from './use-board';
 
 const sourceBase = 'https://github.com/stanbang/Grasp/blob/98f8cda/';
@@ -168,14 +169,14 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
       item.id === link.id ? { ...item, [end]: id } : item) }));
   }
 
-  function changeFeedback(id: string, changes: Partial<Pick<CanvasObject, 'relatedConnectionIds' | 'requirement'>>) {
+  function editObjectDetails(id: string, changes: Partial<Pick<CanvasObject, 'relatedConnectionIds' | 'requirement' | 'asset'>>) {
     session.update(board => ({ ...board, authoredCards: board.authoredCards.map(item =>
       item.id === id && item.projectObject ? { ...item, projectObject: { ...item.projectObject, ...changes } } : item) }));
   }
 
   function attachFeedback(id: string) {
     const item = availableFeedback.find(candidate => candidate.id === id)?.projectObject;
-    if (link && item) changeFeedback(item.id, { relatedConnectionIds: [...(item.relatedConnectionIds ?? []), link.id] });
+    if (link && item) editObjectDetails(item.id, { relatedConnectionIds: [...(item.relatedConnectionIds ?? []), link.id] });
   }
 
   function feedbackActions(target: FeedbackTarget) {
@@ -216,7 +217,12 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
           if (title && title !== draft.title) editCard({ title });
           else event.target.value = draft.title;
         }} /></label>
-        {draft.kind !== 'group' && !(projectBoardId && draft.kind === 'evidence') && <label>Text<textarea key={draft.description} defaultValue={draft.description} maxLength={4000} rows={5}
+        {projectBoardId && draft.projectObject?.asset && <ProjectAssetDetails boardId={projectBoardId}
+          source={draft.projectObject.asset} onPage={page => {
+            const asset = draft.projectObject?.asset;
+            if (asset) editObjectDetails(draft.id, { asset: { ...asset, page } });
+          }} />}
+        {draft.kind !== 'group' && !draft.projectObject?.asset && !(projectBoardId && draft.kind === 'evidence') && <label>Text<textarea key={draft.description} defaultValue={draft.description} maxLength={4000} rows={5}
           onBlur={event => { if (event.target.value !== draft.description) editCard({ description: event.target.value }); }} /></label>}
         {draft.kind === 'annotation' && <label>Annotation style<select value={draft.noteStyle ?? 'plain'} onChange={event => {
           const style = event.target.value;
@@ -227,7 +233,7 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
           if (illustration) editCard({ illustration: illustration.id, ...(draft.title === 'New illustration' ? { title: illustration.label } : {}) });
         }}>{illustrationOptions.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>}
         {draft.projectObject?.requirement && <label>Requirement decision
-          <select value={draft.projectObject.requirement.status ?? 'proposed'} onChange={event => changeFeedback(draft.id, {
+          <select value={draft.projectObject.requirement.status ?? 'proposed'} onChange={event => editObjectDetails(draft.id, {
             requirement: { ...draft.projectObject?.requirement, status: event.target.value as CanvasRequirement['status'] },
           })}>
             <option value="proposed">Proposed</option>
@@ -237,7 +243,7 @@ export function CanvasInspector({ card, link, session, documents, onClose, onSou
         </label>}
         {authoredLinks.filter(edge => draft.projectObject?.relatedConnectionIds?.includes(edge.id)).map(edge =>
           <section key={edge.id}><h3>Attached connection</h3><p>{edge.label}</p>
-            <button type="button" className="board-inspector-action" onClick={() => changeFeedback(draft.id, {
+            <button type="button" className="board-inspector-action" onClick={() => editObjectDetails(draft.id, {
               relatedConnectionIds: draft.projectObject?.relatedConnectionIds?.filter(id => id !== edge.id) ?? [],
             })}>Detach feedback</button>
           </section>)}

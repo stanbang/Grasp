@@ -54,9 +54,14 @@ export async function droppedFiles(transfer: DataTransfer): Promise<{
     }
     return { files, errors };
 }
-export function installFileDropHandlers(target: Pick<Window, 'addEventListener' | 'removeEventListener'>, onDrop: (transfer: DataTransfer) => void, onDrag: (active: boolean) => void): () => void {
+export function installFileDropHandlers(
+    target: Pick<Window, 'addEventListener' | 'removeEventListener'>,
+    onDrop: (transfer: DataTransfer) => void,
+    onDrag: (active: boolean) => void,
+    useWorkspaceDrop: (event: DragEvent) => boolean = () => true,
+): () => void {
     let depth = 0;
-    const isFile = (event: DragEvent) => Array.from(event.dataTransfer?.types || []).includes('Files');
+    const isFile = (event: DragEvent) => useWorkspaceDrop(event) && Array.from(event.dataTransfer?.types || []).includes('Files');
     const enter = (event: DragEvent) => { if (isFile(event)) {
         event.preventDefault();
         depth++;

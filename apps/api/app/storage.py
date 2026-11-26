@@ -44,6 +44,7 @@ class Storage:
     def __init__(self, settings: Settings):
         self.settings = settings
         self.upload_lock = Lock()
+        self.asset_upload_lock = Lock()
         self.engine = create_sqlite_engine(settings.data_dir)
         self.chroma = chromadb.PersistentClient(
             path=str(settings.data_dir / "chroma"),

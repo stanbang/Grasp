@@ -5,6 +5,7 @@ import type { Document } from '../types/contracts';
 import type { SourceSelection } from './board';
 import { CanvasBoard } from './CanvasBoard';
 import { CanvasInspector } from './CanvasInspector';
+import { useProjectAssets } from './project-assets';
 import { useProjectBoard } from './use-project-board';
 
 const emptyScene = { cards: [], links: [] };
@@ -148,22 +149,36 @@ export function ProjectCanvas({ initial, theme, documents, onSource }: {
   onSource: (citation: SourceSelection) => void;
 }) {
   const board = useProjectBoard(initial);
+  const assets = useProjectAssets(initial.id, board.session);
   const { selected, selectedLinks } = board.session;
   useSharedSelection(initial.id, board.savedRevision, selected, selectedLinks, !board.saving && !board.issue);
   return <div ref={board.root}>
     <CanvasBoard seed={emptyScene} session={board.session} highlight={[]} theme={theme}
-      importing={false} presenting={false} onInspect={ignoreProjectAction}
-      empty={<div className="board-empty"><h1>{initial.title}</h1><p>Add an object to start this board.</p></div>}
+      projectBoardId={initial.id} importAssets={assets.importFiles}
+      importing={assets.working} presenting={false} onInspect={ignoreProjectAction}
+      empty={<div className="board-empty"><h1>{initial.title}</h1><p>Add an object, import files or paste an image.</p></div>}
       inspect={(card, link, close, pin) => <CanvasInspector key={card?.id ?? link?.id}
         card={card} link={card ? undefined : link} session={board.session} documents={documents} onClose={close}
         onSource={onSource} onAsk={ignoreProjectAction} onExplore={ignoreProjectAction} onPin={ignoreProjectAction}
         projectBoardId={initial.id} savedRevision={board.savedRevision} onAddProjectFeedback={pin} />} />
+    {assets.items.length > 0 && <section className="canvas-uploads" aria-label="Project imports">
+      <header><h2>{assets.working ? 'Importing files' : 'Import results'}</h2>
+        {!assets.working && <button type="button" className="board-icon" aria-label="Dismiss import results"
+          onClick={assets.dismiss}>×</button>}</header>
+      <ul aria-live="polite">{assets.items.map((item, index) => <li key={index} data-status={item.failed ? 'failed' : undefined}>
+        <strong>{item.name}</strong><span>{item.message}</span>
+        {item.retryable && !assets.working && <button type="button" className="board-inspector-action"
+          onClick={() => assets.retry(index)}>Retry upload</button>}
+      </li>)}</ul>
+    </section>}
     {board.issue ? <section className="canvas-error project-save-error" aria-label="Board save">
       <span role="alert">{board.conflict?.code === 'staleRevision'
         ? `Board changed to revision ${board.conflict.currentRevision}. Your draft is kept.`
         : `${board.conflict?.message ?? board.issue.message} Your draft is kept.`}</span>
       <div>
         {!board.conflict && <button type="button" onClick={board.retry}>Retry save</button>}
+        {board.conflict?.code === 'staleRevision' && board.canRetryAssetPlacements
+          && <button type="button" onClick={() => void board.retryAssetPlacements()}>Retry asset placements</button>}
         <button type="button" onClick={board.downloadDraft}>Download draft</button>
         <button type="button" onClick={() => void board.discardDraft()}>Discard draft</button>
       </div>

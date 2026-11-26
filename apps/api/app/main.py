@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlmodel import Session
 
+from .asset_routes import cleanup_expired_assets, router as asset_router
 from .config import PROJECT_ROOT, get_settings
 from .board_selections import BoardSelections
 from .canvas_routes import router as canvas_router
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from .document_lifecycle import backfill_digests, retry_pending_cleanup
     backfill_digests(app.state.storage)
     retry_pending_cleanup(app.state.storage)
+    cleanup_expired_assets(app.state.storage)
     try:
         yield
     finally:
@@ -53,6 +55,7 @@ app.include_router(document_router)
 app.include_router(study_router)
 app.include_router(conversation_router)
 app.include_router(canvas_router)
+app.include_router(asset_router)
 app.include_router(knowledge_router)
 app.include_router(owner_session_router)
 

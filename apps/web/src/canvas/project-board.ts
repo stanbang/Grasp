@@ -1,5 +1,5 @@
-import type { CanvasBatch, CanvasConnectionData, CanvasObjectData, ProjectBoard } from '../types/canvas-contracts';
-import type { AuthoredCard, AuthoredLink, BoardDocument } from './board';
+import type { CanvasBatch, CanvasConnectionData, CanvasObject, CanvasObjectData, ProjectBoard } from '../types/canvas-contracts';
+import type { AuthoredCard, AuthoredLink, BoardDocument, Placement } from './board';
 
 export type ProjectFeedbackKind = 'annotation' | 'question' | 'requirement';
 export type FeedbackTarget = { objectId: string } | { connectionId: string };
@@ -17,18 +17,40 @@ export function projectFeedbackObject(card: AuthoredCard, feedback: ProjectFeedb
   };
 }
 
+export function projectCard(item: CanvasObject): AuthoredCard {
+  const { kind, id, title, description, placement, illustration, noteStyle } = item;
+  return {
+    id, title, description: kind === 'evidence' ? '' : description ?? '',
+    kind: kind === 'requirement' || kind === 'question' || kind === 'prototype' ? 'explanation' : kind,
+    placement: { ...placement, groupId: placement.groupId ?? undefined },
+    illustration: illustration ?? undefined, noteStyle: noteStyle ?? undefined, projectObject: item,
+  };
+}
+
+export function placeProjectAssets(board: BoardDocument, assets: AuthoredCard[]): BoardDocument {
+  if (!assets.length) return board;
+  const authoredCards = [...board.authoredCards];
+  const margin = 22;
+  for (const asset of assets) {
+    if (authoredCards.some(item => item.id === asset.id)) continue;
+    const occupied = authoredCards.map(item => board.placements[item.id] ?? item.placement);
+    const start = asset.placement;
+    const placement: Placement = { ...start };
+    for (const other of occupied.sort((a, b) => a.y - b.y)) {
+      if (
+        placement.x < other.x + other.width + margin && placement.x + placement.width + margin > other.x &&
+        placement.y < other.y + other.height + margin && placement.y + placement.height + margin > other.y
+      ) placement.y = other.y + other.height + margin;
+    }
+    authoredCards.push({ ...asset, placement });
+  }
+  return { ...board, authoredCards, schemaVersion: 2 };
+}
+
 export function projectDocument(board: ProjectBoard): BoardDocument {
   return {
     kind: 'project', schemaVersion: board.schemaVersion, revision: board.revision, placements: {},
-    authoredCards: Object.values(board.objects).map(item => {
-      const { kind, id, title, description, placement, illustration, noteStyle } = item;
-      return {
-        id, title, description: kind === 'evidence' ? '' : description ?? '',
-        kind: kind === 'requirement' || kind === 'question' || kind === 'prototype' ? 'explanation' : kind,
-        placement: { ...placement, groupId: placement.groupId ?? undefined },
-        illustration: illustration ?? undefined, noteStyle: noteStyle ?? undefined, projectObject: item,
-      };
-    }),
+    authoredCards: Object.values(board.objects).map(projectCard),
     authoredLinks: Object.values(board.connections).map(connection => ({
       id: connection.id, source: connection.source, target: connection.target, label: connection.label,
       role: connection.role, origin: 'authored', projectConnection: connection,
@@ -48,7 +70,7 @@ function objectData(card: AuthoredCard, board: BoardDocument): CanvasObjectData 
     relatedObjectIds: details?.relatedObjectIds ?? [], relatedConnectionIds: details?.relatedConnectionIds ?? [],
     sizing: details?.sizing ?? null,
     requirement: details?.requirement ?? null,
-    question: details?.question ?? null, prototype: details?.prototype ?? null,
+    question: details?.question ?? null, prototype: details?.prototype ?? null, asset: details?.asset ?? undefined,
   };
 }
 

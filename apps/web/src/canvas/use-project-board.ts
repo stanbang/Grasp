@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, apiFetch, ApiError } from '../client';
-import type { BoardCommit, BoardConflict, CanvasBatch, ProjectBoard } from '../types/canvas-contracts';
+import type { AddObject, BoardCommit, BoardConflict, CanvasBatch, ProjectBoard } from '../types/canvas-contracts';
 import type { BoardDocument } from './board';
-import { boardOperations, projectDocument } from './project-board';
+import { boardOperations, placeProjectAssets, projectCard, projectDocument } from './project-board';
 import { useBoard } from './use-board';
 
 type Draft = { document: BoardDocument; batches: CanvasBatch[] };
@@ -148,10 +148,36 @@ export function useProjectBoard(initial: ProjectBoard) {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  async function retryAssetPlacements() {
+    const queued = pending.current;
+    const operations = queued.flatMap(batch => batch.operations);
+    const additions = operations.filter((operation): operation is AddObject => operation.type === 'addObject' && !!operation.object.asset);
+    if (!additions.length || additions.length !== operations.length) return;
+    const base = latest.current.session.document.revision;
+    try {
+      const head = await api<ProjectBoard>(path);
+      if (pending.current !== queued || !latest.current.session.adopt(projectDocument(head), base, true)) return;
+      draft.current = undefined;
+      replaceQueue([]);
+      setSaved(head);
+      setIssue(undefined);
+      const assets = additions.map(operation => projectCard({
+        ...operation.object, createdBy: 'user', updatedBy: 'user',
+      }));
+      latest.current.session.update(board => placeProjectAssets(board, assets));
+    } catch (error) {
+      setIssue(error instanceof Error ? error : new Error('Could not load the saved board.'));
+    }
+  }
+
   const conflict = issue instanceof ApiError && issue.status === 409
     ? issue.detail as BoardConflict : undefined;
   return {
     root, session, savedRevision: saved.revision, saving: batches.length > 0 && !issue,
     issue, conflict, disconnected, discardDraft, downloadDraft, retry: () => setIssue(undefined),
+    retryAssetPlacements,
+    canRetryAssetPlacements: batches.length > 0 && batches.every(batch => batch.operations.every(
+      operation => operation.type === 'addObject' && !!operation.object.asset,
+    )),
   };
 }

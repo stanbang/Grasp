@@ -39,9 +39,34 @@ export interface CanvasPrototype {
   requirementIds?: Array<string>;
 }
 
+export interface CanvasAssetRef {
+  assetId: string;
+  page?: number | null;
+}
+
+export interface ProjectAsset {
+  id: string;
+  kind: "image" | "document";
+  name: string;
+  mediaType: string;
+  digest: string;
+  byteLength: number;
+  width: number | null;
+  height: number | null;
+  pageCount: number | null;
+  documentId: string | null;
+  indexStatus: "queued" | "chunking" | "extracting" | "done" | "failed" | null;
+  available: boolean;
+  shared: boolean;
+}
+
+export interface AssetSharing {
+  shared: boolean;
+}
+
 export interface CanvasObjectData {
   id: string;
-  kind: "explanation" | "annotation" | "group" | "heading" | "text" | "illustration" | "evidence" | "requirement" | "question" | "prototype";
+  kind: "explanation" | "annotation" | "group" | "heading" | "text" | "illustration" | "evidence" | "requirement" | "question" | "prototype" | "image" | "document";
   title: string;
   description?: string;
   placement: CanvasPlacement;
@@ -55,11 +80,12 @@ export interface CanvasObjectData {
   requirement?: CanvasRequirement | null;
   question?: CanvasQuestion | null;
   prototype?: CanvasPrototype | null;
+  asset?: CanvasAssetRef | null;
 }
 
 export interface CanvasObject {
   id: string;
-  kind: "explanation" | "annotation" | "group" | "heading" | "text" | "illustration" | "evidence" | "requirement" | "question" | "prototype";
+  kind: "explanation" | "annotation" | "group" | "heading" | "text" | "illustration" | "evidence" | "requirement" | "question" | "prototype" | "image" | "document";
   title: string;
   description?: string;
   placement: CanvasPlacement;
@@ -73,6 +99,7 @@ export interface CanvasObject {
   requirement?: CanvasRequirement | null;
   question?: CanvasQuestion | null;
   prototype?: CanvasPrototype | null;
+  asset?: CanvasAssetRef | null;
   createdBy: "user" | "agent";
   updatedBy: "user" | "agent";
   answer?: CanvasAnswer | null;
@@ -106,7 +133,7 @@ export interface CreateBoard {
 export interface BoardSummary {
   id: string;
   projectId: string;
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   title: string;
   revision: number;
   createdAt: string;
@@ -122,7 +149,7 @@ export interface BoardList {
 export interface ProjectBoard {
   id: string;
   projectId: string;
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   title: string;
   revision: number;
   createdAt: string;

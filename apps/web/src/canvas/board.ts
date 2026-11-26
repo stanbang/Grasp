@@ -9,7 +9,7 @@ export type Point = { x: number; y: number };
 export type Rect = Point & { width: number; height: number };
 export type Placement = Rect & { groupId?: string };
 export type ObjectKind = 'concept' | 'document' | 'component' | 'explanation' | 'annotation' | 'group'
-  | 'heading' | 'text' | 'illustration' | 'evidence' | 'visualization';
+  | 'heading' | 'text' | 'illustration' | 'evidence' | 'visualization' | 'image';
 export type NoteStyle = 'plain' | 'underline' | 'callout';
 export type LinkRole = 'structural' | 'data' | 'process' | 'annotation';
 export type Card = {
@@ -46,7 +46,7 @@ export type BoardLink = {
 
 export type BoardScene = { cards: Card[]; links: BoardLink[] };
 export type AuthoredCard = Pick<Card, 'id' | 'title' | 'description' | 'placement' | 'illustration' | 'noteStyle' | 'evidence'> & {
-  kind: 'explanation' | 'annotation' | 'group' | 'heading' | 'text' | 'illustration' | 'evidence';
+  kind: 'explanation' | 'annotation' | 'group' | 'heading' | 'text' | 'illustration' | 'evidence' | 'image' | 'document';
   projectObject?: CanvasObject;
 };
 export type AuthoredLink = Pick<BoardLink, 'id' | 'source' | 'target' | 'label' | 'role'> & {
@@ -54,7 +54,7 @@ export type AuthoredLink = Pick<BoardLink, 'id' | 'source' | 'target' | 'label' 
   projectConnection?: CanvasConnection;
 };
 export type BoardDocument = {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   kind: BoardKind;
   revision: number;
   placements: Record<string, Placement>;

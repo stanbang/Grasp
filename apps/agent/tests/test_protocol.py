@@ -1,5 +1,6 @@
 import json
 import os
+from base64 import b64decode
 from pathlib import Path
 import socket
 import subprocess
@@ -8,6 +9,7 @@ from tempfile import TemporaryDirectory
 import time
 import tomllib
 import unittest
+from urllib.request import Request, urlopen
 from uuid import uuid4
 
 from mcp.client import Client
@@ -289,6 +291,57 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             response = await client.call_tool("list_boards")
             self.assertFalse(response.is_error, response.content)
             self.assertIn("boards", response.structured_content)
+
+    async def test_stdio_can_annotate_a_shared_image_and_readback_respects_revocation(self):
+        owner = GraspClient(self.base, OWNER)
+        board_id = owner.create_board("Image acceptance")["id"]
+        url = f"{self.base}/boards/{board_id}/assets"
+        boundary = uuid4().hex
+        image = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAIAAAA2iEnWAAAAFElEQVR4nGNkYPjPwMDAxAAGUAoAEkIBBYa3P50AAAAASUVORK5CYII=")
+        parts = [
+            f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="fixture.png"\r\n'.encode(),
+            b"Content-Type: image/png\r\n\r\n", image, f"\r\n--{boundary}--\r\n".encode(),
+        ]
+        with urlopen(Request(
+            f"{url}?collectionId=fixture&position=0&method=picker", data=b"".join(parts),
+            headers={"Authorization": f"Bearer {OWNER}", "Content-Type": f"multipart/form-data; boundary={boundary}"},
+        ), timeout=5) as response:
+            asset_id = json.load(response)["id"]
+        owner.apply(board_id, {"baseRevision": 0, "mutationId": "image", "operations": [{
+            "type": "addObject", "object": {
+                "id": "asset", "kind": "image", "title": "fixture.png", "placement": OBJECT["placement"],
+                "asset": {"assetId": asset_id},
+            },
+        }]})
+
+        def share(value):
+            with urlopen(Request(
+                f"{url}/{asset_id}/sharing", method="PUT", data=json.dumps({"shared": value}).encode(),
+                headers={"Authorization": f"Bearer {OWNER}", "Content-Type": "application/json"},
+            ), timeout=5) as response:
+                self.assertEqual(json.load(response)["shared"], value)
+
+        scope = {"board_id": board_id}
+        share(True)
+        async with self.connect() as fresh:
+            response = await fresh.call_tool("get_board_context", scope)
+            saved = response.structured_content["board"]
+            self.assertEqual(saved["objects"]["asset"]["asset"]["assetId"], asset_id)
+            self.assertTrue(all(item.type == "text" for item in response.content))
+            note = {**OBJECT, "id": "observed", "title": "Shared asset record", "relatedObjectIds": ["asset"],
+                    "placement": {**OBJECT["placement"], "x": 400}}
+            receipt = await fresh.call_tool("apply_canvas_operations", {
+                **scope, "base_revision": saved["revision"], "mutation_id": "annotate",
+                "operations": [{"type": "addObject", "object": note}],
+            })
+            self.assertFalse(receipt.is_error, receipt.content)
+            self.assertEqual(owner.get_board(board_id)["objects"]["observed"]["relatedObjectIds"], ["asset"])
+        share(False)
+        async with self.connect() as fresh:
+            result = await fresh.call_tool("get_board_context", {**scope, "since_revision": 0})
+            self.assertEqual(result.structured_content["board"]["objects"]["asset"]["title"], "Private source")
+            self.assertNotIn("fixture.png", json.dumps(result.structured_content))
+            self.assertNotIn(asset_id, json.dumps(result.structured_content))
 
     async def test_missing_token_is_a_tool_error_instead_of_failed_initialization(self):
         async with self.connect(settings=self.settings.with_name("missing.env")) as client:

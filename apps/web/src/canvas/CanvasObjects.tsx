@@ -2,7 +2,7 @@ import {
   BaseEdge, EdgeLabelRenderer, Handle, NodeResizer, Position, getBezierPath, getSmoothStepPath,
   type Edge, type EdgeProps, type Node, type NodeProps,
 } from '@xyflow/react';
-import { ArrowUpRight, Check, Quote } from 'lucide-react';
+import { ArrowUpRight, Check, FileText, Quote } from 'lucide-react';
 import { memo, useEffect, useRef, useState } from 'react';
 import type { BoardLink, Card } from './board';
 import type { EdgeLabel, EdgeRoute, ViewDetail } from './canvas-view';
@@ -18,6 +18,7 @@ type CardData = {
   presentationContext: boolean;
   preview?: () => void;
   inspect?: () => void;
+  imageSrc?: string;
   resizeStart: () => void;
   resizeEnd: () => void;
 };
@@ -25,6 +26,13 @@ export type CanvasNode = Node<CardData, 'card'>;
 export type CanvasEdge = Edge<{ link: BoardLink; showLabel: boolean; route?: EdgeRoute; label?: EdgeLabel }, 'relation'>;
 
 export const sides = [Position.Left, Position.Right, Position.Top, Position.Bottom];
+
+function CardImage({ src, title }: { src: string; title: string }) {
+  const [failed, setFailed] = useState(false);
+  return failed ? <span className="board-card-detail">Preview unavailable</span>
+    : <img className="board-asset-image" src={src} alt={title} loading="lazy" decoding="async" draggable={false}
+      onError={() => setFailed(true)} />;
+}
 
 export const CanvasCard = memo(function CanvasCard({ data, selected, isConnectable }: NodeProps<CanvasNode>) {
   const { card } = data;
@@ -59,16 +67,20 @@ export const CanvasCard = memo(function CanvasCard({ data, selected, isConnectab
     <div className="board-card-heading">
       {!caption && card.illustration && <TechnicalIllustration name={card.illustration} />}
       {card.kind === 'evidence' && <Quote size={16} aria-hidden />}
+      {card.kind === 'document' && card.projectObject?.asset && <FileText size={17} aria-hidden />}
       {data.preview ? <button className="board-preview-button nodrag nopan" type="button" onClick={event => {
         event.stopPropagation();
         data.preview?.();
       }}>{card.title}<ArrowUpRight size={14} aria-hidden /></button> : <Title className="board-object-title" title={card.title}>{card.title}</Title>}
       {mastered && <Check className="board-mastered" size={17} aria-label="Mastered" />}
     </div>
-    {showDescription && (!caption || data.view) && !group && data.view !== 'overview'
+    {data.imageSrc && <CardImage key={data.imageSrc} src={data.imageSrc} title={card.title} />}
+    {showDescription && !data.imageSrc && (!caption || data.view) && !group && data.view !== 'overview'
       && description?.trim() && description.trim() !== card.title && <p>{description}</p>}
     {important && data.titleFits && <span className="board-card-detail board-decision">{important}</span>}
     {card.document && <span className="board-card-detail">{card.document.status === 'done' ? 'Ready to read' : card.document.status}</span>}
+    {card.kind === 'document' && card.projectObject?.asset?.page && data.view !== 'overview'
+      && <span className="board-card-detail">Page {card.projectObject.asset.page}</span>}
     {card.message && <span className="board-card-detail">{card.message}</span>}
     {sourceCount !== undefined && (selected || data.detail) && <span className="board-card-detail">{sourceCount} {sourceCount === 1 ? 'source' : 'sources'}</span>}
     </div>

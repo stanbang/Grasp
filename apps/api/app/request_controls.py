@@ -6,6 +6,9 @@ from fastapi import HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Scope, Receive, Send, Message
+from sqlmodel import Session, select
+
+from .asset_storage import ProjectDocumentRow
 
 from .owner_sessions import SESSION_PATH, browser_owner, workspace_origin
 
@@ -26,8 +29,22 @@ def is_agent_path(path: str) -> bool:
 
 def agent_source_scope(request: Request) -> frozenset[str] | None:
     if request.state.board_actor == "agent":
-        return request.app.state.storage.settings.agent_source_doc_ids
+        storage = request.app.state.storage
+        scope = storage.settings.agent_source_doc_ids
+        if not scope:
+            return scope
+        # The legacy search has no board parameter and cannot authorize a Project source.
+        with Session(storage.engine) as session:
+            project_sources = session.exec(select(ProjectDocumentRow.document_id).where(
+                ProjectDocumentRow.document_id.in_(scope),
+            ))
+            return scope.difference(project_sources)
     return None
+
+
+def is_asset_upload(path: str, method: str) -> bool:
+    parts = path.split("/")
+    return method == "POST" and len(parts) == 4 and parts[1] == "boards" and parts[3] == "assets"
 
 
 class RequestControls:
@@ -43,6 +60,7 @@ class RequestControls:
         settings=scope['app'].state.storage.settings
         headers={key.decode().lower():value.decode() for key,value in scope.get('headers',[])}
         path=request_path(scope)
+        asset_upload = is_asset_upload(path, scope["method"])
         authorization=headers.get("authorization", "")
         supplied=authorization.removeprefix("Bearer ").encode()
         settings_owner = bool(settings.access_token and authorization.startswith("Bearer ")
@@ -64,6 +82,9 @@ class RequestControls:
             if actor is None:
                 await JSONResponse({"detail": "Enter a valid GRASP access token."}, status_code=401)(scope,receive,send)
                 return
+            if actor == "agent" and asset_upload:
+                await JSONResponse({"detail": "Only the workspace owner can import assets."}, status_code=403)(scope,receive,send)
+                return
             scope.setdefault("state", {})["board_actor"] = actor
         elif settings.access_token and path not in {"/health", SESSION_PATH}:
             if not settings_owner:
@@ -83,7 +104,7 @@ class RequestControls:
             if limited:
                 await JSONResponse({'detail':'Too many requests. Try again in a minute.'},status_code=429,headers={'Retry-After':'60'})(scope,receive,send)
                 return
-        max_body=settings.max_upload_bytes+65536 if path.startswith('/documents') else 65536
+        max_body=settings.max_upload_bytes+65536 if path.startswith('/documents') or asset_upload else 65536
         try:length=int(headers.get('content-length','0'))
         except ValueError:length=max_body+1
         if length>max_body:

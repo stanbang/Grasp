@@ -5,6 +5,7 @@ from .agent_contracts import (
     BoardFocus, BoardItemChange, BoardRevisionChanges,
 )
 from .board_selections import TabPresence, context_selection
+from .asset_access import shared_assets, visible_board
 from .canvas_contracts import CanvasConnection, CanvasObject, ProjectBoard
 from .canvas_service import board_row, invalid, revision_row, summary
 from .canvas_storage import BoardRevisionRow
@@ -101,13 +102,15 @@ def selected_focus(board: ProjectBoard, selection: BoardContextSelection) -> Boa
     )
 
 
-def changes_since(session: Session, head: ProjectBoard, since: int) -> BoardChanges:
+def changes_since(session: Session, head: ProjectBoard, since: int, visible: set[str] | None) -> BoardChanges:
     if since > head.revision:
         invalid("Use a revision from this board at or before its current revision.")
     revisions = []
     remaining_bytes = HISTORY_PAGE_BYTES
     if since < head.revision:
         before = ProjectBoard.model_validate_json(revision_row(session, head.id, since).snapshot)
+        if visible is not None:
+            before = visible_board(before, visible)
         rows = session.exec(select(BoardRevisionRow).where(
             BoardRevisionRow.board_id == head.id,
             BoardRevisionRow.revision > since,
@@ -115,6 +118,8 @@ def changes_since(session: Session, head: ProjectBoard, since: int) -> BoardChan
         ).order_by(BoardRevisionRow.revision).limit(HISTORY_PAGE_SIZE))
         for row in rows:
             after = head if row.revision == head.revision else ProjectBoard.model_validate_json(row.snapshot)
+            if visible is not None and after is not head:
+                after = visible_board(after, visible)
             delta = BoardRevisionChanges(
                 revision=row.revision, actor=row.actor,
                 objects=object_changes(before.objects, after.objects),
@@ -134,6 +139,7 @@ def changes_since(session: Session, head: ProjectBoard, since: int) -> BoardChan
 
 def read_board_context(
     session: Session, presence: tuple[TabPresence, ...], board_id: str | None, since: int | None,
+    agent: bool = False,
 ) -> BoardContext:
     if since is not None and board_id is None:
         invalid("Supply the board ID that the earlier revision belongs to.")
@@ -149,6 +155,9 @@ def read_board_context(
         board_id = active_ids[0]
     row = board_row(session, board_id)
     board = ProjectBoard.model_validate_json(revision_row(session, row.id, row.revision).snapshot)
+    visible = shared_assets(session, row.id) if agent else None
+    if visible is not None:
+        board = visible_board(board, visible)
     objects = board.objects.values()
     selection = context_selection(presence, board.id, board.revision)
     return BoardContext(
@@ -158,5 +167,5 @@ def read_board_context(
         requirementIds=[item.id for item in objects if item.kind == "requirement"],
         proposalIds=[item.id for item in objects if item.createdBy == "agent" and not (item.decidedBy or item.answer)],
         decisionIds=[item.id for item in objects if item.decidedBy or item.answer],
-        changes=changes_since(session, board, since) if since is not None else None,
+        changes=changes_since(session, board, since, visible) if since is not None else None,
     )

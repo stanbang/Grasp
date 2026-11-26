@@ -7,6 +7,8 @@ from fastapi import HTTPException
 from sqlalchemy import text
 from sqlmodel import Session, select
 
+from .asset_access import board_asset, shared_assets, visible_board
+from .asset_storage import ProjectDocumentRow
 from .canvas_contracts import (
     Actor, AddConnection, AddObject, AnswerQuestion, BoardCommit, BoardConflict, BoardList,
     BoardSummary, CanvasAnswer, CanvasBatch, CanvasConceptContext, CanvasConnection,
@@ -29,7 +31,7 @@ def board_row(session: Session, board_id: str) -> ProjectBoardRow:
 
 def summary(row: ProjectBoardRow) -> BoardSummary:
     return BoardSummary(
-        id=row.id, projectId=row.project_id, schemaVersion=1, title=row.title, revision=row.revision,
+        id=row.id, projectId=row.project_id, schemaVersion=row.schema_version, title=row.title, revision=row.revision,
         createdAt=row.created_at.replace(tzinfo=timezone.utc), updatedAt=row.updated_at.replace(tzinfo=timezone.utc),
         createdBy=row.created_by,
     )
@@ -183,6 +185,8 @@ def put_object(board: ProjectBoard, item: CanvasObjectData, actor: Actor, adding
     check_object_permission(existing, item, actor)
     if existing and existing.kind != item.kind:
         invalid("An object's kind cannot change.")
+    if existing and existing.asset and item.asset and existing.asset.assetId != item.asset.assetId:
+        invalid("Place a new object to attach a different asset.")
     if existing and existing.prototype and item.prototype and existing.prototype != item.prototype:
         if item.prototype.revision <= existing.prototype.revision:
             invalid("Changed prototype metadata needs a higher prototype revision.")
@@ -251,11 +255,26 @@ def detach_feedback(
             item.relatedConnectionIds = [key for key in item.relatedConnectionIds if key not in connection_ids]
 
 
+def unavailable_asset() -> NoReturn:
+    raise HTTPException(403, "The workspace owner has not shared this asset with the agent.")
+
+
+def operation_object_id(operation: CanvasOperation) -> str | None:
+    if isinstance(operation, (AddObject, UpdateObject)):
+        return operation.object.id
+    if isinstance(operation, (PlaceObject, RemoveObject, AnswerQuestion)):
+        return operation.objectId
+    return None
+
+
 def validate_board(
-    session: Session, board: ProjectBoard, before: ProjectBoard, restoring: bool, source_scope: frozenset[str] | None,
+    session: Session, board: ProjectBoard, before: ProjectBoard, restoring: bool,
+    source_scope: frozenset[str] | None, visible: set[str] | None, restricted: set[str], now: datetime,
 ) -> None:
     if len(board.objects) > 200 or len(board.connections) > 400:
         invalid("A project board can hold up to 200 objects and 400 connections.")
+    if any(board.objects.get(key) != before.objects[key] for key in restricted):
+        unavailable_asset()
     for item in board.objects.values():
         if item.placement.groupId:
             parent = object_in(board, item.placement.groupId)
@@ -276,6 +295,22 @@ def validate_board(
         if restoring:
             continue
         previous = before.objects.get(item.id)
+        if restricted.intersection(set(related) - set(previous.relatedObjectIds if previous else [])):
+            unavailable_asset()
+        if item.asset and (previous is None or item.asset != previous.asset):
+            row = board_asset(session, board.id, item.asset.assetId)
+            if visible is not None and row.id not in visible:
+                unavailable_asset()
+            if row.document_id:
+                if item.kind != "document" or (item.asset.page or 1) > (row.page_count or 0):
+                    invalid("A document object needs an available page of a document asset.")
+                if session.get(DocumentRow, row.document_id) is None:
+                    invalid("The original document is unavailable.")
+            elif item.kind != "image" or item.asset.page is not None:
+                invalid("An image object needs an image asset without a page.")
+            if row.attached_at is None:
+                row.attached_at = now
+                session.add(row)
         if len({(ref.chunkId, ref.charStart, ref.charEnd) for ref in item.evidence}) != len(item.evidence):
             invalid("Source spans on an object must be unique.")
         if item.canonicalNodeId and (previous is None or item.canonicalNodeId != previous.canonicalNodeId):
@@ -286,6 +321,8 @@ def validate_board(
         for reference in item.evidence:
             if previous is None or reference not in previous.evidence:
                 require_shared_documents(source_scope, {reference.docId})
+                if session.get(ProjectDocumentRow, reference.docId) is not None:
+                    invalid("Use a document object for a Project source.")
                 if not resolve_evidence(session, reference).available:
                     invalid("The evidence does not match an available source span.")
 
@@ -296,8 +333,10 @@ def validate_board(
         if source.id == target.id or source.kind == "group" or target.kind == "group" or pair in endpoints:
             invalid("A connection needs two distinct objects and unique directed endpoints.")
         endpoints.add(pair)
+        old_edge = before.connections.get(edge.id)
+        if restricted.intersection(pair) and (old_edge is None or (old_edge.source, old_edge.target) != pair):
+            unavailable_asset()
         if edge.canonicalEdgeId and not restoring:
-            old_edge = before.connections.get(edge.id)
             old_source, old_target = before.objects.get(source.id), before.objects.get(target.id)
             changed = (
                 old_edge is None or old_edge.canonicalEdgeId != edge.canonicalEdgeId
@@ -336,6 +375,7 @@ def commit_batch(
     # Lock before reading the head so two workers cannot both accept the same base revision.
     session.execute(text("BEGIN IMMEDIATE"))
     head = board_row(session, board_id)
+    visible = shared_assets(session, board_id) if actor == "agent" else None
     digest = batch_digest(batch)
     replay = session.exec(select(BoardRevisionRow).where(
         BoardRevisionRow.board_id == board_id, BoardRevisionRow.mutation_id == batch.mutationId,
@@ -343,11 +383,18 @@ def commit_batch(
     if replay:
         if replay.actor != actor or replay.request_digest != digest:
             conflict("mutationIdReused", "This mutation ID was used for a different request.", head.revision)
-        return receipt(replay)
+        result = receipt(replay)
+        if visible is not None:
+            result.board = visible_board(result.board, visible)
+        return result
     if batch.baseRevision != head.revision:
         conflict("staleRevision", "The board changed since this edit started.", head.revision)
 
     before = ProjectBoard.model_validate_json(revision_row(session, board_id, head.revision).snapshot)
+    restricted = {
+        item.id for item in before.objects.values()
+        if visible is not None and item.asset and item.asset.assetId not in visible
+    }
     restorations = [item for item in batch.operations if isinstance(item, RestoreRevision)]
     now = datetime.now(timezone.utc)
     if restorations:
@@ -359,8 +406,10 @@ def commit_batch(
     else:
         board = before.model_copy(deep=True)
         for operation in batch.operations:
+            if operation_object_id(operation) in restricted:
+                unavailable_asset()
             apply_operation(board, operation, actor, now)
-    validate_board(session, board, before, bool(restorations), source_scope)
+    validate_board(session, board, before, bool(restorations), source_scope, visible, restricted, now)
     if not restorations:
         if batch.autoLayout:
             auto_layout(before, board, batch.expandFromObjectId)
@@ -368,6 +417,9 @@ def commit_batch(
     validate_expansion(batch, before, board)
     head.revision += 1
     head.updated_at = now
+    if any(item.asset for item in board.objects.values()):
+        board.schemaVersion = 2
+    head.schema_version = board.schemaVersion
     board.revision, board.updatedAt = head.revision, now
     snapshot = board.model_dump_json()
     if len(snapshot.encode()) > 512 * 1024:
@@ -378,5 +430,7 @@ def commit_batch(
     )
     session.add(row)
     result = receipt(row)
+    if visible is not None:
+        result.board = visible_board(result.board, visible)
     session.commit()
     return result

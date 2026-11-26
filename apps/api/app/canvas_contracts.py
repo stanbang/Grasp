@@ -15,7 +15,7 @@ Illustration = Literal[
 ]
 ObjectKind = Literal[
     "explanation", "annotation", "group", "heading", "text", "illustration", "evidence",
-    "requirement", "question", "prototype",
+    "requirement", "question", "prototype", "image", "document",
 ]
 Extent = Annotated[float, Field(gt=0, le=20_000, strict=True)]
 Coordinate = Annotated[float, Field(ge=-1_000_000, le=1_000_000, strict=True)]
@@ -72,6 +72,34 @@ class CanvasPrototype(CanvasContract):
     requirementIds: Annotated[list[CanvasId], Field(max_length=20)] = Field(default_factory=list)
 
 
+class CanvasAssetRef(CanvasContract):
+    assetId: CanvasId
+    page: Annotated[int, Field(ge=1, strict=True)] | None = None
+
+
+AssetImportMethod = Literal["picker", "drop", "paste"]
+
+
+class ProjectAsset(CanvasContract):
+    id: CanvasId
+    kind: Literal["image", "document"]
+    name: str
+    mediaType: str
+    digest: str
+    byteLength: int
+    width: int | None
+    height: int | None
+    pageCount: int | None
+    documentId: CanvasId | None
+    indexStatus: Literal["queued", "chunking", "extracting", "done", "failed"] | None
+    available: bool
+    shared: bool
+
+
+class AssetSharing(CanvasContract):
+    shared: bool = Field(strict=True)
+
+
 class CanvasObjectData(CanvasContract):
     id: CanvasId
     kind: ObjectKind
@@ -88,6 +116,7 @@ class CanvasObjectData(CanvasContract):
     requirement: CanvasRequirement | None = None
     question: CanvasQuestion | None = None
     prototype: CanvasPrototype | None = None
+    asset: CanvasAssetRef | None = Field(default=None, exclude_if=lambda value: value is None)
 
     @model_validator(mode="after")
     def details_match_kind(self) -> "CanvasObjectData":
@@ -101,6 +130,10 @@ class CanvasObjectData(CanvasContract):
             raise ValueError("Only annotations have a note style.")
         if self.kind == "evidence" and not self.evidence:
             raise ValueError("An evidence object needs a source span.")
+        if (self.kind in ("image", "document")) != (self.asset is not None):
+            raise ValueError("Only image and document objects must include an asset.")
+        if self.asset and (self.evidence or self.canonicalNodeId):
+            raise ValueError("An asset object cannot include legacy evidence or a canonical concept.")
         if self.relatedConnectionIds and self.kind not in ("annotation", "requirement", "question"):
             raise ValueError("Only notes, requirements and questions can attach to a connection.")
         return self
@@ -134,7 +167,7 @@ class CreateBoard(CanvasContract):
 class BoardSummary(CanvasContract):
     id: CanvasId
     projectId: CanvasId
-    schemaVersion: Literal[1]
+    schemaVersion: Literal[1, 2]
     title: CanvasTitle
     revision: Revision
     createdAt: datetime
@@ -270,6 +303,7 @@ class CanvasObjectContext(CanvasContract):
 
 CANVAS_MODELS = (
     CanvasPlacement, CanvasEvidenceRef, CanvasRequirement, CanvasQuestion, CanvasAnswer, CanvasPrototype,
+    CanvasAssetRef, ProjectAsset, AssetSharing,
     CanvasObjectData, CanvasObject, CanvasConnectionData, CanvasConnection, CreateBoard, BoardSummary,
     BoardList, ProjectBoard, AddObject, UpdateObject, PlaceObject, RemoveObject, AddConnection, UpdateConnection,
     RemoveConnection, AnswerQuestion, RestoreRevision, CanvasBatch, BoardCommit, BoardConflict, BoardConflictResponse,

@@ -4,6 +4,8 @@ from sqlalchemy import Column, Text, UniqueConstraint, text
 from sqlalchemy.engine import Engine
 from sqlmodel import Field, SQLModel
 
+from .asset_storage import ASSET_TABLES
+
 
 class ProjectBoardRow(SQLModel, table=True):
     __tablename__ = "project_boards"
@@ -12,6 +14,7 @@ class ProjectBoardRow(SQLModel, table=True):
     project_id: str = Field(unique=True)
     title: str
     revision: int
+    schema_version: int = 1
     created_at: datetime
     updated_at: datetime
     created_by: str
@@ -30,7 +33,8 @@ class BoardRevisionRow(SQLModel, table=True):
     actor: str
 
 
-CANVAS_TABLES = (ProjectBoardRow.__table__, BoardRevisionRow.__table__)
+BOARD_TABLES = (ProjectBoardRow.__table__, BoardRevisionRow.__table__)
+CANVAS_TABLES = (*BOARD_TABLES, *ASSET_TABLES)
 
 
 def migrate_canvas(engine: Engine) -> None:
@@ -41,9 +45,16 @@ def migrate_canvas(engine: Engine) -> None:
         ))
         version = connection.execute(text("SELECT max(version) FROM canvas_schema")).scalar()
         if version is None:
-            # Version 1 adds canvas tables without rewriting existing study records.
-            for table in CANVAS_TABLES:
+            for table in BOARD_TABLES:
                 table.create(connection, checkfirst=True)
             connection.execute(text("INSERT INTO canvas_schema (version) VALUES (1)"))
-        elif version != 1:
+        if version in (None, 1):
+            if version == 1:
+                connection.execute(text(
+                    "ALTER TABLE project_boards ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1"
+                ))
+            for table in ASSET_TABLES:
+                table.create(connection, checkfirst=True)
+            connection.execute(text("INSERT INTO canvas_schema (version) VALUES (2)"))
+        elif version != 2:
             raise RuntimeError(f"Unsupported canvas database schema version: {version}.")

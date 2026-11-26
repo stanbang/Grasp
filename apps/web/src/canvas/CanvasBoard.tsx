@@ -3,13 +3,14 @@ import {
   getViewportForBounds, type Connection, type OnEdgesChange, type OnNodesChange, type ReactFlowInstance,
 } from '@xyflow/react';
 import {
-  BoxSelect, ChevronLeft, ChevronRight, Hand, Link2, List, Maximize, Minus, MousePointer2, Plus, Redo2, Scan, Undo2, X,
+  BoxSelect, ChevronLeft, ChevronRight, Hand, Link2, List, Maximize, Minus, MousePointer2, Plus, Redo2, Scan, Undo2, Upload, X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { CanvasCard, Relation, sides, type CanvasEdge, type CanvasNode } from './CanvasObjects';
-import { bounds, groupCards, placeCard, projectBoard, rect, removeAuthored, zoomAt, type AuthoredCard, type AuthoredLink, type BoardLink, type BoardScene, type Card, type Placement } from './board';
+import { bounds, groupCards, placeCard, projectBoard, rect, removeAuthored, zoomAt, type AuthoredCard, type AuthoredLink, type BoardLink, type BoardScene, type Card, type Placement, type Point } from './board';
 import { engineeringPaths } from './engineering-board';
 import { projectFeedbackObject, type ProjectFeedback } from './project-board';
+import { assetPath, type ImportAssets } from './project-assets';
 import { projectLabels, projectRoutes, viewDetail } from './canvas-view';
 import type { BoardSession } from './use-board';
 
@@ -55,7 +56,8 @@ function connectionHandles(width: number, height: number): CanvasNode['handles']
   });
 }
 
-export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, importing, presenting, onInspect }: {
+export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, importing, presenting, onInspect,
+  projectBoardId, importAssets }: {
   seed: BoardScene;
   session: BoardSession;
   highlight: string[];
@@ -64,6 +66,8 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
   presenting: boolean;
   onInspect: () => void;
   empty?: ReactNode;
+  projectBoardId?: string;
+  importAssets?: ImportAssets;
   inspect: (card: Card | undefined, link: InspectedLink | undefined, close: () => void, pin: PinCanvasObject) => ReactNode;
 }) {
   const scene = useMemo(() => projectBoard(seed, session.document), [seed, session.document]);
@@ -80,6 +84,7 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
   const [presentationPath, setPresentationPath] = useState<PresentationPath>('overview');
   const [presentationStep, setPresentationStep] = useState(0);
   const frame = useRef<HTMLDivElement>(null);
+  const assetPicker = useRef<HTMLInputElement>(null);
   const instance = useRef<Instance>();
   const inspectButton = useRef<HTMLButtonElement>(null);
   const outlineButton = useRef<HTMLButtonElement>(null);
@@ -224,12 +229,15 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     const { x, y, width, height, groupId } = card.placement;
     const parent = groupId ? byId.get(groupId)?.placement : undefined;
     const position = parent ? { x: x - parent.x, y: y - parent.y } : { x, y };
+    const asset = card.projectObject?.asset;
     return {
       id: card.id, type: 'card', position, parentId: groupId, width, height, measured: { width, height }, ariaLabel: card.title,
       handles: card.kind === 'group' ? undefined : connectionHandles(width, height),
       selected: session.selected.includes(card.id), draggable: !presenting && tool === 'select', deletable: false,
       selectable: !presenting, connectable: tool === 'connect' && card.kind !== 'group', zIndex: card.kind === 'group' ? -1 : 1,
       data: { card, emphasized: !!card.concept && highlight.includes(card.concept.id),
+        imageSrc: card.kind === 'image' && projectBoardId && asset
+          ? `/api${assetPath(projectBoardId, asset.assetId)}/preview` : undefined,
         connecting: connectFrom === card.id, detail: zoom >= 1.25, resizeStart: begin, resizeEnd: finish,
         view: isProject ? detail : undefined,
         titleFits: isProject ? width * zoom >= 60 && height * zoom >= 16 : undefined,
@@ -393,8 +401,34 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
     session.update(board => removeAuthored(board, session.selected, session.selectedLinks));
   }
 
+  function importAnchor(screen?: Point): Point {
+    const host = frame.current?.getBoundingClientRect();
+    if (!host || !instance.current) return { x: 24, y: 70 };
+    return instance.current.screenToFlowPosition(screen ?? {
+      x: host.left + host.width * .24, y: host.top + host.height * .22,
+    });
+  }
+
   return <section className="board-layout" aria-label="Canvas workspace">
-    <div ref={frame} tabIndex={-1} className={`board-frame board-frame--${tool}`} data-board={session.document.kind}
+    <div ref={frame} tabIndex={importAssets ? 0 : -1} className={`board-frame board-frame--${tool}`} data-board={session.document.kind}
+      data-project-file-drop={importAssets ? true : undefined}
+      onDragOver={event => {
+        if (importAssets && event.dataTransfer.types.includes('Files')) event.preventDefault();
+      }}
+      onDrop={event => {
+        if (!importAssets || !event.dataTransfer.types.includes('Files')) return;
+        event.preventDefault();
+        const files = Array.from(event.dataTransfer.files);
+        importAssets(files, 'drop', importAnchor({ x: event.clientX, y: event.clientY }));
+      }}
+      onPaste={event => {
+        if (!importAssets || event.target instanceof Element &&
+          event.target.closest('input, textarea, select, [contenteditable]')) return;
+        const images = Array.from(event.clipboardData.files).filter(file => file.type.startsWith('image/'));
+        if (!images.length) return;
+        event.preventDefault();
+        importAssets(images, 'paste', importAnchor());
+      }}
       style={isProject ? { '--canvas-zoom': zoom } as CSSProperties : undefined}
       data-minimum-zoom={isProject ? minimumZoom : undefined}
       data-presentation-path={presenting ? presentationPath : undefined}
@@ -458,7 +492,10 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
           else setConnectFrom(node.id);
         }}
         onNodeDoubleClick={(_, node) => { if (!presenting && tool === 'select') { selection(node.id); openInspection(); } }}
-        onPaneClick={() => { setInspectOpen(false); setConnectFrom(undefined); setMenu(false); }}>
+        onPaneClick={() => {
+          if (importAssets) frame.current?.focus({ preventScroll: true });
+          setInspectOpen(false); setConnectFrom(undefined); setMenu(false);
+        }}>
         <Background variant={BackgroundVariant.Dots} gap={29} size={.8} color="var(--board-dot)" />
       </ReactFlow>
       {!scene.cards.length && empty}
@@ -524,6 +561,15 @@ export function CanvasBoard({ seed, session, highlight, theme, empty, inspect, i
               <button type="button" onClick={() => add({ kind: 'explanation', title: 'New explanation', description: '' })}>Explanation</button>
             </div>}
           </div>
+          {importAssets && <>
+            <input ref={assetPicker} type="file" multiple hidden aria-label="Project asset files"
+              accept=".png,.jpg,.jpeg,.webp,.pdf,.md,.txt" onChange={event => {
+                importAssets(Array.from(event.currentTarget.files ?? []), 'picker', importAnchor());
+                event.currentTarget.value = '';
+              }} />
+            <button type="button" className="board-icon" aria-label="Import files" title="Import files"
+              disabled={importing} onClick={() => assetPicker.current?.click()}><Upload size={18} /></button>
+          </>}
           <div className="board-tool-separator" />
           <button type="button" className="board-icon" aria-label="Undo" title="Undo" disabled={!session.canUndo} onClick={() => session.restore('undo')}><Undo2 size={17} /></button>
           <button type="button" className="board-icon" aria-label="Redo" title="Redo" disabled={!session.canRedo} onClick={() => session.restore('redo')}><Redo2 size={17} /></button>
