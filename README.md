@@ -2,7 +2,7 @@
 
 # GRASP
 
-Retrieval-grounded visual workspace for AI-assisted software design, document understanding and agent collaboration.
+A retrieval-grounded visual workspace for understanding and designing software with AI agents.
 
 **Developer preview · Milestone A**
 
@@ -25,22 +25,22 @@ GRASP started with a question about document Q&A. How can a reader see which pas
 <table>
   <tr>
     <td width="50%"><a href="docs/assets/preview-knowledge.webp"><img src="docs/assets/preview-knowledge.webp" alt="Knowledge workspace with a question about retrieval practice and an exact passage highlighted in its sample source."></a></td>
-    <td width="50%"><a href="docs/assets/preview-project.webp"><img src="docs/assets/preview-project.webp" alt="Project canvas with a synthetic software diagram, imported image and PDF cards, and a saved annotation from a local MCP session."></a></td>
+    <td width="50%"><a href="docs/assets/preview-project.webp"><img src="docs/assets/preview-project.webp" alt="Museum audio guide board with a diagram created by Codex, an imported image and PDF, and a note about resuming playback after reconnecting."></a></td>
   </tr>
   <tr>
     <td><strong>Knowledge.</strong> A cited answer and its source in the bundled sample.</td>
-    <td><strong>Projects.</strong> A synthetic design board with imported files and a saved agent annotation.</td>
+    <td><strong>Projects.</strong> Codex built this board over MCP and added the playback note after the image and PDF were imported through the browser.</td>
   </tr>
 </table>
 
-All three screenshots come from the running app with bundled or synthetic data. The Projects example used a local MCP test client to create the diagram and save the annotation.
+All three screenshots come from the running app with bundled or synthetic data. The Projects example used the signed-in Codex CLI against a disposable local GRASP library.
 
 <details>
 <summary>Recorded RAG walkthrough</summary>
 
 ![Recorded GRASP walkthrough showing an example note, the ingestion replay and a cited answer.](docs/assets/showcase.gif)
 
-The browser-only showcase replays bundled example traces. Run it locally at [`/showcase/`](http://127.0.0.1:5173/showcase/) or open the [RAG guide](http://127.0.0.1:5173/showcase/?view=guide).
+The browser-only showcase replays bundled example traces. It answers sample questions from recorded passages without a model connection. Run it locally at [`/showcase/`](http://127.0.0.1:5173/showcase/) or open the [RAG guide](http://127.0.0.1:5173/showcase/?view=guide).
 
 </details>
 
@@ -64,7 +64,15 @@ The default `MOCK_LLM=1` uses deterministic local embeddings and returns retriev
 
 ### Connect Codex
 
-Install the local Python adapter and run `grasp setup --agent codex` from the checkout. Setup registers the MCP server and skill with Codex and stores separate owner and agent credentials locally. Start GRASP and open a fresh local Codex chat. Ask it to help sketch a system on a GRASP board, select an item in the browser, then ask it to explain the selection or add a related note. [Adapter installation and walkthrough](docs/grasp-v2/agent-guide.md)
+This setup is optional for the local walkthrough. To connect an installed Codex client on Windows, run these commands from the checkout in PowerShell.
+
+```powershell
+py -3.11 -m venv .venv-mcp
+.\.venv-mcp\Scripts\python.exe -m pip install -e .\apps\agent
+.\.venv-mcp\Scripts\grasp.exe setup --agent codex
+```
+
+Setup registers the MCP server and skill with Codex and stores separate owner and agent credentials in the ignored `.env`. Start or restart GRASP, run `.\.venv-mcp\Scripts\grasp.exe doctor`, then open a fresh local Codex chat. Ask it to sketch a system on a GRASP board. Select a component in the browser, then ask Codex to explain it or add a related note. Enter the owner credential in GRASP when it prompts for one. [Adapter installation and walkthrough](docs/grasp-v2/agent-guide.md)
 
 ## Architecture
 
@@ -83,7 +91,7 @@ flowchart LR
     validate --> sourceView["Answer and source view"]
 ```
 
-The retriever searches text chunks. The concept map uses links to those chunks so readers can explore related ideas. The API checks cited quotes against the stored passage. When retrieval finds no supporting passage, the API can decline to answer. [RAG design and code map](docs/rag-design.md)
+GRASP extracts text page by page and can use local OCR for scanned PDFs. It embeds text chunks with LangChain and uses ChromaDB to rank them within the selected document scope. In live mode, the model drafts a structured answer from the retrieved passages. FastAPI validates the response with Pydantic and checks cited quotes against the stored text. The concept map links to the same chunks so readers can explore related ideas. When retrieval finds no supporting passage, the API can decline to answer. [RAG design and code map](docs/rag-design.md)
 
 ### Shared project boards
 
@@ -117,7 +125,7 @@ The [Milestone A acceptance guide](docs/grasp-v2/milestone-a-assets.md) covers b
 
 ## Preview scope
 
-This is a single-owner workspace. Images can be placed, previewed and shared as board assets. The agent can see authorized image metadata. Image interpretation and visual retrieval are future work. See the [Milestone A details](docs/grasp-v2/milestone-a-assets.md) and [roadmap](docs/grasp-v2/roadmap.md).
+This is a local, single-owner workspace. Milestone A implements image and document assets on Project boards. The agent can read image metadata when the owner shares an asset on that board. Manual acceptance is pending. Image interpretation, contextual multimodal retrieval and evidence on diagram arrows are planned work. [Milestone A details](docs/grasp-v2/milestone-a-assets.md) · [Roadmap](docs/grasp-v2/roadmap.md)
 
 ## Demo script
 
@@ -136,3 +144,7 @@ This is a single-owner workspace. Images can be placed, previewed and shared as 
 | [`docs`](docs/) | Design decisions, experiments and acceptance notes |
 
 [Course walkthrough](docs/course-walkthrough.md) · [Retrieval tradeoffs](docs/tradeoffs.md) · [Interview talk track](docs/interview-talk-track.md)
+
+## Author
+
+Stanley Lur · Computer Science (Real-Time Interactive Simulation). [Portfolio](https://www.stanleylur.com/) · [GitHub](https://github.com/stanbang)
