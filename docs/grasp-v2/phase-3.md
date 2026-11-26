@@ -42,8 +42,9 @@ Codex may ask for approval for `apply_canvas_operations` because batches can cha
 | Command | Behavior |
 | --- | --- |
 | `grasp init` | Print the local Codex MCP configuration. |
+| `grasp setup` | Configure the workspace, register MCP and install the GRASP skill for detected agents. |
 | `grasp open [BOARD_ID]` | Open the workspace or the saved Project board. `--print-url` prints the link. |
-| `grasp doctor` | Check API health and credential access to board listing. |
+| `grasp doctor` | Check API access, the browser endpoint and the installed agent configuration. |
 | `grasp board list` | List summaries with optional `--offset` and `--limit`. |
 | `grasp board create "TITLE"` | Create a board at revision 0. |
 | `grasp board read BOARD_ID` | Read the current saved snapshot. |
@@ -123,3 +124,9 @@ The browser shares the board ID, saved revision and selected object IDs under a 
 The context tool reads the saved head and history in one transaction. History comes from existing snapshots, with the revision author and the changed fields of each object or connection. The browser uses the existing revision poll to show agent edits. [Install the reusable skill and run acceptance](agent-guide.md)
 
 The 26 November check passed 82 API tests, 24 Node tests, TypeScript and contract checks, the production build, all six stdio MCP tests, and the two-tab browser regression. A fresh session in the desktop-bundled Codex runtime discovered the user-level skill from outside the checkout. Through MCP it saved the video-editor layout at revision 1, explained the browser selection, recognized the owner note, arrow and moved card at revision 5, and applied an approval gate at revision 6. The same browser tab showed the gate without a refresh. MCP readback confirmed that the owner edits and unrelated cards survived. The same Codex session explained the gate after it was selected. The Claude Code installer was checked against a disposable configuration directory.
+
+### Phase 3.2 workspace integration
+
+`grasp setup` now configures and checks the existing local app, MCP entry and skill from one command. The real Codex CLI registered a fresh profile without changing an unrelated entry. A second run left the configuration and credentials byte-for-byte identical. The installed CLI ran setup, doctor and open from outside the checkout.
+
+GRASP provides the board's live URL through MCP. The user-level skill opens that URL in Codex's built-in browser and keeps using the same board. A fresh local Codex chat outside the checkout loaded the skill, saved the video-editor design and queued its browser panel while the chat was hidden. Automatic browser review rejected opening the separate fixture because its review usage limit was reached. Direct selection, owner edits and a follow-up update in the fresh chat remain for acceptance. [Workspace walk-through](agent-guide.md#try-a-collaboration) · [Codex split view](https://learn.chatgpt.com/docs/browser#arrange-tabs-and-chat)

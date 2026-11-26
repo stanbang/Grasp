@@ -58,6 +58,10 @@ def web_board_url(base: str, board_id: str | None) -> str:
     return f"{url}/?{urlencode({'board': 'project', 'projectBoard': board_id})}"
 
 
+def projects_url(base: str) -> str:
+    return loopback_url(base) + "/?board=project"
+
+
 def request_error(status: int, detail: Any) -> GraspError:
     text = detail if isinstance(detail, str) else ""
     if status == 401:
@@ -81,8 +85,11 @@ def request_error(status: int, detail: Any) -> GraspError:
 
 
 class GraspClient:
-    def __init__(self, api_url: str, token: str):
+    def __init__(self, api_url: str, token: str, web_url: str | None = None):
         self.api_url = loopback_url(api_url, allow_api_path=True)
+        self.web_url = loopback_url(web_url or (
+            self.api_url.removesuffix("/api") if self.api_url.endswith("/api") else DEFAULT_WEB_URL
+        ))
         if not token:
             raise GraspError("missingToken", "Set GRASP_AGENT_TOKEN in the project's .env or in the process that launches GRASP.")
         if not token.isascii() or not token.isprintable() or any(character.isspace() for character in token):
@@ -128,8 +135,32 @@ class GraspClient:
         health = self._json("GET", "/health")
         if health.get("status") != "ok":
             raise GraspError("apiDegraded", "GRASP reports degraded health. Check SQLite, Chroma and provider settings.")
-        self.list_boards(limit=1)
-        return {"status": "ok", "apiUrl": self.api_url, "health": health, "boardAccess": True}
+        try:
+            self.get_board_context()
+        except GraspError as error:
+            if error.status == 404:
+                raise GraspError("apiOutdated", "Restart GRASP to load the current board context endpoint.") from error
+            raise
+        return {
+            "status": "ok", "apiUrl": self.api_url, "health": health, "boardAccess": True,
+            "workspaceUrl": projects_url(self.web_url),
+            "browserStatus": "ready" if self.browser_reachable() else "unavailable",
+        }
+
+    def browser_reachable(self) -> bool:
+        address = urlsplit(self.web_url)
+        connection = HTTPConnection("127.0.0.1", address.port or 80, timeout=2)
+        try:
+            connection.request("GET", "/api/health")
+            response = connection.getresponse()
+            if response.status != 200:
+                return False
+            health = json.loads(response.read(MAX_REQUEST_BYTES))
+            return isinstance(health, dict) and health.get("status") == "ok"
+        except (OSError, HTTPException, ValueError):
+            return False
+        finally:
+            connection.close()
 
     def list_boards(self, offset: int = 0, limit: int = 50) -> JsonObject:
         query = urlencode({"offset": offset, "limit": limit})
@@ -149,6 +180,16 @@ class GraspClient:
         if since_revision is not None:
             query["sinceRevision"] = since_revision
         return self._json("GET", f"/boards/context?{urlencode(query)}")
+
+    def canvas_context(self, board_id: str | None = None, since_revision: int | None = None) -> JsonObject:
+        context = self.get_board_context(board_id, since_revision)
+        board = context.get("board")
+        concrete_id = board["id"] if board else None
+        return {
+            **context,
+            "workspaceUrl": projects_url(self.web_url),
+            "boardUrl": web_board_url(self.web_url, concrete_id) if concrete_id else None,
+        }
 
     def get_selection(self, board_id: str) -> JsonObject:
         return self._json("GET", board_path(board_id) + "/selection")

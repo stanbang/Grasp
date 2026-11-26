@@ -5,10 +5,9 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from dotenv import dotenv_values
-
-from .client import MAX_REQUEST_BYTES, GraspClient, GraspError, JsonObject
-from .client import loopback_url, web_board_url
+from .client import MAX_REQUEST_BYTES, GraspClient, GraspError, JsonObject, loopback_url, projects_url, web_board_url
+from .setup import agent_checks, installed_agents, setup
+from .workspace import api_address, connect, local_settings, settings_file, workspace_address
 
 
 def read_json(source: str) -> JsonObject:
@@ -28,29 +27,6 @@ def read_json(source: str) -> JsonObject:
     if not isinstance(value, dict):
         raise GraspError("invalidJson", "Supply a JSON object.")
     return value
-
-
-def settings_file() -> Path:
-    return Path(os.environ.get("GRASP_ENV_FILE") or ".env").resolve()
-
-
-def local_settings() -> dict[str, str | None]:
-    try:
-        return dotenv_values(settings_file(), encoding="utf-8-sig")
-    except (OSError, UnicodeError) as error:
-        raise GraspError("invalidSettings", "Could not read the local GRASP .env file as UTF-8.") from error
-
-
-def api_address(override: str | None, settings: dict[str, str | None]) -> str:
-    address = override or os.environ.get("GRASP_API_URL")
-    port = os.environ.get("API_PORT", settings.get("API_PORT") or "8000")
-    return loopback_url(address or f"http://127.0.0.1:{port}", allow_api_path=True)
-
-
-def connect(api_url: str | None) -> GraspClient:
-    settings = local_settings()
-    token = os.environ.get("GRASP_AGENT_TOKEN", settings.get("GRASP_AGENT_TOKEN") or "")
-    return GraspClient(api_address(api_url, settings), token)
 
 
 def codex_config(api_url: str | None) -> str:
@@ -77,7 +53,10 @@ def parser() -> argparse.ArgumentParser:
     commands = root.add_subparsers(dest="command", required=True)
 
     commands.add_parser("init", help="Print the Codex MCP configuration for this installation.")
-    commands.add_parser("doctor", help="Check the API and agent credential.")
+    installer = commands.add_parser("setup", help="Configure the workspace and install GRASP in supported agents.")
+    installer.add_argument("--agent", choices=("all", "codex", "claude-code"), default="all")
+    installer.add_argument("--replace-skill", action="store_true", help="Replace a customized GRASP skill.")
+    commands.add_parser("doctor", help="Check the workspace, MCP registration and agent skill.")
     opener = commands.add_parser("open", help="Open the workspace or a project board in your browser.")
     opener.add_argument("board_id", nargs="?")
     opener.add_argument("--print-url", action="store_true", help="Print the URL instead of opening it.")
@@ -118,12 +97,13 @@ def board_command(args: argparse.Namespace, client: GraspClient) -> JsonObject:
 def run(args: argparse.Namespace) -> JsonObject | str | None:
     if args.command == "init":
         return codex_config(args.api_url)
+    if args.command == "setup":
+        return setup(args.agent, args.api_url, args.web_url, args.replace_skill)
     if args.command == "open":
         settings = local_settings()
         api_url = api_address(args.api_url, settings)
-        web_port = os.environ.get("WEB_PORT", settings.get("WEB_PORT") or "5173")
-        web_base = args.web_url or (api_url.removesuffix("/api") if api_url.endswith("/api") else f"http://127.0.0.1:{web_port}")
-        url = web_board_url(web_base, args.board_id)
+        web_base = workspace_address(api_url, args.web_url, settings)
+        url = web_board_url(web_base, args.board_id) if args.board_id else projects_url(web_base)
         if args.print_url:
             return url
         if not webbrowser.open(url):
@@ -132,13 +112,19 @@ def run(args: argparse.Namespace) -> JsonObject | str | None:
 
     if args.command == "mcp":
         from .mcp_server import create_server
-        create_server(lambda: connect(args.api_url)).run(transport="stdio")
+        create_server(lambda: connect(args.api_url, args.web_url)).run(transport="stdio")
         return None
 
-    client = connect(args.api_url)
+    client = connect(args.api_url, args.web_url)
     match args.command:
         case "doctor":
-            return client.doctor()
+            check = client.doctor()
+            agents = agent_checks(installed_agents(), args.api_url, args.web_url)
+            if check["browserStatus"] != "ready":
+                check["hint"] = "Start the GRASP web workspace with python scripts/dev.py."
+            if not agents or any(agent.get("registration") != "ready" or agent.get("skill") != "ready" for agent in agents):
+                check["setupHint"] = "Run grasp setup for the installed coding agent."
+            return {**check, "agents": agents}
         case "board":
             return board_command(args, client)
         case "search":
@@ -149,13 +135,16 @@ def run(args: argparse.Namespace) -> JsonObject | str | None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    args = parser().parse_args(argv)
     try:
-        result = run(parser().parse_args(argv))
+        result = run(args)
     except GraspError as error:
         print(json.dumps({"error": error.as_dict()}, ensure_ascii=True), file=sys.stderr)
         return 1
     if isinstance(result, dict):
         print(json.dumps(result, ensure_ascii=True, indent=2))
+        if args.command == "setup" and result["status"] == "needsAttention":
+            return 1
     elif result is not None:
         print(result)
     return 0

@@ -18,6 +18,7 @@ from grasp_agent.client import GraspClient, GraspError, loopback_url
 ROOT = Path(__file__).resolve().parents[3]
 OWNER = "protocol-test-owner"
 AGENT = "protocol-test-agent"
+WEB = "http://127.0.0.1:5179"
 TOOLS = {
     "list_boards", "create_board", "get_board", "get_board_context", "get_selection", "apply_canvas_operations",
     "get_annotations", "get_requirements", "search_knowledge", "read_source",
@@ -46,7 +47,10 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
         cls.base = f"http://127.0.0.1:{port}"
         cls.settings = Path(directory.name) / ".env"
         cls.settings.write_text(f"API_PORT={port}\nGRASP_AGENT_TOKEN={AGENT}\n", encoding="utf-8")
-        cls.agent_env = {"GRASP_API_URL": cls.base, "GRASP_AGENT_TOKEN": AGENT, "GRASP_ENV_FILE": str(cls.settings)}
+        cls.agent_env = {
+            "GRASP_API_URL": cls.base, "GRASP_AGENT_TOKEN": AGENT,
+            "GRASP_ENV_FILE": str(cls.settings), "GRASP_WEB_URL": WEB,
+        }
         log = Path(directory.name) / "api.log"
         with log.open("wb") as output:
             process = subprocess.Popen([
@@ -122,12 +126,17 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(current.structured_content, applied.structured_content["board"])
             automatic = await client.call_tool("get_board_context", {})
             self.assertEqual(automatic.structured_content["status"], "noActiveBoard")
+            self.assertEqual(automatic.structured_content["workspaceUrl"], f"{WEB}/?board=project")
+            self.assertIsNone(automatic.structured_content["boardUrl"])
             context = await client.call_tool("get_board_context", {"board_id": board_id, "since_revision": 0})
             self.assertFalse(context.is_error, context.content)
             self.assertEqual(context.structured_content["board"], current.structured_content)
             self.assertEqual(context.structured_content["annotationIds"], ["note"])
             self.assertEqual(context.structured_content["requirementIds"], ["requirement"])
             self.assertEqual(context.structured_content["changes"]["revisions"][0]["actor"], "agent")
+            self.assertEqual(
+                context.structured_content["boardUrl"], f"{WEB}/?board=project&projectBoard={board_id}",
+            )
             annotation = await client.call_tool("get_annotations", {"board_id": board_id, "author": "agent"})
             self.assertEqual(annotation.structured_content["annotations"][0]["title"], OBJECT["title"])
             requirements = await client.call_tool("get_requirements", {"board_id": board_id})

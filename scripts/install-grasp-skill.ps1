@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$source = Join-Path $PSScriptRoot '../skills/grasp-canvas/SKILL.md'
+$source = Join-Path $PSScriptRoot '../apps/agent/src/grasp_agent/skills/grasp-canvas/SKILL.md'
 $userDirectory = [Environment]::GetFolderPath('UserProfile')
 $skillsDirectory = if ($Agent -eq 'Codex') {
     Join-Path $userDirectory '.agents/skills'
