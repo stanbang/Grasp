@@ -42,8 +42,8 @@ The remainder records the original showcase work and its approval history. The c
 
 ## Design
 
-- Impeccable shape recorded the [showcase direction](../.impeccable/surfaces/showcase.md) in the existing Grasp visual system. The reference chat was opened in the browser to inspect its composer, starter prompts and history.
-- Created the [Figma draft](https://www.figma.com/design/3rtdi0qiFA8f6ct5MlOp76) in the owner's personal workspace. Figma's official capture tool added all six designs. Direct editing and asset export still face the Starter-plan quota. The Prototype page contains the captured sequence. The browser showcase contains the working transitions.
+- Impeccable shape recorded the [showcase direction](../.impeccable/surfaces/showcase.md) in the existing Grasp visual system. The showcase uses a question composer, suggested prompts and collapsible history.
+- Figma's capture tool recorded six design views. Editing and export remained limited by the plan quota. The browser showcase implements the working transitions. [Browser verification](showcase-review.md)
 - Authored and visually checked both diagrams and the social preview. The [local assets](assets/README.md) include SVG and PNG diagrams, logo variants and the favicon.
 
 ## Traces
@@ -67,7 +67,7 @@ The remainder records the original showcase work and its approval history. The c
 
 - Drafted the five interview answers, diagrams, evaluation, component tradeoffs and decision records. The README links to the archived reports and the runnable mock reproduction.
 - Recorded a short GIF from the local showcase and wrote the staged walkthrough, portfolio snippet and interview talk track.
-- Added the owner's architecture image and used the shared review to shape an interactive guide. Read selected official transcripts across the five course modules using the existing account. Added a prompt comparison to show what the model receives before and after retrieval. The guide uses original diagrams and examples from the Grasp repository. [Lessons reviewed](course-walkthrough.md)
+- Added the [architecture illustration](assets/grasp-architecture.png) and built an interactive guide from selected lessons across the five course modules. The guide compares model inputs before and after retrieval using original Grasp diagrams and examples. [Lessons reviewed](course-walkthrough.md)
 - Verified the five walkthrough topics, both retrieval settings, claim feedback and the router citation handoff in a browser. Local checks, production build and Impeccable scans passed. [Walkthrough review](showcase-review.md#interactive-course-walkthrough)
 
 ## GitHub
@@ -80,7 +80,7 @@ The remainder records the original showcase work and its approval history. The c
 | Requirement | Evidence on hand | Remaining |
 | --- | --- | --- |
 | Evidence, README and course walkthrough | The README answers the five questions and links to the sources, recorded results, diagrams and decision records. The original walkthrough uses selected DeepLearning.AI lessons across the five modules. [Facts](facts.md) · [Course sources](course-walkthrough.md) | Add a public demo link after a deployment succeeds. |
-| Figma and brand assets | The Figma capture tool added the design drafts. The repository has original SVG and PNG diagrams, Mermaid versions and the brand assets. [Figma draft](https://www.figma.com/design/3rtdi0qiFA8f6ct5MlOp76) · [Asset provenance](assets/README.md) | The connected account still has a View seat. Native prototype transitions and Figma-sourced diagram exports remain pending. |
+| Design captures and brand assets | Six views were captured for review. The repository has original SVG and PNG diagrams, Mermaid versions and brand assets. [Asset provenance](assets/README.md) | Native Figma prototype transitions and exports remain pending. |
 | Browser prototype | The local and packaged builds opened and replayed bundled notes, showed citations and loaded the 3D map. Browser checks exercised playback, mouse drag and keyboard controls. The drop tests cover external files and touch-handler events. [Browser review](showcase-review.md) · [Tests](../scripts/tests/showcase.test.cjs) | The available laptop exposed no touchscreen in the Windows device list. Confirm the gesture on a touch device and the frame-rate target on representative hardware. |
 | GitHub and interview material | The repository description and topics, release tag, About copy, demo script and talk track are in place. GitHub Actions passed the offline checks, built the static package and uploaded its artifact. [About copy](about-snippet.md) · [Talk track](interview-talk-track.md) · [Actions run](https://github.com/stanbang/Grasp/actions/runs/45344457592) | Pages still allows `main` only. GitHub reports no custom social preview. Both changes require owner approval. |
 

@@ -1,6 +1,6 @@
 # From the RAG course to the Grasp walkthrough
 
-The walkthrough teaches retrieval, prompt augmentation, generation and source inspection through a question about computer networks. The previous [shared Grasp review](https://chatgpt.com/share/6b04afc4-939c-83ec-99ab-1b58f98d5dba) supplied the architecture image and highlighted three distinctions worth making visible. The graph helps readers navigate sources. Exact quotation checks establish provenance. Retrieval scores tell us how the search ranked evidence.
+The walkthrough teaches retrieval, prompt augmentation, generation and source inspection through a question about computer networks. The [architecture illustration](assets/grasp-architecture.png) shows the pipeline. The concept graph helps readers navigate sources. Exact quotation checks identify where the evidence came from. Retrieval scores show how the search ranked that evidence.
 
 The [official syllabus](https://www.coursera.org/learn/retrieval-augmented-generation-rag/) supplies the topic order. The opening interview and the lessons below supplied the teaching examples through DeepLearning.AI’s transcript panel. The walkthrough uses original diagrams and a question from Grasp’s sample notes. Grasp behavior and metrics come from the repository.
 
