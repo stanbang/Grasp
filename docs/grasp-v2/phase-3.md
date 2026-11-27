@@ -154,7 +154,7 @@ The owner reported that a request to explain an existing component produced a se
 2. **Keep feedback attached.** The Project inspector can attach notes, questions and requirements to objects or connections and record requirement decisions. Edit the source or target of an authored connection in the inspector to keep its ID and attachments. Deleting an arrow keeps its feedback and clears the live attachment. Revision history retains the previous arrow, and the owner can attach the feedback to another connection.
 3. **Expand from the existing design.** The skill uses the saved graph to reuse relevant objects and select an appropriate visual form. The optional `expand_from_object_id` argument to `apply_canvas_operations` accepts additions only. It rejects detached branches, common placeholder labels such as “Related to,” and overlapping cards. The skill reads back each edit to check the saved path, the accuracy of its labels and the placement. The board still supports indexed PDF evidence. The same object and geometry model can support rendered inspection and additional asset references later.
 
-Keep the existing stdio server, SQLite snapshots, board isolation and canvas renderer. The relevant Enso practice is to inspect the current canvas and write a small, connected edit in the available space. [Enso skill](https://github.com/Enso-Team/enso-cli/blob/main/skills/enso/SKILL.md)
+Keep the existing stdio server, SQLite snapshots, board isolation and canvas renderer. Inspect the current canvas and write a small, connected edit in the available space.
 
 #### Automated verification
 

@@ -235,7 +235,7 @@ export default function RagGuide({ onBack, onTry }: { onBack: () => void; onTry:
         </section>
       </div>
       <footer className="guide-footer">
-        <CodeLink path="docs/course-walkthrough.md">Course notes and sources</CodeLink><CodeLink path="docs/interview-talk-track.md">Interview answers</CodeLink>
+        <CodeLink path="docs/course-walkthrough.md">Course notes and sources</CodeLink>
       </footer>
     </main>
   </div>;

@@ -8,11 +8,11 @@ web
 
 ## Stack
 
-Vite, React 18, strict TypeScript, Tailwind CSS, Zustand, Lucide, React Flow for the 2D canvas and react-force-graph-3d/Three.js on demand. Python 3.11, FastAPI, Pydantic v2, LangChain, persistent local ChromaDB and SQLite through SQLModel. Gemini and OpenAI are supported providers. A deterministic mock mode works without a key. A local CLI and stdio MCP adapter are proposed for Developer Preview v0.1. [Canvas decision](docs/grasp-v2/references.md#canvas-library-decision) · [Preview specification](docs/grasp-v2/developer-preview.md)
+Vite, React 18, strict TypeScript, Tailwind CSS, Zustand, Lucide, React Flow for the 2D canvas and react-force-graph-3d/Three.js on demand. Python 3.11, FastAPI, Pydantic v2, LangChain, persistent local ChromaDB and SQLite through SQLModel. Gemini and OpenAI are supported providers. A deterministic mock mode works without a key. A local CLI and stdio MCP adapter are proposed for Developer Preview v0.1. [Preview specification](docs/grasp-v2/developer-preview.md)
 
 ## Users
 
-Developers and project owners shaping an idea with an external coding agent. Students can still study PDF, Markdown and text notes. Interviewers can review the design work and the evidence behind the existing RAG implementation.
+Developers and project owners shaping an idea with an external coding agent. Students can still study PDF, Markdown and text notes. Technical reviewers can review the design work and the evidence behind the existing RAG implementation.
 
 ## Product Purpose
 
@@ -26,7 +26,7 @@ GRASP owns the shared board, evidence, feedback and approval record. Codex or an
 
 The preview adds persistent **Project boards** to the approved whiteboard. The **Knowledge Canvas** remains available for import, scoped questions, exact source inspection and 3D graph exploration. The **Engineering Canvas** presents the existing pipeline using repository-backed objects and its presentation views.
 
-The initial target is a local single-owner workspace and a five-minute HTX demonstration on 7 December 2026. Use an isolated demo library and project board. Label live agent calls, local mock processing, simulated prototype behavior and recorded replay where they occur. The public static showcase retains its offline route.
+The initial target is a local single-owner workspace and a reproducible developer preview. Use an isolated demo library and project board. Label live agent calls, local mock processing, simulated prototype behavior and recorded replay where they occur. The public static showcase retains its offline route.
 
 ## Capabilities and Constraints
 

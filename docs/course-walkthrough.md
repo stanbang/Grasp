@@ -14,4 +14,4 @@ The [official syllabus](https://www.coursera.org/learn/retrieval-augmented-gener
 
 Grasp searches a single vector index. The [hybrid search lesson](https://learn.deeplearning.ai/courses/retrieval-augmented-generation/lesson/77dro/hybrid-search) explains a different design, combining evidence from keyword and semantic search. The lab’s word-overlap reorder scores candidates already found by vector search. A second retriever using BM25 and rank fusion is a proposed experiment. [Tradeoffs](tradeoffs.md)
 
-The small lessons use the same project evidence as the README. The [interview talk track](interview-talk-track.md) gives longer answers, and [the bibliography and commands](facts.md) let a reader check the claims.
+The small lessons use the same project evidence as the README. The [bibliography and commands](facts.md) let a reader check the claims.

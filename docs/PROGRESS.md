@@ -12,7 +12,7 @@
 - **26 November 2026, Phase 3.1 ready for independent acceptance:** The owner approved active-board resolution, an attributed revision-aware MCP read and a shared Codex and Claude Code skill. The Codex skill is installed at user scope. Phase 4 awaits the owner's acceptance. [Collaboration check](grasp-v2/agent-guide.md#try-a-collaboration)
 - **26 November 2026, Phase 3.2 integration.** `grasp setup` configures the local workspace and installs the user-level MCP registration and skill. A fresh Codex desktop chat outside the checkout displayed the live video-editor canvas and used MCP to respond to selections and owner feedback. A live follow-up check confirmed that the open Codex Browser showed an MCP change without a refresh. [Verification](grasp-v2/phase-3.md#phase-32-workspace-integration)
 
-The schedule targets the complete slice by 4 December and reserves 5–6 December for integration and rehearsal ahead of the 7 December interview. [Roadmap](grasp-v2/roadmap.md) · [HTX presentation](grasp-v2/storyboard.md)
+The schedule targets the complete slice by 4 December and reserves 5–6 December for integration and rehearsal. [Roadmap](grasp-v2/roadmap.md)
 
 ## Showcase history
 
@@ -22,7 +22,7 @@ The remainder records the original showcase work and its approval history. The c
 
 - Created `showcase-overhaul` from the current default branch. GitHub reported no open issues, so the Grasp prompt is the work list.
 - Read the product, design and surface guidance and checked the workspace, evaluation runners, reports and test coverage. [Facts and evidence](facts.md) records claims, verification commands, stale copy and measurement gaps.
-- Found earlier interview work on `origin/feature/rag-interview-showcase`. Reconstructed chunks from the archived note bytes and verified gold matches, context counts and scopes. Recomputed archived Hit@1, Hit@3 and MRR@3. The two existing notes match the recorded hashes as Git blobs. The two portfolio-specific fixtures match with CRLF line endings.
+- Reviewed the earlier RAG evaluation branch. Reconstructed chunks from the archived note bytes and verified gold matches, context counts and scopes. Recomputed archived Hit@1, Hit@3 and MRR@3. The two existing notes match the recorded hashes as Git blobs. The two portfolio-specific fixtures match with CRLF line endings.
 - Reproduced the original offline retrieval result. `python scripts/check.py` and `npm run build` passed. The built workspace and mock API passed a loopback smoke check. The build warned about the size of the existing lazy-loaded 3D bundle and stale Browserslist data. Python warned that the current PDF loader's package is deprecated.
 - Reran the earlier four-note benchmark in mock mode with the exact archived input bytes. The report matched the archived mock report after removing timing fields. [Reproduction steps](facts.md#reproduce-the-four-note-mock-report) document the line endings needed to recover the stored chunk IDs.
 - Keep the default branch's study workspace as the integration baseline. Reuse the earlier evaluation artifacts where compatible. The older `/about` walkthrough and the proposed `/showcase` replay serve different purposes.
@@ -65,8 +65,8 @@ The remainder records the original showcase work and its approval history. The c
 
 ## Case study
 
-- Drafted the five interview answers, diagrams, evaluation, component tradeoffs and decision records. The README links to the archived reports and the runnable mock reproduction.
-- Recorded a short GIF from the local showcase and wrote the staged walkthrough, portfolio snippet and interview talk track.
+- Drafted the technical explanations, diagrams, evaluation, component tradeoffs and decision records. The README links to the archived reports and the runnable mock reproduction.
+- Recorded a short GIF from the local showcase and wrote the staged walkthrough, portfolio snippet .
 - Added the [architecture illustration](assets/grasp-architecture.png) and built an interactive guide from selected lessons across the five course modules. The guide compares model inputs before and after retrieval using original Grasp diagrams and examples. [Lessons reviewed](course-walkthrough.md)
 - Verified the five walkthrough topics, both retrieval settings, claim feedback and the router citation handoff in a browser. Local checks, production build and Impeccable scans passed. [Walkthrough review](showcase-review.md#interactive-course-walkthrough)
 
@@ -82,7 +82,7 @@ The remainder records the original showcase work and its approval history. The c
 | Evidence, README and course walkthrough | The README answers the five questions and links to the sources, recorded results, diagrams and decision records. The original walkthrough uses selected DeepLearning.AI lessons across the five modules. [Facts](facts.md) · [Course sources](course-walkthrough.md) | Add a public demo link after a deployment succeeds. |
 | Design captures and brand assets | Six views were captured for review. The repository has original SVG and PNG diagrams, Mermaid versions and brand assets. [Asset provenance](assets/README.md) | Native Figma prototype transitions and exports remain pending. |
 | Browser prototype | The local and packaged builds opened and replayed bundled notes, showed citations and loaded the 3D map. Browser checks exercised playback, mouse drag and keyboard controls. The drop tests cover external files and touch-handler events. [Browser review](showcase-review.md) · [Tests](../scripts/tests/showcase.test.cjs) | The available laptop exposed no touchscreen in the Windows device list. Confirm the gesture on a touch device and the frame-rate target on representative hardware. |
-| GitHub and interview material | The repository description and topics, release tag, About copy, demo script and talk track are in place. GitHub Actions passed the offline checks, built the static package and uploaded its artifact. [About copy](about-snippet.md) · [Talk track](interview-talk-track.md) · [Actions run](https://github.com/stanbang/Grasp/actions/runs/45344457592) | Pages still allows `main` only. GitHub reports no custom social preview. Both changes require owner approval. |
+| GitHub and technical showcase material | The repository description and topics, release tag, About copy, demo script are in place. GitHub Actions passed the offline checks, built the static package and uploaded its artifact. [About copy](about-snippet.md) · [Actions run](https://github.com/stanbang/Grasp/actions/runs/45344457592) | Pages still allows `main` only. GitHub reports no custom social preview. Both changes require owner approval. |
 
 ## Needs owner approval
 

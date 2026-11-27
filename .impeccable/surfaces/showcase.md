@@ -1,6 +1,6 @@
 # Recorded ingestion showcase
 
-Mode: Experience. An interviewer can replay the work that turns a note into a map, then inspect a source or ask about it. Success is finding the passage behind an answer and knowing which parts were recorded offline.
+Mode: Experience. A technical reviewer can replay the work that turns a note into a map, then inspect a source or ask about it. Success is finding the passage behind an answer and knowing which parts were recorded offline.
 
 ## Direction contract
 
@@ -22,4 +22,4 @@ Keep `/` available for real local study. The public route accepts only bundled s
 
 The reader can open the walkthrough from the landing page or return to it after loading a sample. Begin with one question from the networks note. Show the note-preparation lane and the question-answering lane as separate sequences. The same quote should appear in the worked example, claim check and source dialog.
 
-Give the five interview questions their own topics. Use controls where a reader can see the consequence of a choice, such as changing an archived retrieval setting or checking a claim against a quote. Keep the replay available behind the walkthrough and pause its clock while the reader is away. At phone widths put topic selection above the reading panel.
+Give the five technical topics their own topics. Use controls where a reader can see the consequence of a choice, such as changing an archived retrieval setting or checking a claim against a quote. Keep the replay available behind the walkthrough and pause its clock while the reader is away. At phone widths put topic selection above the reading panel.

@@ -1,6 +1,6 @@
 # Grasp facts and evidence
 
-This audit starts from [main at `f2a66fb`](https://github.com/stanbang/Grasp/tree/f2a66fb). The four-note experiment was carried forward from [the earlier interview showcase branch](https://github.com/stanbang/Grasp/tree/8834a8a). Run commands from the repository root with the project's Python environment active. Keep `MOCK_LLM=1` for current verification. Reading a recorded live report makes no provider requests.
+This audit starts from [main at `f2a66fb`](https://github.com/stanbang/Grasp/tree/f2a66fb). The four-note experiment was carried forward from the earlier evaluation work. Run commands from the repository root with the project's Python environment active. Keep `MOCK_LLM=1` for current verification. Reading a recorded live report makes no provider requests.
 
 ## What the workspace does
 
@@ -85,9 +85,9 @@ The run instructions and remaining seeds about supported files, local OCR, exact
 
 The showcase social preview is 1280 × 640. Its dimensions come from [the SVG source](assets/social-preview.svg). Check with `python -c "import struct; from pathlib import Path; print(struct.unpack('>II', Path('docs/assets/social-preview.png').read_bytes()[16:24]))"`.
 
-The [demo script](../README.md#demo-script) budgets five minutes for an interview. The 30-second and two-minute headings in the [talk track](interview-talk-track.md) describe rehearsal lengths. None is a performance measurement.
+The [demo script](../README.md#demo-script) budgets five minutes for a demonstration. This is not a performance measurement.
 
-The project author supplied the [architecture illustration](assets/grasp-architecture.png). The [RAG design notes](rag-design.md) explain how the implementation connects retrieval to the stored sources. The [Grasp walkthrough](course-walkthrough.md) derives its teaching sequence from the syllabus and the linked official transcripts. Its five topics map to the interview prompts. The sample model inputs use the recorded router quote and a short version of the chat route's grounding instruction. The tradeoff and evaluation panels show the recorded run's Hit@3 numerator, case count, corpus size, chunk settings, index count and retrieved characters. Verify with `node --test scripts/tests/showcase.test.cjs`, or start Vite and open `/showcase/?view=guide`. [Chat route](../apps/api/app/study_routes.py) · [Panel data](../apps/web/src/showcase/guide-results.json) · [Interaction and evidence tests](../scripts/tests/showcase.test.cjs)
+The project author supplied the [architecture illustration](assets/grasp-architecture.png). The [RAG design notes](rag-design.md) explain how the implementation connects retrieval to the stored sources. The [Grasp walkthrough](course-walkthrough.md) derives its teaching sequence from the syllabus and the linked official transcripts.  The sample model inputs use the recorded router quote and a short version of the chat route's grounding instruction. The tradeoff and evaluation panels show the recorded run's Hit@3 numerator, case count, corpus size, chunk settings, index count and retrieved characters. Verify with `node --test scripts/tests/showcase.test.cjs`, or start Vite and open `/showcase/?view=guide`. [Chat route](../apps/api/app/study_routes.py) · [Panel data](../apps/web/src/showcase/guide-results.json) · [Interaction and evidence tests](../scripts/tests/showcase.test.cjs)
 
 The [browser frame sample](showcase-review.md#browser-frame-sample) records the build revision, device, display, browser, callbacks per second and frame intervals. Recreate the browser probe with `npm run build` and `node scripts/prepare_showcase_frame_probe.cjs`, then follow the linked test steps. These are single-machine observations. The sustained frame-rate goal for a representative mid-range laptop and physical touch behavior remain unverified.
 
@@ -95,7 +95,7 @@ The [replay timing check](showcase-review.md#replay-timing) records how to verif
 
 The [Pages artifact check](showcase-review.md#github-pages-artifact) gives the commands to download and serve the actual Actions build. It verifies the repository base path, walkthrough, ranking controls, citation and lazy-loaded graph over a static server. The public URL needs a successful Pages deployment.
 
-## Interview questions and missing evidence
+## Technical questions and missing evidence
 
 | Question | Evidence on hand | Gap |
 | --- | --- | --- |

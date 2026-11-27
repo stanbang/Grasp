@@ -143,7 +143,7 @@ This is a local, single-owner workspace. Milestone A implements image and docume
 | [`samples`](samples/) | Bundled demo notes |
 | [`docs`](docs/) | Design decisions, experiments and acceptance notes |
 
-[Course walkthrough](docs/course-walkthrough.md) · [Retrieval tradeoffs](docs/tradeoffs.md) · [Interview talk track](docs/interview-talk-track.md)
+[Course walkthrough](docs/course-walkthrough.md) · [Retrieval tradeoffs](docs/tradeoffs.md)
 
 ## Author
 

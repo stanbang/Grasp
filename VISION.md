@@ -8,6 +8,6 @@ The agent works through an open local MCP interface. GRASP owns the board, feedb
 
 The approved Direction A+ whiteboard is the visual foundation. Technical illustrations, editorial headings, handwritten notes and meaningful connectors give the board room for diagrams, scenarios and unresolved ideas. The Knowledge and Engineering canvases carry forward the study workflow, exact citations and the original RAG walkthrough. Existing graph concepts and source passages retain their identities.
 
-The first proof is one project from the December 7, 2026 HTX interview brief. A user describes an AI video editor, resolves publishing and caption requirements, reviews a working browser prototype, leaves visual feedback and approves an updated specification. The implementation engine is general enough to repeat that workflow for a different application.
+The first proof is a sample project demonstrating the end-to-end workflow. A user describes an AI video editor, resolves publishing and caption requirements, reviews a working browser prototype, leaves visual feedback and approves an updated specification. The implementation engine is general enough to repeat that workflow for a different application.
 
-[Developer Preview specification](docs/grasp-v2/developer-preview.md) · [Roadmap](docs/grasp-v2/roadmap.md) · [HTX demonstration](docs/grasp-v2/storyboard.md)
+[Developer Preview specification](docs/grasp-v2/developer-preview.md) · [Roadmap](docs/grasp-v2/roadmap.md)

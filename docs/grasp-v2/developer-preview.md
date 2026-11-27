@@ -63,11 +63,11 @@ Serve previews on a separate loopback origin without application cookies or inje
 
 The board stores a prototype object ID and immutable prototype revision with its entry point, digest and requirement references. **Interact** hands pointer and keyboard control to the preview. **Annotate** captures feedback on the host canvas. Use an optional normalized rectangle over the visible preview linked to the exact prototype revision. Record feedback against the stable object, even after the agent registers a replacement preview. Keep old revisions inspectable by ID only while their assets are retained.
 
-## Interview scope
+## Developer preview scope
 
 - **Essential:** One Codex-driven project from brief through human approval and versioned export. Use real persisted questions, decisions, board edits, prototype interaction, one feedback-driven revision and exact citations when a fixture is in scope. Keep a no-source route.
 - **Video editor demo:** Import a bundled sample, play it, select a timeline range, simulate a cut, edit and restyle captions, choose an export format and require a simulated publishing approval. Use sample data and label simulated AI and Instagram steps. Prepare the existing Engineering walkthrough and the recorded retrieval evaluation for technical follow-ups.
 - **Stretch:** Claude Code verification, a second generic project fixture, more prototype regions and export formats, richer trace overlays, stronger automated contrast and physical projection checks. Complete the scheduled regression and rehearsal before adding these items.
 - **Deferred:** npm publication, desktop installers, collaboration, distributed infrastructure, agent orchestration, repository-wide indexing, a full prototype editor, public deployment and production video or Instagram integration.
 
-[Delivery sequence and gates](roadmap.md) · [Five-minute run and rehearsal plan](storyboard.md)
+[Delivery sequence and gates](roadmap.md)
